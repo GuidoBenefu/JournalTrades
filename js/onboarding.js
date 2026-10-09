@@ -15,11 +15,14 @@
   const draft = {
     accountType: state.accountType || 'retail',
     ddType: (state.fundedRules && state.fundedRules.ddType) || 'static',
-    items: state.items.map(it => ({...it})),
+    // El Trading Plan se arma desde cero: cada usuario carga sus propias reglas.
+    items: [],
   };
+  const MIN_RULES = 2;
   let editing = null;
 
   function renderItems(){
+    renderRuleCount();
     if(!draft.items.length){
       $('obItems').innerHTML = '<div class="ob-empty">Todavía no agregaste reglas. Empezá por la más importante de tu estrategia.</div>';
       return;
@@ -55,6 +58,16 @@
       editing = null;
       renderItems();
     }));
+  }
+
+  function renderRuleCount(){
+    const n = draft.items.length;
+    const box = $('obRuleCount');
+    box.textContent = n >= MIN_RULES
+      ? `✓ ${n} reglas cargadas`
+      : `${n} de ${MIN_RULES} reglas mínimas`;
+    box.classList.toggle('ok', n >= MIN_RULES);
+    if(n >= MIN_RULES) $('obItemsError').textContent = '';
   }
 
   function render(){
@@ -126,15 +139,14 @@
   $('obNext').addEventListener('click', ()=>{
     // Si escribió una regla y no tocó "Agregar", la sumamos igual.
     if(step === 2 && $('obNewItem').value.trim()) addItem();
-    if(step === 2 && !draft.items.length){
-      $('obItemsError').textContent = 'Agregá al menos una regla a tu Trading Plan para seguir.';
+    if(step === 2 && draft.items.length < MIN_RULES){
+      $('obItemsError').textContent = `Agregá al menos ${MIN_RULES} reglas a tu Trading Plan para seguir.`;
       $('obNewItem').focus();
       return;
     }
     if(step < 3){ step++; render(); } else finish();
   });
   $('obBack').addEventListener('click', ()=>{ if(step > 1){ step--; render(); } });
-  $('obSkip').addEventListener('click', close);
 
   renderItems();
   render();

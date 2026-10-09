@@ -8,8 +8,7 @@ const STORAGE_KEY = 'tradingChecklistState';
 const SCHEMA_VERSION = 1;
 
 // Cada usuario tiene su propio journal bajo `tradingChecklistState:<userId>`.
-// La clave sin usuario es la de la versión anterior a las cuentas: el primer
-// usuario que entra sin datos propios la adopta.
+// Una cuenta nueva siempre arranca vacía: no se adoptan datos de otras claves.
 const LocalStorageAdapter = {
   userId: null,
   key(){
@@ -17,14 +16,7 @@ const LocalStorageAdapter = {
   },
   load(){
     const raw = localStorage.getItem(this.key());
-    if(raw) return JSON.parse(raw);
-    const legacy = localStorage.getItem(STORAGE_KEY);
-    if(legacy){
-      localStorage.setItem(this.key(), legacy);
-      localStorage.removeItem(STORAGE_KEY);
-      return JSON.parse(legacy);
-    }
-    return null;
+    return raw ? JSON.parse(raw) : null;
   },
   save(data){
     localStorage.setItem(this.key(), JSON.stringify(data));

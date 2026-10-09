@@ -132,6 +132,10 @@ button.small{padding:6px 12px; font-size:13px;}
 .ob-funded{margin-top:16px; padding-top:16px; border-top:1px solid var(--border);}
 .ob-grid{display:grid; grid-template-columns:1fr 1fr; gap:4px 14px;}
 .ob-items{display:flex; flex-direction:column; margin-bottom:16px; border:1px solid var(--border); border-radius:12px; padding:0 14px;}
+.ob-rules-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px;}
+.ob-rule-count{font-weight:600; color:var(--text-2);}
+.ob-rule-count.ok{color:var(--accent);}
+.ob-rule-min{color:var(--text-3);}
 .ob-empty{padding:18px 4px; font-size:13px; color:var(--text-3); text-align:center;}
 .ob-item{display:flex; gap:12px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border);}
 .ob-item:last-child{border-bottom:none;}
