@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=13"></script>
+<script src="js/theme.js?v=14"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=13">
-<script src="js/auth.js?v=13"></script>
+<link rel="stylesheet" href="css/styles.css?v=14">
+<script src="js/auth.js?v=14"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -85,7 +85,11 @@
     </div>
     <div class="field">
       <label>Imagen del trade (opcional)</label>
-      <input type="file" id="tradeImageInput" accept="image/*">
+      <label class="file-btn" for="tradeImageInput">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span>Subir captura</span>
+      </label>
+      <input type="file" id="tradeImageInput" class="visually-hidden" accept="image/*">
       <div id="tradeImagePreview"></div>
     </div>
     <button class="primary" id="addTradeBtn">Agregar trade</button>
@@ -221,7 +225,7 @@
   </div>
         </div>
 
-    <div class="card">
+    <div class="card plan-card">
       <h2>Tu Trading Plan</h2>
       <div id="itemsManager"></div>
     <div class="field" style="margin-top:10px;">
@@ -340,10 +344,10 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/storage.js?v=13"></script>
-<script src="js/session.js?v=13"></script>
-<script src="js/app.js?v=13"></script>
-<script src="js/onboarding.js?v=13"></script>
+<script src="js/storage.js?v=14"></script>
+<script src="js/session.js?v=14"></script>
+<script src="js/app.js?v=14"></script>
+<script src="js/onboarding.js?v=14"></script>
 
 </body>
 </html>
