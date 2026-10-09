@@ -5,7 +5,8 @@ a{color:var(--accent);}
 .site{min-height:100vh; display:flex; flex-direction:column;}
 .site-nav{display:flex; align-items:center; justify-content:space-between; gap:12px;
   max-width:1120px; width:100%; margin:0 auto; padding:20px 24px;}
-.site-nav .brand{padding:0;}
+.site-nav .brand{padding:0; flex-shrink:0;}
+.site-nav .nav-right{display:flex; align-items:center; gap:10px;}
 .site-nav .links{display:flex; align-items:center; gap:10px;}
 .btn-link{display:inline-flex; align-items:center; justify-content:center; text-decoration:none;
   font-size:14px; font-weight:500; border-radius:8px; border:1px solid var(--border-strong);

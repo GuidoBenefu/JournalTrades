@@ -1,7 +1,7 @@
 :root{
   color-scheme: light dark;
   --bg: #f7f6f2; --card:#ffffff; --border:#e4e2d9; --border-strong:#c9c6b8;
-  --text:#1c1c1a; --text-2:#5f5e5a; --text-3:#8a8880;
+  --text:#1c1c1a; --text-2:#5f5e5a; --text-3:#6e6c65;
   --accent:#087a4a; --accent-bg:#dcf9e9; --accent-text:#055232;
   /* Verde del logo: fondo de botones y estados seleccionados, con texto oscuro encima. */
   --brand:#10e88c; --brand-hover:#0dd47f; --on-brand:#06281a;
@@ -10,11 +10,10 @@
   --amber:#854f0b; --amber-bg:#faeeda; --amber-text:#633806;
   --radius:10px;
 }
-:root:not([data-theme="light"]) { }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#161615; --card:#201f1d; --border:#3a3934; --border-strong:#4d4b44;
-    --text:#efeee8; --text-2:#b4b2a9; --text-3:#888780;
+    --text:#efeee8; --text-2:#b4b2a9; --text-3:#9a9890;
     --accent:#10e88c; --accent-bg:#0a3d27; --accent-text:#b8f5d6;
     --danger:#f09595; --danger-bg:#501313; --danger-text:#fcebeb;
     --success:#97c459; --success-bg:#173404; --success-text:#eaf3de;
@@ -23,13 +22,16 @@
 }
 :root[data-theme="dark"]{
   --bg:#161615; --card:#201f1d; --border:#3a3934; --border-strong:#4d4b44;
-  --text:#efeee8; --text-2:#b4b2a9; --text-3:#888780;
+  --text:#efeee8; --text-2:#b4b2a9; --text-3:#9a9890;
   --accent:#10e88c; --accent-bg:#0a3d27; --accent-text:#b8f5d6;
   --danger:#f09595; --danger-bg:#501313; --danger-text:#fcebeb;
   --success:#97c459; --success-bg:#173404; --success-text:#eaf3de;
   --amber:#ef9f27; --amber-bg:#412402; --amber-text:#faeeda;
 }
+:root[data-theme="light"]{color-scheme:light;}
+:root[data-theme="dark"]{color-scheme:dark;}
 *{box-sizing:border-box;}
+input[type=checkbox], input[type=radio]{accent-color:var(--accent);}
 html{scroll-padding-top:env(safe-area-inset-top,0px);}
 body{
   margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
@@ -37,13 +39,16 @@ body{
 }
 .applogo{font-size:20px;}
 button.small{padding:6px 12px; font-size:13px;}
+.theme-toggle{width:38px; height:38px; padding:0; display:inline-flex; align-items:center; justify-content:center;
+  border-radius:10px; color:var(--text-2); flex-shrink:0;}
+.theme-toggle:hover{color:var(--text); border-color:var(--accent);}
 
 /* ---- Layout de escritorio: barra lateral + contenido ---- */
 .appshell{display:grid; grid-template-columns:240px minmax(0,1fr); min-height:100vh;}
 .sidebar{position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:20px;
   background:var(--card); border-right:1px solid var(--border); padding:20px 14px;}
 .brand{display:flex; align-items:center; gap:10px; font-size:16px; font-weight:600; color:var(--text); text-decoration:none; padding:4px 8px;}
-.brand-logo{height:44px; width:auto; display:block;}
+.brand-logo{height:44px; width:auto; max-width:none; display:block;}
 .tabbar{display:flex; flex-direction:column; gap:2px;}
 .tabbtn{background:none; border:none; display:flex; align-items:center; gap:10px; width:100%;
   padding:10px 12px; border-radius:8px; font-size:14px; font-weight:500; color:var(--text-2); font-family:inherit; cursor:pointer; text-align:left;}
@@ -64,7 +69,8 @@ button.small{padding:6px 12px; font-size:13px;}
   padding:18px 32px; background:var(--bg); border-bottom:1px solid var(--border);}
 .topbar h1{margin:0; font-size:22px; font-weight:600;}
 .topbar-right{display:flex; align-items:center; gap:10px;}
-.planbadge{font-size:12px; font-weight:600; padding:5px 12px; border-radius:20px;}
+.planbadge{font-size:12px; font-weight:600; padding:5px 12px; border-radius:20px; white-space:nowrap;}
+.topbar-right button{white-space:nowrap;}
 .planbadge.pro{background:var(--accent-bg); color:var(--accent-text);}
 .planbadge.trial{background:var(--success-bg); color:var(--success-text);}
 .planbadge.ending{background:var(--amber-bg); color:var(--amber-text);}
@@ -98,7 +104,7 @@ button.small{padding:6px 12px; font-size:13px;}
   .appshell{display:block;}
   .sidebar{position:fixed; top:auto; bottom:0; left:0; right:0; height:auto; z-index:50; padding:0 0 env(safe-area-inset-bottom,0px);
     border-right:none; border-top:1px solid var(--border); gap:0;}
-  .brand, .sidebar-foot{display:none;}
+  .sidebar .brand, .sidebar-foot{display:none;}
   .tabbar{flex-direction:row; gap:0;}
   .tabbtn{flex-direction:column; gap:2px; padding:9px 2px 8px; font-size:10.5px; border-radius:0; text-align:center; justify-content:center;}
   .tabbtn:hover{background:none;}
@@ -107,6 +113,9 @@ button.small{padding:6px 12px; font-size:13px;}
   .topbar{padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;}
   .topbar h1{font-size:18px;}
   .mobile-only{display:inline-block;}
+  .desktop-only{display:none;}
+  .topbar-right{gap:8px;}
+  .topbar .theme-toggle{width:34px; height:34px;}
   .storage-warning{margin:12px 16px 0;}
   .content{padding:14px 14px calc(90px + env(safe-area-inset-bottom,0px));}
   .tabpage.active{grid-template-columns:minmax(0,1fr); gap:16px;}

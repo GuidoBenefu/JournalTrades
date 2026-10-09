@@ -18,8 +18,9 @@ function renderSession(user){
     upgradeBtn.style.display = 'none';
   } else {
     const days = JournalAuth.trialDaysLeft(user);
-    badge.textContent = days > 0
-      ? 'Prueba gratis · ' + (days === 1 ? 'queda 1 día' : 'quedan ' + days + ' días')
+    // En celular se oculta "Prueba gratis · " para que entre en la barra.
+    badge.innerHTML = days > 0
+      ? '<span class="desktop-only">Prueba gratis · </span>' + (days === 1 ? 'queda 1 día' : 'quedan ' + days + ' días')
       : 'Prueba terminada';
     badge.className = 'planbadge ' + (days > 2 ? 'trial' : 'ending');
     upgradeBtn.style.display = '';

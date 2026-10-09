@@ -25,6 +25,7 @@ auth.html        Login y registro, con elección de plan
 app.html         El journal (pestañas Trade, Stats, Calendario, Historial, Ajustes)
 css/styles.css   Tokens de color (claro/oscuro) y estilos de la app
 css/site.css     Estilos de inicio y login
+js/theme.js      Modo claro/oscuro (oscuro por defecto, la elección se guarda)
 js/auth.js       Usuarios, sesión y planes (simulados en localStorage)
 js/session.js    Header del usuario, plan, paywall al vencer la prueba y logout
 js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
