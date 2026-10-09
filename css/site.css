@@ -74,9 +74,11 @@ a{color:var(--accent);}
 
 .plans{display:grid; grid-template-columns:repeat(2, minmax(0,360px)); gap:20px; justify-content:center;}
 .plan{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; display:flex; flex-direction:column;}
-.plan.featured{border:2px solid var(--accent);}
-.plan .tag{align-self:flex-start; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px;
-  background:var(--accent-bg); color:var(--accent-text); margin-bottom:10px;}
+.plan.featured{border:2px solid var(--accent); padding:23px;}
+.plan-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 4px;}
+.plan-head h3{margin:0;}
+.plan .tag{font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px;
+  background:#10e88c; color:#06281a;}
 .plan h3{font-size:20px; margin:0 0 4px;}
 .plan .price{font-size:34px; font-weight:700; margin:10px 0 2px;}
 .plan .price span{font-size:14px; font-weight:500; color:var(--text-2);}
