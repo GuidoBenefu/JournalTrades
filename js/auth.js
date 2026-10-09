@@ -10,6 +10,16 @@ const SESSION_KEY = 'jt_session';
 const TRIAL_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Precios del plan Pro en USD. El anual tiene un 20% de descuento sobre 12 meses.
+const PRO_PRICING = {
+  monthly: {price: 14.99},
+  annual: {price: 143.90, perMonth: 11.99, discountPct: 20, savings: 35.98},
+};
+
+function formatUSD(n){
+  return 'USD ' + n.toFixed(2).replace('.', ',');
+}
+
 function readJSON(key, fallback){
   try{
     const raw = localStorage.getItem(key);
@@ -41,8 +51,10 @@ function publicUser(u){
 
 const JournalAuth = {
   TRIAL_DAYS,
+  PRO_PRICING,
+  formatUSD,
 
-  async register({name, email, password, plan}){
+  async register({name, email, password, plan, billing}){
     email = String(email || '').trim().toLowerCase();
     name = String(name || '').trim();
     if(!name) throw new Error('Ingresá tu nombre.');
@@ -58,6 +70,7 @@ const JournalAuth = {
       passwordHash: await hashPassword(password),
       plan: plan === 'pro' ? 'pro' : 'trial',
       trialEndsAt: plan === 'pro' ? null : now + TRIAL_DAYS * DAY_MS,
+      billing: plan === 'pro' ? (billing === 'annual' ? 'annual' : 'monthly') : null,
       createdAt: now,
     };
     users.push(user);
@@ -99,13 +112,14 @@ const JournalAuth = {
   },
 
   // Simula el pago: cuando haya pasarela de pagos, esto lo confirma el backend.
-  upgradeToPro(){
+  upgradeToPro(billing){
     const session = readJSON(SESSION_KEY, null);
     if(!session) return null;
     const users = readJSON(USERS_KEY, []);
     const user = users.find(u=>u.id === session.userId);
     if(!user) return null;
     user.plan = 'pro';
+    user.billing = billing === 'annual' ? 'annual' : 'monthly';
     user.trialEndsAt = null;
     writeJSON(USERS_KEY, users);
     return publicUser(user);

@@ -31,8 +31,17 @@
         <label>Plan</label>
         <div class="plan-pick">
           <button type="button" class="plan-opt" data-plan="trial"><div class="t">Prueba gratis</div><div class="s">7 días, sin tarjeta</div></button>
-          <button type="button" class="plan-opt" data-plan="pro"><div class="t">Pro</div><div class="s">USD 9.99 / mes</div></button>
+          <button type="button" class="plan-opt" data-plan="pro"><div class="t">Pro</div><div class="s">Desde USD 11,99 / mes</div></button>
         </div>
+      </div>
+
+      <div class="field" id="billingField">
+        <label>Forma de pago</label>
+        <div class="plan-pick">
+          <button type="button" class="plan-opt billing-opt" data-billing="monthly"><div class="t">Mensual</div><div class="s" id="monthlyPrice"></div></button>
+          <button type="button" class="plan-opt billing-opt" data-billing="annual"><div class="t">Anual <span class="save-pill">-20%</span></div><div class="s" id="annualPrice"></div></button>
+        </div>
+        <div class="price-note" id="billingNote"></div>
       </div>
 
       <div class="field" id="nameField">
@@ -62,6 +71,10 @@
   const params = new URLSearchParams(location.search);
   let mode = params.get('mode') === 'register' ? 'register' : 'login';
   let plan = params.get('plan') === 'pro' ? 'pro' : 'trial';
+  let billing = params.get('billing') === 'annual' ? 'annual' : 'monthly';
+  const pricing = JournalAuth.PRO_PRICING;
+  document.getElementById('monthlyPrice').textContent = JournalAuth.formatUSD(pricing.monthly.price) + ' / mes';
+  document.getElementById('annualPrice').textContent = JournalAuth.formatUSD(pricing.annual.price) + ' / año';
 
   function render(){
     const reg = mode === 'register';
@@ -70,12 +83,17 @@
       ? (plan === 'pro' ? 'Empezá con el plan Pro.' : 'Empezá tu prueba gratis de 7 días.')
       : 'Ingresá para ir a tu journal.';
     document.querySelectorAll('.auth-tabs button').forEach(b=> b.classList.toggle('active', b.dataset.mode === mode));
-    document.querySelectorAll('.plan-opt').forEach(b=> b.classList.toggle('active', b.dataset.plan === plan));
+    document.querySelectorAll('.plan-opt[data-plan]').forEach(b=> b.classList.toggle('active', b.dataset.plan === plan));
+    document.querySelectorAll('.billing-opt').forEach(b=> b.classList.toggle('active', b.dataset.billing === billing));
     document.getElementById('planField').style.display = reg ? '' : 'none';
+    document.getElementById('billingField').style.display = reg && plan === 'pro' ? '' : 'none';
+    document.getElementById('billingNote').innerHTML = billing === 'annual'
+      ? '<strong>20% de descuento pagando anual.</strong> Equivale a ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes: ahorrás ' + JournalAuth.formatUSD(pricing.annual.savings) + ' al año.'
+      : 'Pagando anual tenés un 20% de descuento: ' + JournalAuth.formatUSD(pricing.annual.price) + ' / año.';
     document.getElementById('nameField').style.display = reg ? '' : 'none';
     document.getElementById('passwordInput').autocomplete = reg ? 'new-password' : 'current-password';
     document.getElementById('submitBtn').textContent = reg
-      ? (plan === 'pro' ? 'Crear cuenta Pro' : 'Empezar prueba gratis')
+      ? (plan === 'pro' ? 'Crear cuenta Pro ' + (billing === 'annual' ? 'anual' : 'mensual') : 'Empezar prueba gratis')
       : 'Iniciar sesión';
     document.getElementById('formNote').textContent = reg && plan === 'pro'
       ? 'Los pagos todavía no están integrados: el plan Pro se activa sin cobro.'
@@ -84,7 +102,8 @@
   }
 
   document.querySelectorAll('.auth-tabs button').forEach(b=> b.addEventListener('click', ()=>{ mode = b.dataset.mode; render(); }));
-  document.querySelectorAll('.plan-opt').forEach(b=> b.addEventListener('click', ()=>{ plan = b.dataset.plan; render(); }));
+  document.querySelectorAll('.plan-opt[data-plan]').forEach(b=> b.addEventListener('click', ()=>{ plan = b.dataset.plan; render(); }));
+  document.querySelectorAll('.billing-opt').forEach(b=> b.addEventListener('click', ()=>{ billing = b.dataset.billing; render(); }));
 
   document.getElementById('authForm').addEventListener('submit', async e=>{
     e.preventDefault();
@@ -94,7 +113,7 @@
     const password = document.getElementById('passwordInput').value;
     try{
       if(mode === 'register'){
-        await JournalAuth.register({name: document.getElementById('nameInput').value, email, password, plan});
+        await JournalAuth.register({name: document.getElementById('nameInput').value, email, password, plan, billing});
       } else {
         await JournalAuth.login({email, password});
       }

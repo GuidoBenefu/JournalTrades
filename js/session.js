@@ -13,7 +13,7 @@ function renderSession(user){
   const badge = document.getElementById('planBadge');
   const upgradeBtn = document.getElementById('upgradeBtn');
   if(user.plan === 'pro'){
-    badge.textContent = 'Pro';
+    badge.textContent = user.billing === 'annual' ? 'Pro · anual' : 'Pro · mensual';
     badge.className = 'planbadge pro';
     upgradeBtn.style.display = 'none';
   } else {
@@ -24,21 +24,39 @@ function renderSession(user){
     badge.className = 'planbadge ' + (days > 2 ? 'trial' : 'ending');
     upgradeBtn.style.display = '';
   }
-  document.getElementById('paywall').style.display = JournalAuth.hasAccess(user) ? 'none' : 'flex';
+  if(!JournalAuth.hasAccess(user)) openUpgrade(true);
+  else document.getElementById('paywall').style.display = 'none';
 }
 
-function upgrade(){
-  if(!confirm('Los pagos todavía no están integrados: el plan Pro se activa sin cobro. ¿Continuar?')) return;
-  renderSession(JournalAuth.upgradeToPro());
+const pricing = JournalAuth.PRO_PRICING;
+document.getElementById('pwMonthly').textContent = JournalAuth.formatUSD(pricing.monthly.price);
+document.getElementById('pwAnnual').textContent = JournalAuth.formatUSD(pricing.annual.price);
+document.getElementById('pwAnnualSub').textContent = 'por año · ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes';
+
+// expired: la prueba terminó y no se puede cerrar sin pasar a Pro.
+function openUpgrade(expired){
+  document.getElementById('paywallIcon').textContent = expired ? '⏳' : '🚀';
+  document.getElementById('paywallTitle').textContent = expired ? 'Tu prueba gratis terminó' : 'Pasate a Pro';
+  document.getElementById('paywallText').textContent = expired
+    ? 'Pasate a Pro para seguir registrando trades. Tus datos siguen guardados.'
+    : 'Seguí entrenando tu disciplina sin límite de tiempo.';
+  document.getElementById('paywallCloseBtn').style.display = expired ? 'none' : '';
+  document.getElementById('paywall').style.display = 'flex';
 }
+
+document.querySelectorAll('.billing-card').forEach(btn=>{
+  btn.addEventListener('click', ()=> renderSession(JournalAuth.upgradeToPro(btn.dataset.billing)));
+});
+document.getElementById('paywallCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('paywall').style.display = 'none';
+});
 
 function logout(){
   JournalAuth.logout();
   location.href = 'index.html';
 }
 
-document.getElementById('upgradeBtn').addEventListener('click', upgrade);
-document.getElementById('paywallUpgradeBtn').addEventListener('click', upgrade);
+document.getElementById('upgradeBtn').addEventListener('click', ()=> openUpgrade(false));
 document.getElementById('logoutBtn').addEventListener('click', logout);
 document.getElementById('logoutBtnMobile').addEventListener('click', logout);
 document.getElementById('paywallLogoutBtn').addEventListener('click', logout);

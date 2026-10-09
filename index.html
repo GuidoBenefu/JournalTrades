@@ -124,6 +124,10 @@
   <section class="section" id="planes">
     <h2 class="title">Elegí cómo empezar</h2>
     <p class="subtitle">Empezá a entrenar tu disciplina hoy. Probalo gratis o pasate a Pro desde el primer día.</p>
+    <div class="billing-toggle" role="group" aria-label="Forma de pago">
+      <button type="button" data-billing="monthly" class="active">Mensual</button>
+      <button type="button" data-billing="annual">Anual <span class="save-pill">-20%</span></button>
+    </div>
     <div class="plans">
       <div class="plan">
         <h3>Prueba gratis</h3>
@@ -139,7 +143,8 @@
       <div class="plan featured">
         <span class="tag">Recomendado</span>
         <h3>Pro</h3>
-        <div class="price">USD 9.99 <span>/ mes</span></div>
+        <div class="price"><span class="amount" id="proPrice">USD 14,99</span> <span id="proPeriod">/ mes</span></div>
+        <div class="price-note" id="proNote">O pagá anual con un 20% de descuento.</div>
         <p class="desc">Para entrenar tu disciplina todos los días, sin límite.</p>
         <ul>
           <li>Trades ilimitados</li>
@@ -147,7 +152,7 @@
           <li>Seguimiento de cuentas de fondeo</li>
           <li>Backup de tus datos</li>
         </ul>
-        <a class="btn-link primary lg" href="auth.html?mode=register&plan=pro">Ir a Pro</a>
+        <a class="btn-link primary lg" id="proCta" href="auth.html?mode=register&plan=pro&billing=monthly">Ir a Pro</a>
       </div>
     </div>
   </section>
@@ -157,6 +162,20 @@
 
 <script src="js/auth.js"></script>
 <script>
+  const pricing = JournalAuth.PRO_PRICING;
+  function renderBilling(billing){
+    document.querySelectorAll('.billing-toggle button').forEach(b=> b.classList.toggle('active', b.dataset.billing === billing));
+    const annual = billing === 'annual';
+    document.getElementById('proPrice').textContent = JournalAuth.formatUSD(annual ? pricing.annual.price : pricing.monthly.price);
+    document.getElementById('proPeriod').textContent = annual ? '/ año' : '/ mes';
+    document.getElementById('proNote').innerHTML = annual
+      ? '<strong>20% de descuento pagando anual.</strong> Equivale a ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes: ahorrás ' + JournalAuth.formatUSD(pricing.annual.savings) + ' al año.'
+      : 'O pagá anual con un 20% de descuento.';
+    document.getElementById('proCta').href = 'auth.html?mode=register&plan=pro&billing=' + billing;
+  }
+  document.querySelectorAll('.billing-toggle button').forEach(b=> b.addEventListener('click', ()=> renderBilling(b.dataset.billing)));
+  renderBilling('monthly');
+
   const user = JournalAuth.currentUser();
   if(user){
     document.getElementById('navLinks').innerHTML =

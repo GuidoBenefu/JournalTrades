@@ -80,6 +80,12 @@ a{color:var(--accent);}
 .plan h3{font-size:20px; margin:0 0 4px;}
 .plan .price{font-size:34px; font-weight:700; margin:10px 0 2px;}
 .plan .price span{font-size:14px; font-weight:500; color:var(--text-2);}
+.plan .price .amount{font-size:inherit; font-weight:inherit; color:inherit;}
+.price-note{font-size:13px; color:var(--success-text); background:var(--success-bg); border-radius:8px; padding:6px 10px; margin:6px 0 10px;}
+.price-note strong{font-weight:700;}
+.billing-toggle{display:flex; width:max-content; margin:0 auto 24px; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:4px; gap:4px;}
+.billing-toggle button{border:none; border-radius:999px; padding:8px 18px; color:var(--text-2); background:transparent; display:flex; align-items:center; gap:8px;}
+.billing-toggle button.active{background:var(--accent); color:#fff;}
 .plan .desc{font-size:14px; color:var(--text-2); margin:0 0 16px;}
 .plan ul{list-style:none; padding:0; margin:0 0 22px; display:flex; flex-direction:column; gap:8px; font-size:14px;}
 .plan li::before{content:'✓'; color:var(--success); font-weight:700; margin-right:8px;}
