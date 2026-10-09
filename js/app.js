@@ -524,13 +524,19 @@ document.querySelectorAll('#confidenceSeg button').forEach(b=> b.addEventListene
   renderChips();
 }));
 
-// Puntaje de disciplina del trade (0-100): reglas cumplidas, errores y emoción.
-function disciplineScore(rulesDone, rulesTotal, errorCount, emotionId){
-  const rules = rulesTotal ? rulesDone / rulesTotal * 100 : 100;
-  const errors = Math.max(0, 100 - errorCount * 34);
+// Puntaje de disciplina del trade (0-100): reglas cumplidas (60%), errores (25%)
+// y emoción (15%). Solo cuenta lo que ya se respondió: con el formulario vacío
+// devuelve null, y la emoción suma recién cuando se elige una.
+function disciplineScore(rulesDone, rulesTotal, errorCount, emotionId, planTouched){
   const emo = emotionById(emotionId);
-  const mind = emo && emo.tone === 'risk' ? 0 : 100;
-  return Math.round(rules * 0.6 + errors * 0.25 + mind * 0.15);
+  const touched = planTouched || rulesDone > 0 || errorCount > 0 || !!emo;
+  if(!touched) return null;
+  const parts = [];
+  if(rulesTotal) parts.push([rulesDone / rulesTotal * 100, 60]);
+  parts.push([Math.max(0, 100 - errorCount * 34), 25]);
+  if(emo) parts.push([emo.tone === 'risk' ? 0 : 100, 15]);
+  const weight = parts.reduce((a, p)=> a + p[1], 0);
+  return Math.round(parts.reduce((a, p)=> a + p[0] * p[1], 0) / weight);
 }
 
 // Estado de cada paso, barra de progreso y tarjeta de vista previa.
@@ -568,8 +574,8 @@ function renderTradeFormStatus(){
   const timeVal = val('entryTimeInput');
   const ts = timeVal ? new Date(timeVal).getTime() : Date.now();
   const emo = emotionById(tradeForm.emotion);
-  const score = disciplineScore(done, total, tradeForm.errors.length, tradeForm.emotion);
-  const scoreCls = score >= 80 ? 'good' : score >= 50 ? 'warn' : 'bad';
+  const score = disciplineScore(done, total, tradeForm.errors.length, tradeForm.emotion, tradeForm.planTouched);
+  const scoreCls = score === null ? 'none' : score >= 80 ? 'good' : score >= 50 ? 'warn' : 'bad';
   const resCls = tradeForm.result === 'win' ? 'pos' : tradeForm.result === 'loss' ? 'neg' : '';
   const row = (l, v)=> `<div class="tp-row"><span>${l}</span><b>${v}</b></div>`;
   const dir = tradeForm.direction
@@ -589,9 +595,9 @@ function renderTradeFormStatus(){
       ${row('Errores', tradeForm.errors.length ? `<span class="neg">${tradeForm.errors.length}</span>` : '0')}
     </div>
     <div class="tp-score ${scoreCls}">
-      <div class="tp-ring" style="--p:${score}"><span>${score}</span></div>
+      <div class="tp-ring" style="--p:${score || 0}"><span>${score === null ? '—' : score}</span></div>
       <div><div class="tp-score-t">Puntaje de disciplina</div>
-      <div class="tp-score-s">${score >= 80 ? 'Trade ejecutado con disciplina.' : score >= 50 ? 'Hay cosas para ajustar.' : 'Este trade se alejó de tu plan.'}</div></div>
+      <div class="tp-score-s">${score === null ? 'Completá el formulario para ver tu puntaje.' : score >= 80 ? 'Trade ejecutado con disciplina.' : score >= 50 ? 'Hay cosas para ajustar.' : 'Este trade se alejó de tu plan.'}</div></div>
     </div>`;
 }
 ['assetInput', 'setupInput', 'riskInput', 'rrPlanInput', 'resultPctInput', 'resultNote', 'entryTimeInput']

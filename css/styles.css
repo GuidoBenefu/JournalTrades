@@ -543,6 +543,7 @@ body.no-scroll{overflow:hidden;}
 .tp-ring span{width:42px; height:42px; border-radius:50%; background:var(--bg); display:grid; place-items:center; font-weight:700; font-size:15px;}
 .tp-score.warn .tp-ring{--c:var(--amber);}
 .tp-score.bad .tp-ring{--c:var(--danger);}
+.tp-score.none .tp-ring span{color:var(--text-3);}
 .tp-score-t{font-size:13px; font-weight:600;}
 .tp-score-s{font-size:12px; color:var(--text-3); margin-top:2px;}
 
