@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=20"></script>
+<script src="js/theme.js?v=21"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=20">
-<script src="js/auth.js?v=20"></script>
+<link rel="stylesheet" href="css/styles.css?v=21">
+<script src="js/auth.js?v=21"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -65,6 +65,7 @@
         </div>
         <button class="primary" data-goto="register">+ Registrar trade</button>
       </div>
+      <div class="span-2 review-nudge" id="homeReviewNudge" style="display:none;"></div>
       <div class="kpis span-2" id="homeKpis"></div>
       <div class="card span-2">
         <div class="card-head"><h2>Tu curva</h2><button type="button" class="link-btn" data-goto="stats">Ver análisis completo →</button></div>
@@ -320,31 +321,70 @@
     </div><!-- /tab history -->
 
     <div class="tabpage" data-tab="review">
-      <div class="card span-2">
-        <div class="card-head">
-          <h2 id="reviewTitle">Tu semana</h2>
-          <select id="reviewWeek" class="select-sm" aria-label="Semana"></select>
+      <section class="card span-2 rv-week">
+        <div class="rv-nav">
+          <button type="button" class="icon-btn" id="rvPrev" aria-label="Semana anterior"><i data-icon="chevron-left" data-size="18"></i></button>
+          <div class="rv-nav-mid">
+            <div class="rv-kicker" id="reviewKicker"></div>
+            <h2 id="reviewTitle">Tu semana</h2>
+          </div>
+          <button type="button" class="icon-btn" id="rvNext" aria-label="Semana siguiente"><i data-icon="chevron-right" data-size="18"></i></button>
+          <div class="rv-badges">
+            <span class="rv-streak" id="reviewStreak"></span>
+            <span class="rv-status" id="reviewStatus"></span>
+          </div>
         </div>
-        <div class="stats" id="reviewSummary"></div>
-        <div id="reviewAuto"></div>
-      </div>
-      <div class="card">
-        <h2>Revisión guiada</h2>
-        <p class="card-sub">Cinco minutos al final de la semana para mirar cómo operaste, no solo cuánto ganaste.</p>
-        <div class="field"><label for="rvGood">¿Qué hiciste bien esta semana?</label><textarea id="rvGood" rows="3"></textarea></div>
-        <div class="field"><label for="rvError">¿Qué error se repitió y por qué creés que pasó?</label><textarea id="rvError" rows="3"></textarea></div>
-        <div class="field"><label for="rvChange">¿Qué vas a hacer distinto la semana que viene?</label><textarea id="rvChange" rows="3"></textarea></div>
-        <div class="field">
-          <label>Del 1 al 10, ¿cómo calificás tu disciplina esta semana?</label>
-          <div class="seg seg-10" id="rvScore"></div>
+        <div class="rv-commit" id="rvCommit"></div>
+        <div class="rv-kpis" id="reviewSummary"></div>
+        <div class="rv-grid">
+          <div class="rv-chart-box">
+            <div class="rv-sub-t">Resultado por día</div>
+            <div class="rv-chart" id="reviewChart"></div>
+          </div>
+          <div class="rv-auto" id="reviewAuto"></div>
+        </div>
+        <details class="rv-trades" id="reviewTradesBox">
+          <summary><span id="reviewTradesTitle">Trades de la semana</span><i data-icon="chevron-down" data-size="16"></i></summary>
+          <div id="reviewTrades"></div>
+        </details>
+      </section>
+
+      <section class="card rv-form">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="notebook-pen" data-size="18"></i></span>
+          <div><h2>Revisión guiada</h2><p>Cinco minutos al final de la semana para mirar cómo operaste, no solo cuánto ganaste.</p></div>
+        </div>
+        <div class="rq rq-good" data-q="rvGood">
+          <div class="rq-head"><span class="rq-ic"><i data-icon="circle-check" data-size="16"></i></span><span class="rq-t"><span class="rq-n">1</span> Lo que hiciste bien</span><span class="rq-done"><i data-icon="check" data-size="14"></i></span></div>
+          <label for="rvGood" class="rq-q">¿Qué hiciste bien esta semana?</label>
+          <textarea id="rvGood" rows="3" placeholder="Ej. Esperé la confirmación en todos los trades y respeté el horario."></textarea>
+        </div>
+        <div class="rq rq-bad" data-q="rvError">
+          <div class="rq-head"><span class="rq-ic"><i data-icon="repeat" data-size="16"></i></span><span class="rq-t"><span class="rq-n">2</span> El error que se repitió</span><span class="rq-done"><i data-icon="check" data-size="14"></i></span></div>
+          <label for="rvError" class="rq-q">¿Qué error se repitió y por qué creés que pasó?</label>
+          <textarea id="rvError" rows="3" placeholder="Ej. Cerré antes de tiempo dos veces por miedo a devolver la ganancia."></textarea>
+        </div>
+        <div class="rq rq-warn" data-q="rvChange">
+          <div class="rq-head"><span class="rq-ic"><i data-icon="target" data-size="16"></i></span><span class="rq-t"><span class="rq-n">3</span> Qué vas a cambiar</span><span class="rq-done"><i data-icon="check" data-size="14"></i></span></div>
+          <label for="rvChange" class="rq-q">¿Qué vas a hacer distinto la semana que viene? <span class="label-note">(va a ser tu compromiso)</span></label>
+          <textarea id="rvChange" rows="3" placeholder="Ej. Dejar correr el trade hasta el TP salvo que se invalide el setup."></textarea>
+        </div>
+        <div class="field rv-score-field">
+          <label>Del 1 al 10, ¿cómo calificás tu disciplina esta semana? <span class="rv-score-word" id="rvScoreWord"></span></label>
+          <div class="score-blocks" id="rvScore"></div>
         </div>
         <div class="row"><button class="primary" id="rvSave">Guardar revisión</button></div>
         <div class="form-ok" id="rvSaved"></div>
-      </div>
-      <div class="card">
-        <h2>Revisiones anteriores</h2>
+      </section>
+
+      <section class="card rv-history">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="calendar-check" data-size="18"></i></span>
+          <div><h2>Revisiones anteriores</h2><p>Cómo evoluciona tu nota de disciplina semana a semana.</p></div>
+        </div>
+        <div id="reviewTrend"></div>
         <div id="reviewList"></div>
-      </div>
+      </section>
     </div><!-- /tab review -->
 
     <div class="tabpage" data-tab="settings">
@@ -613,19 +653,19 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=20"></script>
-<script src="js/storage.js?v=20"></script>
-<script src="js/session.js?v=20"></script>
-<script src="js/app.js?v=20"></script>
-<script src="js/analytics.js?v=20"></script>
-<script src="js/charts.js?v=20"></script>
-<script src="js/achievements.js?v=20"></script>
-<script src="js/dashboard.js?v=20"></script>
-<script src="js/analysis.js?v=20"></script>
-<script src="js/review.js?v=20"></script>
-<script src="js/calendar.js?v=20"></script>
-<script src="js/onboarding.js?v=20"></script>
-<script src="js/settings.js?v=20"></script>
+<script src="js/icons.js?v=21"></script>
+<script src="js/storage.js?v=21"></script>
+<script src="js/session.js?v=21"></script>
+<script src="js/app.js?v=21"></script>
+<script src="js/analytics.js?v=21"></script>
+<script src="js/charts.js?v=21"></script>
+<script src="js/achievements.js?v=21"></script>
+<script src="js/dashboard.js?v=21"></script>
+<script src="js/analysis.js?v=21"></script>
+<script src="js/review.js?v=21"></script>
+<script src="js/calendar.js?v=21"></script>
+<script src="js/onboarding.js?v=21"></script>
+<script src="js/settings.js?v=21"></script>
 
 </body>
 </html>
