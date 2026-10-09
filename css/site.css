@@ -10,7 +10,8 @@ a{color:var(--accent);}
 .btn-link{display:inline-flex; align-items:center; justify-content:center; text-decoration:none;
   font-size:14px; font-weight:500; border-radius:8px; border:1px solid var(--border-strong);
   padding:10px 16px; color:var(--text); background:transparent;}
-.btn-link.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+.btn-link.primary{background:var(--brand); border-color:var(--brand); color:var(--on-brand); font-weight:600;}
+.btn-link.primary:hover{background:var(--brand-hover); border-color:var(--brand-hover);}
 .btn-link.ghost{border-color:transparent; color:var(--text-2);}
 .btn-link.lg{padding:13px 22px; font-size:15px;}
 
@@ -57,7 +58,7 @@ a{color:var(--accent);}
 
 .steps{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
 .step{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px;}
-.step-n{width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; font-weight:700;
+.step-n{width:34px; height:34px; border-radius:50%; background:var(--brand); color:var(--on-brand); font-weight:700;
   display:flex; align-items:center; justify-content:center;}
 .step h3{font-size:16px; margin:14px 0 6px;}
 .step p{font-size:14px; color:var(--text-2); line-height:1.5; margin:0;}
@@ -78,7 +79,7 @@ a{color:var(--accent);}
 .plan-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 4px;}
 .plan-head h3{margin:0;}
 .plan .tag{font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px;
-  background:#10e88c; color:#06281a;}
+  background:var(--brand); color:var(--on-brand);}
 .plan h3{font-size:20px; margin:0 0 4px;}
 .plan .price{font-size:34px; font-weight:700; margin:10px 0 2px;}
 .plan .price span{font-size:14px; font-weight:500; color:var(--text-2);}
@@ -87,7 +88,8 @@ a{color:var(--accent);}
 .price-note strong{font-weight:700;}
 .billing-toggle{display:flex; width:max-content; margin:0 auto 24px; background:var(--card); border:1px solid var(--border); border-radius:999px; padding:4px; gap:4px;}
 .billing-toggle button{border:none; border-radius:999px; padding:8px 18px; color:var(--text-2); background:transparent; display:flex; align-items:center; gap:8px;}
-.billing-toggle button.active{background:var(--accent); color:#fff;}
+.billing-toggle button.active{background:var(--brand); color:var(--on-brand); font-weight:600;}
+.billing-toggle button.active .save-pill{background:var(--on-brand); color:var(--brand);}
 .plan .desc{font-size:14px; color:var(--text-2); margin:0 0 16px;}
 .plan ul{list-style:none; padding:0; margin:0 0 22px; display:flex; flex-direction:column; gap:8px; font-size:14px;}
 .plan li::before{content:'✓'; color:var(--success); font-weight:700; margin-right:8px;}
