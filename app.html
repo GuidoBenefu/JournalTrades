@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=19"></script>
+<script src="js/theme.js?v=20"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=19">
-<script src="js/auth.js?v=19"></script>
+<link rel="stylesheet" href="css/styles.css?v=20">
+<script src="js/auth.js?v=20"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -316,9 +316,6 @@
       <div class="card span-2">
     <h2>Historial</h2>
     <div class="hist" id="hist"></div>
-    <div id="resetArea" style="margin-top:10px;">
-      <button class="ghost" id="resetBtn">Borrar todo el historial</button>
-    </div>
   </div>
     </div><!-- /tab history -->
 
@@ -351,91 +348,147 @@
     </div><!-- /tab review -->
 
     <div class="tabpage" data-tab="settings">
-    <div class="stack">
-    <div class="card">
-      <h2>Tipo de cuenta</h2>
-      <div class="field" style="margin-bottom:6px;">
-      <label>¿Cómo operás?</label>
-      <div class="pillrow" id="accountTypePills">
-        <button type="button" class="pill" data-type="retail">Trader retail independiente</button>
-        <button type="button" class="pill" data-type="funded">Cuenta de fondeo (prop firm)</button>
-      </div>
-    </div>
+      <div class="stack">
+        <section class="card set-card" id="profileCard">
+          <div class="set-head">
+            <span class="set-ic"><i data-icon="user" data-size="18"></i></span>
+            <div><h2>Perfil</h2><p>Cómo te ves en la app y en qué plan estás.</p></div>
+          </div>
+          <div class="profile-top">
+            <div class="avatar avatar-lg" id="profileAvatar"></div>
+            <div class="profile-fields">
+              <div class="field">
+                <label for="profileNameInput">Nombre</label>
+                <input type="text" id="profileNameInput" maxlength="40" autocomplete="name">
+              </div>
+              <div class="profile-email"><span>Email</span><b id="profileEmail"></b></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Color del avatar</label>
+            <div class="swatches" id="avatarSwatches"></div>
+          </div>
+          <div class="plan-box" id="profilePlan"></div>
+        </section>
 
-    <div id="fundedRulesSection" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
-      <div class="field">
-        <label>Drawdown diario (%)</label>
-        <input type="text" inputmode="decimal" id="dailyDrawdownInput">
+        <section class="card set-card">
+          <div class="set-head">
+            <span class="set-ic"><i data-icon="landmark" data-size="18"></i></span>
+            <div><h2>Cuenta</h2><p>Si operás tu propia cuenta o una de fondeo con reglas.</p></div>
+          </div>
+          <div class="type-cards" id="accountTypePills">
+            <button type="button" class="type-card" data-type="retail">
+              <span class="type-ic"><i data-icon="user" data-size="20"></i></span>
+              <span class="t">Trader retail</span><span class="s">Opero mi propia cuenta.</span>
+              <span class="type-check"><i data-icon="circle-check" data-size="18"></i></span>
+            </button>
+            <button type="button" class="type-card" data-type="funded">
+              <span class="type-ic"><i data-icon="landmark" data-size="20"></i></span>
+              <span class="t">Cuenta de fondeo</span><span class="s">Opero con una prop firm y tengo reglas de drawdown.</span>
+              <span class="type-check"><i data-icon="circle-check" data-size="18"></i></span>
+            </button>
+          </div>
+          <div id="fundedRulesSection" class="funded-rules" style="display:none;">
+            <div class="set-sub">Reglas de tu prop firm</div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="dailyDrawdownInput">Drawdown diario</label>
+                <div class="input-suffix"><input type="text" inputmode="decimal" id="dailyDrawdownInput" placeholder="Ej. 5"><span>%</span></div>
+              </div>
+              <div class="field">
+                <label for="totalDrawdownInput">Drawdown total</label>
+                <div class="input-suffix"><input type="text" inputmode="decimal" id="totalDrawdownInput" placeholder="Ej. 10"><span>%</span></div>
+              </div>
+              <div class="field">
+                <label for="profitTargetInput">Profit target</label>
+                <div class="input-suffix"><input type="text" inputmode="decimal" id="profitTargetInput" placeholder="Ej. 8"><span>%</span></div>
+              </div>
+              <div class="field">
+                <label>Tipo de drawdown total</label>
+                <div class="seg" id="ddTypePills">
+                  <button type="button" data-dd="static">Estático</button>
+                  <button type="button" data-dd="trailing">Trailing</button>
+                </div>
+              </div>
+            </div>
+            <div class="field" id="ddLockField" style="display:none;">
+              <label class="check-row">
+                <input type="checkbox" id="ddLockInput">
+                <span>El piso deja de subir cuando llega al balance inicial (mi firma congela el trailing)</span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="card set-card">
+          <div class="set-head">
+            <span class="set-ic"><i data-icon="target" data-size="18"></i></span>
+            <div><h2>Metas y riesgo</h2><p>Los límites que te ponés para operar con disciplina.</p></div>
+          </div>
+          <div class="field">
+            <label for="goalPlanInput">Meta del mes: trades con el plan respetado</label>
+            <div class="quick-row">
+              <div class="quick" id="goalQuick">
+                <button type="button" data-v="70">70%</button><button type="button" data-v="80">80%</button><button type="button" data-v="90">90%</button>
+              </div>
+              <div class="input-suffix input-sm"><input type="text" inputmode="numeric" id="goalPlanInput" placeholder="Ej. 80" aria-label="Meta personalizada"><span>%</span></div>
+            </div>
+            <div class="goal-preview" id="goalPreview"></div>
+          </div>
+          <div class="field">
+            <label for="maxDailyRiskInput">Riesgo máximo por día según tu Trading Plan</label>
+            <div class="quick-row">
+              <div class="quick" id="riskQuick">
+                <button type="button" data-v="0.5">0.5%</button><button type="button" data-v="1">1%</button><button type="button" data-v="2">2%</button>
+              </div>
+              <div class="input-suffix input-sm"><input type="text" inputmode="decimal" id="maxDailyRiskInput" placeholder="Ej. 1" aria-label="Riesgo personalizado"><span>%</span></div>
+            </div>
+            <div id="dailyRiskStatus"></div>
+          </div>
+        </section>
+
+        <section class="card set-card">
+          <div class="set-head">
+            <span class="set-ic"><i data-icon="database" data-size="18"></i></span>
+            <div><h2>Datos y backup</h2><p>Por ahora tus datos se guardan solo en este navegador. Exportá un backup para no perderlos o pasarlos a otro dispositivo.</p></div>
+          </div>
+          <div class="data-actions">
+            <button type="button" class="data-card" id="exportBtn">
+              <span class="data-ic"><i data-icon="download" data-size="20"></i></span>
+              <span><span class="t">Exportar backup</span><span class="s">Descargá un archivo con todos tus datos.</span></span>
+            </button>
+            <button type="button" class="data-card" id="importBtn">
+              <span class="data-ic"><i data-icon="upload" data-size="20"></i></span>
+              <span><span class="t">Importar backup</span><span class="s">Reemplazá tus datos por los de un archivo.</span></span>
+            </button>
+          </div>
+          <input type="file" id="importInput" accept="application/json,.json" style="display:none;">
+          <div id="backupMsg" style="display:none; color:var(--danger); font-size:13px; margin-top:8px;"></div>
+          <div class="danger-zone">
+            <div class="dz-head"><i data-icon="alert-triangle" data-size="16"></i><b>Zona peligrosa</b></div>
+            <p>Borra todos tus trades, rachas y meses cerrados. Tu Trading Plan y tus ajustes se mantienen.</p>
+            <div id="resetArea"><button class="danger-o" id="resetBtn">Borrar todo el historial</button></div>
+          </div>
+        </section>
       </div>
-      <div class="field">
-        <label>Tipo de drawdown total</label>
-        <div class="pillrow" id="ddTypePills">
-          <button type="button" class="pill" data-dd="static">Estático</button>
-          <button type="button" class="pill" data-dd="trailing">Trailing</button>
+
+      <section class="card set-card plan-card">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="list-checks" data-size="18"></i></span>
+          <div><h2>Tu Trading Plan</h2><p>Las reglas que tiene que cumplir cada trade, en el orden en que las revisás.</p></div>
+          <span class="set-count" id="planCount"></span>
         </div>
-      </div>
-      <div class="field" id="ddLockField" style="display:none;">
-        <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
-          <input type="checkbox" id="ddLockInput" style="margin-top:2px;">
-          <span>El piso deja de subir cuando llega al balance inicial (mi firma congela el trailing)</span>
-        </label>
-      </div>
-      <div class="field">
-        <label>Drawdown total (%)</label>
-        <input type="text" inputmode="decimal" id="totalDrawdownInput">
-      </div>
-      <div class="field">
-        <label>Profit target (%)</label>
-        <input type="text" inputmode="decimal" id="profitTargetInput">
-      </div>
-    </div>
-
-    </div>
-
-    <div class="card">
-      <h2>Meta del mes</h2>
-      <div class="field">
-        <label for="goalPlanInput">Porcentaje de trades con el plan seguido que querés lograr cada mes</label>
-        <input type="text" inputmode="numeric" id="goalPlanInput" placeholder="Ej. 80">
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Risk management</h2>
-      <div class="field">
-      <label>Riesgo máximo por día según mi trading plan (%)</label>
-      <input type="text" inputmode="decimal" id="maxDailyRiskInput">
-    </div>
-    <div id="dailyRiskStatus"></div>
-  </div>
-
-    <div class="card">
-    <h2>Copia de seguridad</h2>
-    <p style="font-size:13px; color:var(--text-2); margin:0 0 10px;">Por ahora tus datos se guardan solo en este navegador. Exportá un backup para no perderlos o para pasarlos a otro dispositivo.</p>
-    <div class="row">
-      <button id="exportBtn">Exportar backup</button>
-      <button class="ghost" id="importBtn">Importar backup</button>
-    </div>
-    <input type="file" id="importInput" accept="application/json,.json" style="display:none;">
-    <div id="backupMsg" style="display:none; color:var(--danger); font-size:13px; margin-top:8px;"></div>
-  </div>
+        <div id="itemsManager"></div>
+        <div class="rule-add">
+          <div class="rule-add-row">
+            <span class="rule-add-ic"><i data-icon="plus" data-size="16"></i></span>
+            <input type="text" id="newItemLabel" placeholder="Escribí una nueva regla" aria-label="Nueva regla">
+            <button class="primary small" id="addItemBtn">Agregar</button>
+          </div>
+          <button type="button" class="link-btn" id="toggleHintBtn">+ Agregar aclaración</button>
+          <input type="text" id="newItemHint" placeholder="Aclaración opcional (ej. 9:30 a 11:00 NY)" aria-label="Aclaración" style="display:none;">
         </div>
-
-    <div class="card plan-card">
-      <h2>Tu Trading Plan</h2>
-      <div id="itemsManager"></div>
-    <div class="field" style="margin-top:10px;">
-      <label>Nueva regla</label>
-      <input type="text" id="newItemLabel">
-    </div>
-    <div class="field">
-      <label>Aclaración (opcional)</label>
-      <input type="text" id="newItemHint">
-    </div>
-    <button class="ghost" id="addItemBtn">+ Agregar regla</button>
-
-    </div>
-
+      </section>
     </div><!-- /tab settings -->
 
     </main>
@@ -553,24 +606,26 @@
   </aside>
 </div>
 
+<div class="saved-pill" id="savedPill" aria-live="polite"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <div id="lightbox" class="lightbox" style="display:none;">
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=19"></script>
-<script src="js/storage.js?v=19"></script>
-<script src="js/session.js?v=19"></script>
-<script src="js/app.js?v=19"></script>
-<script src="js/analytics.js?v=19"></script>
-<script src="js/charts.js?v=19"></script>
-<script src="js/achievements.js?v=19"></script>
-<script src="js/dashboard.js?v=19"></script>
-<script src="js/analysis.js?v=19"></script>
-<script src="js/review.js?v=19"></script>
-<script src="js/calendar.js?v=19"></script>
-<script src="js/onboarding.js?v=19"></script>
+<script src="js/icons.js?v=20"></script>
+<script src="js/storage.js?v=20"></script>
+<script src="js/session.js?v=20"></script>
+<script src="js/app.js?v=20"></script>
+<script src="js/analytics.js?v=20"></script>
+<script src="js/charts.js?v=20"></script>
+<script src="js/achievements.js?v=20"></script>
+<script src="js/dashboard.js?v=20"></script>
+<script src="js/analysis.js?v=20"></script>
+<script src="js/review.js?v=20"></script>
+<script src="js/calendar.js?v=20"></script>
+<script src="js/onboarding.js?v=20"></script>
+<script src="js/settings.js?v=20"></script>
 
 </body>
 </html>

@@ -150,4 +150,16 @@ const JournalAuth = {
   completeOnboarding(){
     return updateCurrentUser({onboarded: true});
   },
+
+  // Datos editables del perfil: nombre y color del avatar.
+  updateProfile({name, avatarColor}){
+    const changes = {};
+    if(name !== undefined){
+      name = String(name).trim();
+      if(!name) throw fieldError('name', 'Ingresá tu nombre.');
+      changes.name = name.slice(0, 40);
+    }
+    if(avatarColor !== undefined) changes.avatarColor = avatarColor;
+    return updateCurrentUser(changes);
+  },
 };

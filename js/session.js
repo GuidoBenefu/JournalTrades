@@ -4,11 +4,33 @@
 const sessionUser = JournalAuth.currentUser();
 if(sessionUser) JournalStore.setUser(sessionUser.id);
 
+// Colores del avatar: fondo y texto, legibles en modo claro y oscuro.
+const AVATAR_COLORS = {
+  green: ['#10e88c', '#06281a'],
+  blue: ['#4f8cff', '#04163a'],
+  violet: ['#a78bfa', '#1e0f45'],
+  amber: ['#f5b041', '#3a2400'],
+  rose: ['#f472b6', '#3d0722'],
+  slate: ['#94a3b8', '#0f1720'],
+};
+
+function initialsOf(name){
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  return ((parts[0] || '?').charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : '')).toUpperCase();
+}
+
+function paintAvatar(el, user){
+  el.textContent = initialsOf(user.name);
+  const c = AVATAR_COLORS[user.avatarColor];
+  el.style.background = c ? c[0] : '';
+  el.style.color = c ? c[1] : '';
+}
+
 function renderSession(user){
   if(!user) return;
   document.getElementById('userName').textContent = user.name;
   document.getElementById('userEmail').textContent = user.email;
-  document.getElementById('userAvatar').textContent = user.name.trim().charAt(0).toUpperCase();
+  paintAvatar(document.getElementById('userAvatar'), user);
 
   const badge = document.getElementById('planBadge');
   const upgradeBtn = document.getElementById('upgradeBtn');
