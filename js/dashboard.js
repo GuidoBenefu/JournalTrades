@@ -8,20 +8,27 @@ function renderInsightList(el, list, emptyText){
   el.innerHTML = list.map(i=> `<div class="insight ${i.tone}"><span class="insight-ic">${Icons.svg(i.icon, 17)}</span><p>${i.text}</p></div>`).join('');
 }
 
-function equityChart(el, height){
-  const {trades, real, plan} = Analytics.equityCurves();
+function equityChart(el, height, list){
+  const {trades, real, plan} = Analytics.equityCurves(list);
   const titles = real.map((v, i)=>{
-    if(i === 0) return 'Inicio';
+    if(i === 0) return '<b>Inicio</b>';
     const h = trades[i - 1];
-    return `Trade ${i} · ${fmtDate(h.ts)}${h.asset ? ' · ' + escapeHtml(h.asset) : ''}\nResultado: ${fmtSignedPct(Analytics.pct(h))}${h.followedPlan ? '' : ' (plan roto)'}\nAcumulado: ${fmtSignedPct(v)}`;
+    const r = Analytics.pct(h);
+    return `<div class="tip-h">Trade ${i} · ${fmtDate(h.ts)}${h.asset ? ' · ' + escapeHtml(h.asset) : ''}</div>
+      <div class="tip-r"><span>Resultado</span><b class="${r > 0 ? 'pos' : r < 0 ? 'neg' : ''}">${fmtSignedPct(r)}</b></div>
+      <div class="tip-r"><span>Acumulado</span><b>${fmtSignedPct(v)}</b></div>
+      <div class="tip-r"><span>Con tu plan</span><b>${fmtSignedPct(plan[i])}</b></div>
+      ${h.followedPlan ? '' : '<div class="tip-bad">Plan roto</div>'}`;
   });
   Charts.line(el, {
     height,
+    area: true,
+    band: true,
     series: [
       {values: real, color: 'var(--brand)', titles},
       {values: plan, color: 'var(--text-3)', dashed: true, width: 1.75},
     ],
-    points: trades.map((h, i)=> h.followedPlan ? null : {i: i + 1, color: 'var(--danger)', title: `Plan roto · ${fmtDate(h.ts)} · ${fmtSignedPct(Analytics.pct(h))}`}).filter(Boolean),
+    points: trades.map((h, i)=> h.followedPlan ? null : {i: i + 1, color: 'var(--danger)'}).filter(Boolean),
     format: v=> (v > 0 ? '+' : '') + v.toFixed(1) + '%',
   });
 }

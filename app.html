@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=21"></script>
+<script src="js/theme.js?v=22"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=21">
-<script src="js/auth.js?v=21"></script>
+<link rel="stylesheet" href="css/styles.css?v=22">
+<script src="js/auth.js?v=22"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -230,60 +230,89 @@
     </div><!-- /tab register -->
 
     <div class="tabpage" data-tab="stats">
-    <div class="card span-2">
-      <h2>Estadísticas</h2>
-      <div class="stats" id="stats"></div>
-    </div>
-
-    <div class="card span-2">
-      <div class="card-head"><h2>Curva de resultados</h2><span class="card-meta" id="curveMeta"></span></div>
-      <div class="chart" id="equityChart"></div>
-      <div class="legend"><span><i class="lg-real"></i>Resultado real</span><span><i class="lg-plan"></i>Si hubieras seguido tu plan</span><span><i class="lg-dot"></i>Plan roto</span></div>
-      <div class="curve-cost" id="curveCost"></div>
-    </div>
-
-    <div class="card span-2">
-      <h2>Lo que dicen tus datos</h2>
-      <div id="allInsights"></div>
-    </div>
-
-    <div class="card span-2">
-      <div class="card-head"><h2>Mapa de calor: cuándo rompés el plan</h2></div>
-      <p class="card-sub">Cada celda es un día y una hora de entrada. Cuanto más rojo, más veces rompiste el plan en ese momento.</p>
-      <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
-      <div class="legend"><span><i class="hm-ok"></i>Plan seguido</span><span><i class="hm-warn"></i>A veces roto</span><span><i class="hm-bad"></i>Mayormente roto</span></div>
-    </div>
-
-    <div class="card span-2">
-      <div class="card-head">
-        <h2>Desglose</h2>
-        <div class="pillrow" id="breakdownPills">
-          <button type="button" class="pill active" data-by="emotion">Emoción</button>
-          <button type="button" class="pill" data-by="error">Errores</button>
-          <button type="button" class="pill" data-by="session">Sesión</button>
-          <button type="button" class="pill" data-by="asset">Activo</button>
-          <button type="button" class="pill" data-by="setup">Setup</button>
-          <button type="button" class="pill" data-by="direction">Dirección</button>
+      <div class="span-2 st-period">
+        <div class="st-period-l"><b>Período</b><span id="statsRange"></span></div>
+        <div class="seg seg-sm" id="statsPeriod">
+          <button type="button" data-p="7">7 días</button>
+          <button type="button" data-p="30">30 días</button>
+          <button type="button" data-p="90">3 meses</button>
+          <button type="button" data-p="all">Todo</button>
         </div>
       </div>
-      <div class="table-wrap"><table class="breakdown" id="breakdownTable"></table></div>
-    </div>
 
-    <div class="card">
-      <h2>Plan seguido vs. plan roto</h2>
-      <div class="compare" id="compareBox"></div>
-    </div>
+      <div class="span-2 st-kpis" id="statsKpis"></div>
+      <div class="span-2 st-kpis-sec" id="stats"></div>
 
-    <div class="card">
-      <h2>Qué ítem se confirma más seguido</h2>
-      <div id="itemStats"></div>
-    </div>
+      <div class="span-2 st-row">
+        <section class="card st-ring-card">
+          <div class="set-head">
+            <span class="set-ic"><i data-icon="shield-check" data-size="18"></i></span>
+            <div><h2>Disciplina</h2><p>Trades con tu plan respetado contra tu meta.</p></div>
+          </div>
+          <div id="disciplineRing"></div>
+        </section>
+        <section class="card st-curve-card">
+          <div class="card-head"><h2>Curva de resultados</h2><span class="card-meta" id="curveMeta"></span></div>
+          <div class="chart" id="equityChart"></div>
+          <div class="legend"><span><i class="lg-real"></i>Resultado real</span><span><i class="lg-plan"></i>Si hubieras seguido tu plan</span><span><i class="lg-band"></i>Lo que te costó romperlo</span><span><i class="lg-dot"></i>Plan roto</span></div>
+        </section>
+      </div>
 
-    <div class="card span-2">
-      <h2>Cierre mensual</h2>
-      <div id="currentPeriod"></div>
-      <div id="closedMonths" style="margin-top:8px;"></div>
-    </div>
+      <section class="card span-2">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="lightbulb" data-size="18"></i></span>
+          <div><h2>Lo que dicen tus datos</h2><p>Patrones que aparecen en tus trades del período.</p></div>
+        </div>
+        <div id="allInsights"></div>
+      </section>
+
+      <section class="card span-2">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="calendar" data-size="18"></i></span>
+          <div><h2>Mapa de calor: cuándo rompés el plan</h2><p>Cada celda es un día y una hora de entrada. Pasá el mouse para ver el detalle.</p></div>
+        </div>
+        <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
+        <div class="legend hm-legend"><span>Plan seguido</span><span class="hm-grad"></span><span>Plan roto</span><span class="hm-legend-n">El número es la cantidad de trades</span></div>
+      </section>
+
+      <section class="card span-2">
+        <div class="card-head">
+          <h2>Desglose</h2>
+          <div class="pillrow" id="breakdownPills">
+            <button type="button" class="pill active" data-by="emotion">Emoción</button>
+            <button type="button" class="pill" data-by="error">Errores</button>
+            <button type="button" class="pill" data-by="session">Sesión</button>
+            <button type="button" class="pill" data-by="asset">Activo</button>
+            <button type="button" class="pill" data-by="setup">Setup</button>
+            <button type="button" class="pill" data-by="direction">Dirección</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table class="breakdown" id="breakdownTable"></table></div>
+      </section>
+
+      <section class="card">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="arrow-left-right" data-size="18"></i></span>
+          <div><h2>Plan seguido vs. plan roto</h2><p>Lo mismo medido de los dos lados.</p></div>
+        </div>
+        <div class="vs" id="compareBox"></div>
+      </section>
+
+      <section class="card">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="list-checks" data-size="18"></i></span>
+          <div><h2>Qué regla cumplís más</h2><p>Porcentaje de trades en los que tildaste cada regla.</p></div>
+        </div>
+        <div id="itemStats"></div>
+      </section>
+
+      <section class="card span-2">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="calendar-check" data-size="18"></i></span>
+          <div><h2>Cierre mensual</h2><p>Cada mes se cierra solo al terminar. Siempre muestra todo tu historial.</p></div>
+        </div>
+        <div class="months" id="closedMonths"></div>
+      </section>
     </div><!-- /tab stats -->
 
     <div class="tabpage" data-tab="calendar">
@@ -646,6 +675,7 @@
   </aside>
 </div>
 
+<div class="chart-tip" id="chartTip" role="tooltip"></div>
 <div class="saved-pill" id="savedPill" aria-live="polite"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
@@ -653,19 +683,19 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=21"></script>
-<script src="js/storage.js?v=21"></script>
-<script src="js/session.js?v=21"></script>
-<script src="js/app.js?v=21"></script>
-<script src="js/analytics.js?v=21"></script>
-<script src="js/charts.js?v=21"></script>
-<script src="js/achievements.js?v=21"></script>
-<script src="js/dashboard.js?v=21"></script>
-<script src="js/analysis.js?v=21"></script>
-<script src="js/review.js?v=21"></script>
-<script src="js/calendar.js?v=21"></script>
-<script src="js/onboarding.js?v=21"></script>
-<script src="js/settings.js?v=21"></script>
+<script src="js/icons.js?v=22"></script>
+<script src="js/storage.js?v=22"></script>
+<script src="js/session.js?v=22"></script>
+<script src="js/app.js?v=22"></script>
+<script src="js/analytics.js?v=22"></script>
+<script src="js/charts.js?v=22"></script>
+<script src="js/achievements.js?v=22"></script>
+<script src="js/dashboard.js?v=22"></script>
+<script src="js/analysis.js?v=22"></script>
+<script src="js/review.js?v=22"></script>
+<script src="js/calendar.js?v=22"></script>
+<script src="js/onboarding.js?v=22"></script>
+<script src="js/settings.js?v=22"></script>
 
 </body>
 </html>

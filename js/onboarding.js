@@ -131,7 +131,7 @@
     renderChecklist();
     updateAddButton();
     renderHistory();
-    renderItemStats();
+    renderAll();
     renderFundedProgress();
     close();
   }

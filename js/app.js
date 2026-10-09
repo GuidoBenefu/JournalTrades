@@ -673,12 +673,7 @@ const onDataChange = [];
 function renderAll(){
   autoCloseCompletedMonths();
   renderHistory();
-  renderStats();
   renderStreak();
-  renderCompare();
-  renderItemStats();
-  renderCurrentPeriod();
-  renderClosedMonths();
   renderFundedProgress();
   renderDatalists();
   onDataChange.forEach(fn=> fn());
@@ -898,44 +893,6 @@ function renderHistory(){
   });
 }
 
-function renderStats(){
-  const box = document.getElementById('stats');
-  const total = state.history.length;
-  const followed = state.history.filter(h=>h.followedPlan).length;
-  const pct = total ? Math.round((followed/total)*100) : 0;
-  const withResult = state.history.filter(h=>h.result);
-  const wins = withResult.filter(h=>h.result==='win').length;
-  const winRate = withResult.length ? Math.round((wins/withResult.length)*100) : 0;
-
-  const pcts = state.history.filter(h=>h.resultPct !== null && h.resultPct !== undefined).map(h=>h.resultPct);
-  const sumPct = pcts.reduce((a,b)=>a+b, 0);
-  const avgPct = pcts.length ? (sumPct/pcts.length) : null;
-
-  const risks = state.history.filter(h=>h.riskPct !== null && h.riskPct !== undefined).map(h=>h.riskPct);
-  const avgRisk = risks.length ? (risks.reduce((a,b)=>a+b,0)/risks.length) : null;
-
-  const durations = state.history.filter(h=>h.durationMin !== null && h.durationMin !== undefined).map(h=>h.durationMin);
-  const avgDuration = durations.length ? (durations.reduce((a,b)=>a+b,0)/durations.length) : null;
-
-  const checklistPcts = state.items.length ? state.history.map(h=>{
-    const missingCount = (h.missing && h.missing.length) ? h.missing.length : 0;
-    const checkedCount = state.items.length - missingCount;
-    return (checkedCount / state.items.length) * 100;
-  }) : [];
-  const avgChecklistPct = checklistPcts.length ? (checklistPcts.reduce((a,b)=>a+b,0)/checklistPcts.length) : null;
-
-  box.innerHTML = `
-    <div class="stat"><div class="n">${total}</div><div class="l">Trades</div></div>
-    <div class="stat"><div class="n">${pct}%</div><div class="l">Siguió el plan</div></div>
-    <div class="stat"><div class="n">${winRate}%</div><div class="l">Win rate</div></div>
-    <div class="stat"><div class="n">${sumPct > 0 ? '+' : ''}${sumPct.toFixed(1)}%</div><div class="l">Resultado acumulado</div></div>
-    <div class="stat"><div class="n">${avgPct === null ? '—' : (avgPct > 0 ? '+' : '') + avgPct.toFixed(1) + '%'}</div><div class="l">Resultado prom./trade</div></div>
-    <div class="stat"><div class="n">${avgRisk === null ? '—' : avgRisk.toFixed(1) + '%'}</div><div class="l">Riesgo promedio</div></div>
-    <div class="stat"><div class="n">${avgDuration === null ? '—' : Math.round(avgDuration) + ' min'}</div><div class="l">Duración promedio</div></div>
-    <div class="stat"><div class="n">${avgChecklistPct === null ? '—' : Math.round(avgChecklistPct) + '%'}</div><div class="l">Prom. ítems tildados</div></div>
-  `;
-}
-
 function renderStreak(){
   const box = document.getElementById('streakBox');
   let streak = 0;
@@ -952,68 +909,6 @@ function renderStreak(){
     <div class="l">${streak === 1 ? 'trade seguido' : 'trades seguidos'} respetando tu Trading Plan</div>
     <div class="best">Mejor racha: ${state.bestStreak}</div>
   `;
-}
-
-function renderCompare(){
-  const box = document.getElementById('compareBox');
-  function summarize(list){
-    const withPct = list.filter(h=>h.resultPct !== null && h.resultPct !== undefined);
-    const sum = withPct.reduce((a,h)=>a+h.resultPct, 0);
-    const avg = withPct.length ? sum/withPct.length : null;
-    const withDuration = list.filter(h=>h.durationMin !== null && h.durationMin !== undefined);
-    const avgDuration = withDuration.length ? withDuration.reduce((a,h)=>a+h.durationMin, 0)/withDuration.length : null;
-    return {count: list.length, sum, avg, avgDuration};
-  }
-  const followed = summarize(state.history.filter(h=>h.followedPlan));
-  const broken = summarize(state.history.filter(h=>!h.followedPlan));
-  function col(title, s){
-    return `
-      <div class="col">
-        <h3>${title}</h3>
-        <div class="n">${s.count}</div>
-        <div class="l">trades</div>
-        <div class="n" style="margin-top:6px;">${s.avg === null ? '—' : (s.avg>0?'+':'') + s.avg.toFixed(1) + '%'}</div>
-        <div class="l">prom./trade</div>
-        <div class="n" style="margin-top:6px;">${s.avgDuration === null ? '—' : Math.round(s.avgDuration) + ' min'}</div>
-        <div class="l">duración prom./trade</div>
-        <div class="n" style="margin-top:6px;">${s.sum > 0 ? '+' : ''}${s.sum.toFixed(1)}%</div>
-        <div class="l">acumulado</div>
-      </div>`;
-  }
-  box.innerHTML = col('Plan seguido', followed) + col('Plan roto', broken);
-}
-
-function renderItemStats(){
-  const box = document.getElementById('itemStats');
-  if(!state.items.length){
-    box.innerHTML = '<div class="empty">Armá tu Trading Plan en Ajustes para ver qué reglas cumplís más.</div>';
-    return;
-  }
-  if(state.history.length === 0){
-    box.innerHTML = '<div class="empty">Todavía no hay datos suficientes.</div>';
-    return;
-  }
-  const total = state.history.length;
-  const missingCounts = {};
-  state.items.forEach(it=> missingCounts[it.id] = 0);
-  state.history.forEach(h=>{
-    let ids = h.missingIds;
-    if(!ids && h.missing && h.missing.length){
-      ids = state.items.filter(it=> h.missing.includes(it.label)).map(it=>it.id);
-    }
-    (ids || []).forEach(id=>{ if(missingCounts[id] !== undefined) missingCounts[id]++; });
-  });
-  const rows = state.items.map(it=>{
-    const c = total - missingCounts[it.id];
-    const pct = total ? Math.round((c/total)*100) : 0;
-    return {label: it.label, c, pct};
-  }).sort((a,b)=> b.pct - a.pct);
-  box.innerHTML = rows.map(r=>`
-    <div class="itemstat">
-      <div class="top"><span>${escapeHtml(r.label)}</span><span>${r.pct}% (${r.c})</span></div>
-      <div class="bar"><div class="fill" style="width:${r.pct}%; background:var(--brand);"></div></div>
-    </div>
-  `).join('');
 }
 
 function dayKeyFromTs(ts){
@@ -1079,37 +974,6 @@ function autoCloseCompletedMonths(){
     });
   });
   saveState();
-}
-
-function renderCurrentPeriod(){
-  const box = document.getElementById('currentPeriod');
-  const currentKey = monthKeyOf(Date.now());
-  const current = state.history.filter(h => monthKeyOf(h.ts) === currentKey);
-  const s = summarizePeriod(current);
-  box.innerHTML = `
-    <p style="font-size:13px; color:var(--text-2); margin:0 0 10px;">Período actual: ${monthLabel()} (se cierra solo al terminar el mes)</p>
-    <div class="stats">
-      <div class="stat"><div class="n">${s.total}</div><div class="l">Trades</div></div>
-      <div class="stat"><div class="n">${s.pct}%</div><div class="l">Siguió el plan</div></div>
-      <div class="stat"><div class="n">${s.sum>0?'+':''}${s.sum.toFixed(1)}%</div><div class="l">Acumulado</div></div>
-      <div class="stat"><div class="n">${s.avgPerDay === null ? '—' : s.avgPerDay.toFixed(1)}</div><div class="l">Prom. trades/día</div></div>
-      <div class="stat"><div class="n">${s.riskMgmtPct === null ? '—' : s.riskMgmtPct + '%'}</div><div class="l">Risk management</div></div>
-    </div>
-  `;
-}
-
-function renderClosedMonths(){
-  const box = document.getElementById('closedMonths');
-  if(!state.closedMonths.length){
-    box.innerHTML = '';
-    return;
-  }
-  box.innerHTML = state.closedMonths.slice().reverse().map(m=>`
-    <div class="monthrow">
-      <span>${m.label}</span>
-      <span>${m.sum>0?'+':''}${m.sum.toFixed(1)}% <span class="l">(${m.count} trades, ${m.followedPct}% plan${m.avgPerDay !== null && m.avgPerDay !== undefined ? ', ' + m.avgPerDay.toFixed(1) + ' trades/día' : ''}${m.riskMgmtPct !== null && m.riskMgmtPct !== undefined ? ', ' + m.riskMgmtPct + '% risk mgmt' : ''})</span></span>
-    </div>
-  `).join('');
 }
 
 function attachResetHandler(){
