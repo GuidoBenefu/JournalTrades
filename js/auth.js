@@ -13,7 +13,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // Precios del plan Pro en USD. El anual tiene un 20% de descuento sobre 12 meses.
 const PRO_PRICING = {
   monthly: {price: 14.99},
-  annual: {price: 143.90, perMonth: 11.99, discountPct: 20, savings: 35.98},
+  annual: {price: 143.90, fullYear: 179.88, perMonth: 11.99, discountPct: 20, savings: 35.98},
 };
 
 function formatUSD(n){
@@ -43,25 +43,49 @@ async function hashPassword(password){
   return 'plain:' + btoa(unescape(encodeURIComponent(password)));
 }
 
+// Error asociado a un campo del formulario, para mostrarlo debajo de ese campo.
+function fieldError(field, message){
+  const e = new Error(message);
+  e.field = field;
+  return e;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD = 6;
+
 function publicUser(u){
   if(!u) return null;
   const {passwordHash, ...rest} = u;
   return rest;
 }
 
+// Guarda cambios en el usuario de la sesión actual.
+function updateCurrentUser(changes){
+  const session = readJSON(SESSION_KEY, null);
+  if(!session) return null;
+  const users = readJSON(USERS_KEY, []);
+  const user = users.find(u=>u.id === session.userId);
+  if(!user) return null;
+  Object.assign(user, changes);
+  writeJSON(USERS_KEY, users);
+  return publicUser(user);
+}
+
 const JournalAuth = {
   TRIAL_DAYS,
+  EMAIL_RE,
+  MIN_PASSWORD,
   PRO_PRICING,
   formatUSD,
 
   async register({name, email, password, plan, billing}){
     email = String(email || '').trim().toLowerCase();
     name = String(name || '').trim();
-    if(!name) throw new Error('Ingresá tu nombre.');
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Ingresá un email válido.');
-    if(!password || password.length < 6) throw new Error('La contraseña tiene que tener al menos 6 caracteres.');
+    if(!name) throw fieldError('name', 'Ingresá tu nombre.');
+    if(!EMAIL_RE.test(email)) throw fieldError('email', 'Ingresá un email válido.');
+    if(!password || password.length < MIN_PASSWORD) throw fieldError('password', 'La contraseña tiene que tener al menos ' + MIN_PASSWORD + ' caracteres.');
     const users = readJSON(USERS_KEY, []);
-    if(users.some(u=>u.email === email)) throw new Error('Ya existe una cuenta con ese email. Iniciá sesión.');
+    if(users.some(u=>u.email === email)) throw fieldError('email', 'Ya existe una cuenta con ese email. Iniciá sesión.');
     const now = Date.now();
     const user = {
       id: 'u_' + now + '_' + Math.floor(Math.random()*10000),
@@ -71,6 +95,8 @@ const JournalAuth = {
       plan: plan === 'pro' ? 'pro' : 'trial',
       trialEndsAt: plan === 'pro' ? null : now + TRIAL_DAYS * DAY_MS,
       billing: plan === 'pro' ? (billing === 'annual' ? 'annual' : 'monthly') : null,
+      // Las cuentas nuevas pasan por la configuración guiada al entrar a la app.
+      onboarded: false,
       createdAt: now,
     };
     users.push(user);
@@ -113,15 +139,15 @@ const JournalAuth = {
 
   // Simula el pago: cuando haya pasarela de pagos, esto lo confirma el backend.
   upgradeToPro(billing){
-    const session = readJSON(SESSION_KEY, null);
-    if(!session) return null;
-    const users = readJSON(USERS_KEY, []);
-    const user = users.find(u=>u.id === session.userId);
-    if(!user) return null;
-    user.plan = 'pro';
-    user.billing = billing === 'annual' ? 'annual' : 'monthly';
-    user.trialEndsAt = null;
-    writeJSON(USERS_KEY, users);
-    return publicUser(user);
+    return updateCurrentUser({plan: 'pro', billing: billing === 'annual' ? 'annual' : 'monthly', trialEndsAt: null});
+  },
+
+  // Las cuentas creadas antes de la configuración guiada no tienen el campo.
+  needsOnboarding(user){
+    return !!user && user.onboarded === false;
+  },
+
+  completeOnboarding(){
+    return updateCurrentUser({onboarded: true});
   },
 };

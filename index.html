@@ -5,6 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Journal Trading · Primero la mente, después los resultados</title>
 <meta name="description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade hasta operar como una máquina. Los resultados llegan después.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Journal Trading">
+<meta property="og:title" content="Journal Trading · Dominá tu mente. Dominá tu trading.">
+<meta property="og:description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade. Probalo gratis 7 días.">
+<meta property="og:url" content="https://guidobenefu.github.io/JournalTrades/">
+<meta property="og:image" content="https://guidobenefu.github.io/JournalTrades/img/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_AR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Journal Trading · Dominá tu mente. Dominá tu trading.">
+<meta name="twitter:description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade.">
+<meta name="twitter:image" content="https://guidobenefu.github.io/JournalTrades/img/og-image.png">
+<meta name="theme-color" content="#161615">
 <script src="js/theme.js"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
@@ -18,13 +32,22 @@
     <a class="brand" href="index.html"><img class="brand-logo" src="img/logo.png" alt="Journal Trading"></a>
     <div class="nav-right">
       <button type="button" class="theme-toggle" data-theme-toggle></button>
-      <div class="links" id="navLinks">
-        <a class="btn-link ghost" href="#metodo">El método</a>
-        <a class="btn-link ghost" href="#planes">Planes</a>
-        <a class="btn-link" href="auth.html?mode=login">Iniciar sesión</a>
+      <div class="links">
+        <a class="btn-link ghost desktop-link" href="#metodo">El método</a>
+        <a class="btn-link ghost desktop-link" href="#faq">Preguntas</a>
+        <a class="btn-link ghost desktop-link" href="#planes">Planes</a>
+        <a class="btn-link" id="navCta" href="auth.html?mode=login">Iniciar sesión</a>
       </div>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
     </div>
   </header>
+  <nav class="mobile-menu" id="mobileMenu" hidden>
+    <a href="#metodo">El método</a>
+    <a href="#faq">Preguntas frecuentes</a>
+    <a href="#planes">Planes</a>
+  </nav>
 
   <section class="hero">
     <div>
@@ -38,21 +61,23 @@
       <div class="note">Sin tarjeta para la prueba gratis.</div>
     </div>
 
-    <div class="preview" aria-hidden="true">
+    <div class="preview demo" id="demo">
       <div class="pv-top">
-        <div class="pv-title">Octubre</div>
-        <span class="badge ok">Racha: 6 trades sin romper el plan</span>
+        <div class="pv-title">Probalo: registrá un trade</div>
+        <span class="badge ok" id="demoStreak"></span>
       </div>
-      <div class="pv-grid">
-        <div class="pv-stat"><div class="n">84%</div><div class="l">Disciplina</div></div>
-        <div class="pv-stat"><div class="n">58%</div><div class="l">Win rate</div></div>
-        <div class="pv-stat"><div class="n" style="color:var(--success);">+6.4%</div><div class="l">Acumulado</div></div>
+      <p class="demo-help">Tildá solo lo que realmente se cumplió en tu último trade.</p>
+      <div class="demo-list">
+        <label class="demo-item"><input type="checkbox" data-label="Entré en mi horario operativo"><span>Entré en mi horario operativo</span></label>
+        <label class="demo-item"><input type="checkbox" data-label="Tenía el bias definido antes de operar"><span>Tenía el bias definido antes de operar</span></label>
+        <label class="demo-item"><input type="checkbox" data-label="Respeté mi riesgo máximo"><span>Respeté mi riesgo máximo</span></label>
+        <label class="demo-item"><input type="checkbox" data-label="No fue FOMO"><span>Lo hubiera tomado igual sin ver los últimos 2 minutos (no fue FOMO)</span></label>
       </div>
-      <div class="pv-cal">
-        <div class="pv-day"></div><div class="pv-day"></div><div class="pv-day pos"></div><div class="pv-day pos"></div><div class="pv-day neg"></div><div class="pv-day"></div><div class="pv-day"></div>
-        <div class="pv-day pos"></div><div class="pv-day warn"></div><div class="pv-day pos"></div><div class="pv-day"></div><div class="pv-day pos"></div><div class="pv-day"></div><div class="pv-day"></div>
-        <div class="pv-day neg"></div><div class="pv-day pos"></div><div class="pv-day pos"></div><div class="pv-day pos"></div><div class="pv-day warn"></div><div class="pv-day"></div><div class="pv-day"></div>
-        <div class="pv-day pos"></div><div class="pv-day pos"></div><div class="pv-day"></div><div class="pv-day"></div><div class="pv-day"></div><div class="pv-day"></div><div class="pv-day"></div>
+      <button type="button" class="btn-link primary demo-btn" id="demoBtn">Registrar trade</button>
+      <div class="demo-result" id="demoResult" aria-live="polite"></div>
+      <div class="demo-hist">
+        <span class="demo-hist-label">Últimos trades</span>
+        <div class="demo-dots" id="demoDots"></div>
       </div>
     </div>
   </section>
@@ -125,6 +150,37 @@
     </div>
   </section>
 
+  <section class="section" id="faq">
+    <h2 class="title">Preguntas frecuentes</h2>
+    <p class="subtitle">Lo que suelen preguntarnos antes de empezar.</p>
+    <div class="faq">
+      <details>
+        <summary>¿Necesito tarjeta para la prueba gratis?</summary>
+        <p>No. Creás tu cuenta y tenés 7 días con todas las funciones, sin cargar ningún medio de pago.</p>
+      </details>
+      <details>
+        <summary>¿Qué pasa cuando termina la prueba?</summary>
+        <p>Para seguir registrando trades te pedimos pasar a Pro, mensual o anual. Todo lo que cargaste durante la prueba se mantiene.</p>
+      </details>
+      <details>
+        <summary>¿Puedo cancelar cuando quiera?</summary>
+        <p>Sí. Podés cancelar en cualquier momento y seguís teniendo acceso hasta que termine el período que ya pagaste.</p>
+      </details>
+      <details>
+        <summary>¿Sirve para cuentas de fondeo?</summary>
+        <p>Sí. Cargás las reglas de tu prop firm (drawdown diario, drawdown total estático o trailing y profit target) y ves en todo momento cuánto margen te queda.</p>
+      </details>
+      <details>
+        <summary>¿Sirve para mi estrategia y mi mercado?</summary>
+        <p>Sí. La checklist la armás vos con las reglas de tu propio plan, así que funciona con cualquier estrategia y en cualquier mercado: futuros, forex, acciones o cripto.</p>
+      </details>
+      <details>
+        <summary>¿Dónde quedan mis datos?</summary>
+        <p>Por ahora se guardan en tu navegador, y podés exportar una copia de seguridad cuando quieras desde Ajustes. Nadie más tiene acceso a tu journal.</p>
+      </details>
+    </div>
+  </section>
+
   <section class="section" id="planes">
     <h2 class="title">Elegí cómo empezar</h2>
     <p class="subtitle">Empezá a entrenar tu disciplina hoy. Probalo gratis o pasate a Pro desde el primer día.</p>
@@ -136,10 +192,15 @@
       <div class="plan">
         <h3>Prueba gratis</h3>
         <div class="price">USD 0 <span>/ 7 días</span></div>
+        <div class="price-note neutral">Sin tarjeta. Si pasás a Pro, tus datos se mantienen.</div>
+        <p class="desc">Todo Pro, durante 7 días.</p>
         <ul>
-          <li>Todas las funciones de Pro</li>
-          <li>Sin tarjeta</li>
-          <li>Tus datos se mantienen si pasás a Pro</li>
+          <li>Checklist de tu plan, personalizada</li>
+          <li>Racha y estadísticas de disciplina</li>
+          <li>Calendarios de resultados y de cumplimiento</li>
+          <li>Risk management diario</li>
+          <li>Seguimiento de cuentas de fondeo</li>
+          <li>Backup de tus datos</li>
         </ul>
         <a class="btn-link lg" href="auth.html?mode=register&plan=trial">Empezar prueba gratis</a>
       </div>
@@ -148,16 +209,29 @@
           <h3>Pro</h3>
           <span class="tag">Recomendado</span>
         </div>
-        <div class="price"><span class="amount" id="proPrice">USD 14,99</span> <span id="proPeriod">/ mes</span></div>
+        <div class="price"><s class="old-price" id="proOld" hidden></s><span class="amount" id="proPrice">USD 14,99</span> <span id="proPeriod">/ mes</span></div>
         <div class="price-note" id="proNote">O pagá anual con un 20% de descuento.</div>
-        <p class="desc">Para entrenar tu disciplina todos los días, sin límite.</p>
+        <p class="desc">Todo, sin límite de tiempo.</p>
         <ul>
-          <li>Trades ilimitados</li>
-          <li>Estadísticas y calendarios completos</li>
+          <li>Checklist de tu plan, personalizada</li>
+          <li>Racha y estadísticas de disciplina</li>
+          <li>Calendarios de resultados y de cumplimiento</li>
+          <li>Risk management diario</li>
           <li>Seguimiento de cuentas de fondeo</li>
           <li>Backup de tus datos</li>
         </ul>
         <a class="btn-link primary lg" id="proCta" href="auth.html?mode=register&plan=pro&billing=monthly">Ir a Pro</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-cta">
+    <div class="final-cta-inner">
+      <h2>Empezá a entrenar tu disciplina hoy.</h2>
+      <p>7 días gratis, sin tarjeta. Tu próximo trade puede ser el primero de tu racha.</p>
+      <div class="ctas">
+        <a class="btn-link primary lg" href="auth.html?mode=register&plan=trial">Probar gratis 7 días</a>
+        <a class="btn-link lg" href="#planes">Ver planes</a>
       </div>
     </div>
   </section>
@@ -173,6 +247,9 @@
     const annual = billing === 'annual';
     document.getElementById('proPrice').textContent = JournalAuth.formatUSD(annual ? pricing.annual.price : pricing.monthly.price);
     document.getElementById('proPeriod').textContent = annual ? '/ año' : '/ mes';
+    const old = document.getElementById('proOld');
+    old.hidden = !annual;
+    old.textContent = JournalAuth.formatUSD(pricing.annual.fullYear);
     document.getElementById('proNote').innerHTML = annual
       ? '<strong>20% de descuento pagando anual.</strong> Equivale a ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes: ahorrás ' + JournalAuth.formatUSD(pricing.annual.savings) + ' al año.'
       : 'O pagá anual con un 20% de descuento.';
@@ -181,11 +258,51 @@
   document.querySelectorAll('.billing-toggle button').forEach(b=> b.addEventListener('click', ()=> renderBilling(b.dataset.billing)));
   renderBilling('monthly');
 
-  const user = JournalAuth.currentUser();
-  if(user){
-    document.getElementById('navLinks').innerHTML =
-      '<a class="btn-link ghost" href="#metodo">El método</a><a class="btn-link ghost" href="#planes">Planes</a><a class="btn-link primary" href="app.html">Ir a mi journal</a>';
+  if(JournalAuth.currentUser()){
+    const cta = document.getElementById('navCta');
+    cta.textContent = 'Ir a mi journal';
+    cta.href = 'app.html';
+    cta.classList.add('primary');
   }
+
+  // Menú de celular
+  const menu = document.getElementById('mobileMenu');
+  const menuToggle = document.getElementById('menuToggle');
+  function setMenu(open){
+    menu.hidden = !open;
+    menuToggle.setAttribute('aria-expanded', open);
+    menuToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+  }
+  menuToggle.addEventListener('click', ()=> setMenu(menu.hidden));
+  menu.querySelectorAll('a').forEach(a=> a.addEventListener('click', ()=> setMenu(false)));
+
+  // Demo: registrar un trade contra la checklist
+  const demo = {streak: 3, hist: ['ok','ok','bad','ok','ok','ok']};
+  function renderDemo(){
+    document.getElementById('demoStreak').textContent = 'Racha: ' + demo.streak + (demo.streak === 1 ? ' trade' : ' trades');
+    document.getElementById('demoStreak').className = 'badge ' + (demo.streak > 0 ? 'ok' : 'bad');
+    document.getElementById('demoDots').innerHTML = demo.hist.slice(-12)
+      .map(h=> '<span class="demo-dot ' + h + '" title="' + (h === 'ok' ? 'Plan seguido' : 'Plan roto') + '"></span>').join('');
+  }
+  document.getElementById('demoBtn').addEventListener('click', ()=>{
+    const boxes = [...document.querySelectorAll('#demo input[type=checkbox]')];
+    const missing = boxes.filter(b=> !b.checked).map(b=> b.dataset.label);
+    const result = document.getElementById('demoResult');
+    if(missing.length === 0){
+      demo.streak++;
+      demo.hist.push('ok');
+      result.className = 'demo-result ok';
+      result.innerHTML = '<strong>Plan seguido.</strong> Tu racha sube a ' + demo.streak + '. Así se construye la disciplina.';
+    } else {
+      demo.streak = 0;
+      demo.hist.push('bad');
+      result.className = 'demo-result bad';
+      result.innerHTML = '<strong>Plan roto.</strong> Faltó: ' + missing.join(', ') + '. La racha vuelve a 0, aunque el trade haya salido bien.';
+    }
+    boxes.forEach(b=> b.checked = false);
+    renderDemo();
+  });
+  renderDemo();
 </script>
 </body>
 </html>

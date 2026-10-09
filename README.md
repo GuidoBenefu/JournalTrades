@@ -22,6 +22,8 @@ python3 -m http.server 8000
 ```
 index.html       Pantalla de inicio: funciones y planes (prueba gratis 7 días / Pro)
 auth.html        Login y registro, con elección de plan
+terminos.html    Términos y condiciones (en preparación)
+privacidad.html  Política de privacidad (en preparación)
 app.html         El journal (pestañas Trade, Stats, Calendario, Historial, Ajustes)
 css/styles.css   Tokens de color (claro/oscuro) y estilos de la app
 css/site.css     Estilos de inicio y login
@@ -31,6 +33,8 @@ js/session.js    Header del usuario, plan, paywall al vencer la prueba y logout
 js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
                  versión de esquema, migraciones, export/import
 js/app.js        Lógica y renderizado del journal
+js/onboarding.js Configuración guiada al entrar por primera vez (cuentas nuevas)
+img/og-image.png Imagen para compartir el link en redes y WhatsApp
 ```
 
 ### Cuentas simuladas
