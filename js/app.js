@@ -5,13 +5,15 @@ function escapeHtml(str){
 
 // Datos extra de cada trade: emoción, errores y sesión.
 const EMOTIONS = [
-  {id:'calm', label:'Tranquilo'},
-  {id:'confident', label:'Confiado'},
-  {id:'anxious', label:'Ansioso'},
-  {id:'fomo', label:'FOMO'},
-  {id:'revenge', label:'Revancha'},
-  {id:'bored', label:'Aburrido'},
+  {id:'calm', label:'Tranquilo', tone:'good'},
+  {id:'confident', label:'Confiado', tone:'good'},
+  {id:'anxious', label:'Ansioso', tone:'risk'},
+  {id:'fomo', label:'FOMO', tone:'risk'},
+  {id:'revenge', label:'Revancha', tone:'risk'},
+  {id:'bored', label:'Aburrido', tone:'risk'},
 ];
+const RESULT_LABELS = {win: 'Ganador', loss: 'Perdedor', be: 'Break even'};
+const CONFIDENCE_LABELS = ['', 'Nada seguro', 'Poco seguro', 'Neutral', 'Bastante seguro', 'Totalmente seguro'];
 const ERROR_TAGS = [
   {id:'moved_sl', label:'Moví el stop'},
   {id:'early_exit', label:'Cerré antes de tiempo'},
@@ -52,7 +54,7 @@ function toLocalInputValue(ts){
 }
 
 // Lo que se eligió en el formulario y no vive en un input.
-const tradeForm = {direction: null, confidence: null, emotion: null, errors: []};
+const tradeForm = {result: null, direction: null, confidence: null, emotion: null, errors: [], planTouched: false};
 let editingTradeId = null;
 
 let currentImageData = null;
@@ -83,25 +85,53 @@ function resizeImage(file, maxDim, quality){
 
 function renderImagePreview(){
   const box = document.getElementById('tradeImagePreview');
-  if(!currentImageData){ box.innerHTML = ''; return; }
-  box.innerHTML = `<img src="${currentImageData}" class="tradeThumb"><div class="row" style="margin-top:6px;"><button type="button" class="ghost" id="removeImageBtn" style="padding:4px 10px; font-size:12px;">Quitar imagen</button></div>`;
+  document.getElementById('dropzone').style.display = currentImageData ? 'none' : '';
+  if(!currentImageData){ box.innerHTML = ''; renderTradeFormStatus(); return; }
+  box.innerHTML = `<div class="img-preview"><img src="${currentImageData}" alt="Captura del trade">
+    <div class="img-preview-actions">
+      <label class="small-btn" for="tradeImageInput">${Icons.svg('repeat', 14)} Cambiar</label>
+      <button type="button" class="small-btn" id="removeImageBtn">${Icons.svg('x', 14)} Quitar</button>
+    </div></div>`;
+  box.querySelector('img').addEventListener('click', ()=>{
+    const lb = document.getElementById('lightbox');
+    lb.querySelector('img').src = currentImageData;
+    lb.style.display = 'flex';
+  });
   document.getElementById('removeImageBtn').addEventListener('click', ()=>{
     currentImageData = null;
     document.getElementById('tradeImageInput').value = '';
     renderImagePreview();
   });
+  renderTradeFormStatus();
 }
 
-document.getElementById('tradeImageInput').addEventListener('change', async (e)=>{
-  const file = e.target.files[0];
-  if(!file) return;
+async function loadTradeImage(file){
+  if(!file || !file.type.startsWith('image/')) return;
   try{
     currentImageData = await resizeImage(file, 900, 0.7);
     renderImagePreview();
   }catch(err){
     console.error('image error', err);
   }
-});
+}
+
+document.getElementById('tradeImageInput').addEventListener('change', e=> loadTradeImage(e.target.files[0]));
+
+// Arrastrar y soltar, o pegar con Ctrl+V mientras se está en la pestaña Trade.
+(function setupDropzone(){
+  const dz = document.getElementById('dropzone');
+  ['dragenter', 'dragover'].forEach(ev=> dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev=> dz.addEventListener(ev, ()=> dz.classList.remove('over')));
+  dz.addEventListener('drop', e=>{
+    e.preventDefault();
+    loadTradeImage(e.dataTransfer.files[0]);
+  });
+  document.addEventListener('paste', e=>{
+    if(!document.querySelector('.tabpage[data-tab="register"].active')) return;
+    const item = [...(e.clipboardData ? e.clipboardData.items : [])].find(i=> i.type.startsWith('image/'));
+    if(item) loadTradeImage(item.getAsFile());
+  });
+})();
 
 document.getElementById('lightbox').addEventListener('click', ()=>{
   document.getElementById('lightbox').style.display = 'none';
@@ -393,35 +423,21 @@ function renderChecklist(){
       document.querySelector('.tabbtn[data-tab="settings"]').click();
       document.getElementById('newItemLabel').focus();
     });
+    renderTradeFormStatus();
     return;
   }
-  state.items.forEach(it=>{
-    const div = document.createElement('div');
-    div.className = 'item' + (state.checked[it.id] ? ' checked' : '');
-    div.innerHTML = `
-      <input type="checkbox" ${state.checked[it.id] ? 'checked' : ''} data-id="${it.id}">
-      <div>
-        <div class="label">${escapeHtml(it.label)}</div>
-        ${it.hint ? `<div class="hint">${escapeHtml(it.hint)}</div>` : ''}
-      </div>`;
-    box.appendChild(div);
-  });
-  box.querySelectorAll('input[type=checkbox]').forEach(cb=>{
-    cb.addEventListener('change', e=>{
-      state.checked[e.target.dataset.id] = e.target.checked;
-      saveState();
-      renderChecklist();
-      updateAddButton();
-    });
-  });
-  box.querySelectorAll('.item').forEach((div, i)=>{
-    div.addEventListener('click', e=>{
-      if(e.target.tagName === 'INPUT') return;
-      const cb = div.querySelector('input');
-      cb.checked = !cb.checked;
-      cb.dispatchEvent(new Event('change'));
-    });
-  });
+  box.innerHTML = `<div class="rule-grid">${state.items.map(it=> `
+    <button type="button" class="rule-tile ${state.checked[it.id] ? 'on' : ''}" data-id="${it.id}" aria-pressed="${!!state.checked[it.id]}">
+      <span class="rule-check">${Icons.svg('circle-check', 20)}</span>
+      <span class="rule-txt"><span class="label">${escapeHtml(it.label)}</span>${it.hint ? `<span class="hint">${escapeHtml(it.hint)}</span>` : ''}</span>
+    </button>`).join('')}</div>`;
+  box.querySelectorAll('.rule-tile').forEach(t=> t.addEventListener('click', ()=>{
+    state.checked[t.dataset.id] = !state.checked[t.dataset.id];
+    tradeForm.planTouched = true;
+    saveState();
+    renderChecklist();
+  }));
+  renderTradeFormStatus();
 }
 
 function updateAddButton(){
@@ -440,7 +456,10 @@ function sortHistory(){
 
 function renderChips(){
   const emo = document.getElementById('emotionChips');
-  emo.innerHTML = EMOTIONS.map(e=>`<button type="button" class="chip ${tradeForm.emotion === e.id ? 'active' : ''}" data-v="${e.id}">${e.label}</button>`).join('');
+  const group = (tone, title)=> `<div class="emo-group emo-${tone}"><div class="emo-group-t">${title}</div><div class="chips">${
+    EMOTIONS.filter(e=> e.tone === tone).map(e=>`<button type="button" class="chip chip-${tone} ${tradeForm.emotion === e.id ? 'active' : ''}" data-v="${e.id}">${e.label}</button>`).join('')
+  }</div></div>`;
+  emo.innerHTML = group('good', 'Estados que ayudan') + group('risk', 'Estados de riesgo');
   emo.querySelectorAll('.chip').forEach(b=> b.addEventListener('click', ()=>{
     tradeForm.emotion = tradeForm.emotion === b.dataset.v ? null : b.dataset.v;
     renderChips();
@@ -452,10 +471,18 @@ function renderChips(){
     tradeForm.errors = tradeForm.errors.includes(id) ? tradeForm.errors.filter(x=> x !== id) : [...tradeForm.errors, id];
     renderChips();
   }));
+  document.querySelectorAll('#resultSeg button').forEach(b=> b.classList.toggle('active', b.dataset.v === tradeForm.result));
   document.querySelectorAll('#directionSeg button').forEach(b=> b.classList.toggle('active', b.dataset.v === tradeForm.direction));
-  document.querySelectorAll('#confidenceSeg button').forEach(b=> b.classList.toggle('active', b.dataset.v === String(tradeForm.confidence)));
+  document.querySelectorAll('#confidenceSeg button').forEach(b=> b.classList.toggle('on', tradeForm.confidence !== null && Number(b.dataset.v) <= tradeForm.confidence));
+  document.getElementById('confidenceSeg').dataset.level = tradeForm.confidence || '';
+  document.getElementById('confidenceLabel').textContent = tradeForm.confidence ? `· ${tradeForm.confidence}/5 · ${CONFIDENCE_LABELS[tradeForm.confidence]}` : '';
+  renderTradeFormStatus();
 }
 
+document.querySelectorAll('#resultSeg button').forEach(b=> b.addEventListener('click', ()=>{
+  tradeForm.result = tradeForm.result === b.dataset.v ? null : b.dataset.v;
+  renderChips();
+}));
 document.querySelectorAll('#directionSeg button').forEach(b=> b.addEventListener('click', ()=>{
   tradeForm.direction = tradeForm.direction === b.dataset.v ? null : b.dataset.v;
   renderChips();
@@ -465,6 +492,79 @@ document.querySelectorAll('#confidenceSeg button').forEach(b=> b.addEventListene
   tradeForm.confidence = tradeForm.confidence === v ? null : v;
   renderChips();
 }));
+
+// Puntaje de disciplina del trade (0-100): reglas cumplidas, errores y emoción.
+function disciplineScore(rulesDone, rulesTotal, errorCount, emotionId){
+  const rules = rulesTotal ? rulesDone / rulesTotal * 100 : 100;
+  const errors = Math.max(0, 100 - errorCount * 34);
+  const emo = emotionById(emotionId);
+  const mind = emo && emo.tone === 'risk' ? 0 : 100;
+  return Math.round(rules * 0.6 + errors * 0.25 + mind * 0.15);
+}
+
+// Estado de cada paso, barra de progreso y tarjeta de vista previa.
+function renderTradeFormStatus(){
+  if(!state.items) return;
+  const val = id=> document.getElementById(id).value.trim();
+  const total = state.items.length;
+  const done = state.items.filter(it=> state.checked[it.id]).length;
+  const steps = {
+    plan: total > 0 && (done === total || tradeForm.planTouched),
+    trade: !!(tradeForm.result && tradeForm.direction && val('assetInput')),
+    mind: !!(tradeForm.emotion && tradeForm.confidence),
+    notes: !!(val('resultNote') || currentImageData),
+  };
+  const n = Object.values(steps).filter(Boolean).length;
+  document.querySelectorAll('.fstep').forEach(sec=> sec.classList.toggle('done', steps[sec.dataset.step]));
+  document.getElementById('tfProgressFill').style.width = (n / 4 * 100) + '%';
+  document.getElementById('tfProgressTxt').textContent = `${n} de 4 secciones completas`;
+
+  const pct = total ? done / total * 100 : 0;
+  const meter = document.getElementById('planMeter');
+  meter.style.display = total ? '' : 'none';
+  meter.className = 'plan-meter ' + (done === total ? 'good' : done === 0 ? '' : 'warn');
+  meter.innerHTML = `<div class="pm-top"><span>Cumpliste <b>${done}/${total}</b> reglas</span><span>${done === total ? 'Dentro del plan' : (done || tradeForm.planTouched) ? 'Fuera del plan' : 'Sin marcar'}</span></div>
+    <div class="pm-bar"><div style="width:${pct}%"></div></div>`;
+  document.getElementById('planStatus').textContent = total ? `${done}/${total}` : '';
+
+  // Vista previa
+  const asset = val('assetInput').toUpperCase();
+  const risk = parseNum(val('riskInput'));
+  const res = parseNum(val('resultPctInput'));
+  const rrPlan = parseNum(val('rrPlanInput'));
+  const okNum = v=> typeof v === 'number' && !isNaN(v);
+  const rReal = okNum(risk) && risk > 0 && okNum(res) ? res / risk : null;
+  const timeVal = val('entryTimeInput');
+  const ts = timeVal ? new Date(timeVal).getTime() : Date.now();
+  const emo = emotionById(tradeForm.emotion);
+  const score = disciplineScore(done, total, tradeForm.errors.length, tradeForm.emotion);
+  const scoreCls = score >= 80 ? 'good' : score >= 50 ? 'warn' : 'bad';
+  const resCls = tradeForm.result === 'win' ? 'pos' : tradeForm.result === 'loss' ? 'neg' : '';
+  const row = (l, v)=> `<div class="tp-row"><span>${l}</span><b>${v}</b></div>`;
+  const dir = tradeForm.direction
+    ? `<span class="tp-dir ${tradeForm.direction}">${Icons.svg(tradeForm.direction === 'long' ? 'arrow-up' : 'arrow-down', 14)}${tradeForm.direction === 'long' ? 'Long' : 'Short'}</span>` : '';
+  document.getElementById('tradePreview').innerHTML = `
+    <div class="tp-kicker">Vista previa</div>
+    <div class="tp-top">
+      <div class="tp-asset">${asset ? escapeHtml(asset) : '<span class="tp-ph">Activo</span>'}${dir}</div>
+      <div class="tp-res ${resCls}">${okNum(res) ? fmtSignedPct(res) : tradeForm.result ? RESULT_LABELS[tradeForm.result] : '—'}</div>
+    </div>
+    <div class="tp-sub">${[val('setupInput') && escapeHtml(val('setupInput')), !isNaN(ts) && sessionOf(ts)].filter(Boolean).join(' · ') || 'Completá el formulario y el trade se arma acá.'}</div>
+    <div class="tp-rows">
+      ${row('R:R planeado', okNum(rrPlan) ? '1:' + rrPlan.toFixed(1) : '—')}
+      ${row('R real', rReal === null ? '—' : (rReal > 0 ? '+' : '') + rReal.toFixed(1) + 'R')}
+      ${row('Plan respetado', total ? `<span class="${done === total ? 'pos' : 'neg'}">${done === total ? 'Sí' : 'No'} · ${done}/${total}</span>` : '—')}
+      ${row('Emoción', emo ? `<span class="${emo.tone === 'risk' ? 'warn' : 'pos'}">${emo.label}</span>` : '—')}
+      ${row('Errores', tradeForm.errors.length ? `<span class="neg">${tradeForm.errors.length}</span>` : '0')}
+    </div>
+    <div class="tp-score ${scoreCls}">
+      <div class="tp-ring" style="--p:${score}"><span>${score}</span></div>
+      <div><div class="tp-score-t">Puntaje de disciplina</div>
+      <div class="tp-score-s">${score >= 80 ? 'Trade ejecutado con disciplina.' : score >= 50 ? 'Hay cosas para ajustar.' : 'Este trade se alejó de tu plan.'}</div></div>
+    </div>`;
+}
+['assetInput', 'setupInput', 'riskInput', 'rrPlanInput', 'resultPctInput', 'resultNote', 'entryTimeInput']
+  .forEach(id=> document.getElementById(id).addEventListener('input', renderTradeFormStatus));
 
 function parseNum(raw){
   raw = String(raw || '').trim().replace(',', '.');
@@ -496,12 +596,12 @@ function resetForm(){
   state.items.forEach(it=> state.checked[it.id] = false);
   saveState();
   renderChecklist();
-  ['riskInput', 'durationInput', 'resultSelect', 'resultPctInput', 'resultNote', 'rrPlanInput', 'setupInput'].forEach(id=> document.getElementById(id).value = '');
+  ['riskInput', 'durationInput', 'resultPctInput', 'resultNote', 'rrPlanInput', 'setupInput'].forEach(id=> document.getElementById(id).value = '');
   // El activo se mantiene: suele repetirse de un trade al siguiente.
   if(!state.history.length) document.getElementById('assetInput').value = '';
   else document.getElementById('assetInput').value = state.history[0].asset || '';
   document.getElementById('entryTimeInput').value = toLocalInputValue(Date.now());
-  Object.assign(tradeForm, {direction: null, confidence: null, emotion: null, errors: []});
+  Object.assign(tradeForm, {result: null, direction: null, confidence: null, emotion: null, errors: [], planTouched: false});
   currentImageData = null;
   document.getElementById('tradeImageInput').value = '';
   renderImagePreview();
@@ -522,11 +622,10 @@ function startEditTrade(id){
   document.getElementById('setupInput').value = h.setup || '';
   document.getElementById('riskInput').value = h.riskPct ?? '';
   document.getElementById('rrPlanInput').value = h.rrPlanned ?? '';
-  document.getElementById('resultSelect').value = h.result || '';
   document.getElementById('resultPctInput').value = h.resultPct ?? '';
   document.getElementById('durationInput').value = h.durationMin ?? '';
   document.getElementById('resultNote').value = h.note || '';
-  Object.assign(tradeForm, {direction: h.direction || null, confidence: h.confidence || null, emotion: h.emotion || null, errors: [...(h.errors || [])]});
+  Object.assign(tradeForm, {result: h.result || null, planTouched: true, direction: h.direction || null, confidence: h.confidence || null, emotion: h.emotion || null, errors: [...(h.errors || [])]});
   currentImageData = h.image || null;
   renderImagePreview();
   renderChips();
@@ -565,8 +664,8 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
   if(Number.isNaN(rrPlanned)) return fail('El R:R planeado tiene que ser un número (ej. 2).');
   const durationMin = parseNum(document.getElementById('durationInput').value);
   if(Number.isNaN(durationMin)) return fail('La duración tiene que ser un número de minutos (ej. 12).');
-  const result = document.getElementById('resultSelect').value;
-  if(!result) return fail('Elegí un resultado antes de registrar.');
+  const result = tradeForm.result;
+  if(!result) return fail('Elegí un resultado (Ganador, Perdedor o Break even) antes de registrar.');
   const resultPct = parseNum(document.getElementById('resultPctInput').value);
   if(Number.isNaN(resultPct)) return fail('El resultado tiene que ser un número (ej. 1.2 o -0.5).');
   const timeVal = document.getElementById('entryTimeInput').value;

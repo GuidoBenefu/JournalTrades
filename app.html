@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=18"></script>
+<script src="js/theme.js?v=19"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=18">
-<script src="js/auth.js?v=18"></script>
+<link rel="stylesheet" href="css/styles.css?v=19">
+<script src="js/auth.js?v=19"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -90,109 +90,142 @@
     </div><!-- /tab home -->
 
     <div class="tabpage" data-tab="register">
-      <div class="card" id="checklistCard">
-    <h2 id="tradeFormTitle">Registrar trade</h2>
-    <div class="form-section-title">Tu Trading Plan</div>
-    <div id="checklist"></div>
+      <div class="trade-form" id="checklistCard">
+        <div class="tf-head">
+          <div class="tf-head-top">
+            <h2 id="tradeFormTitle">Registrar trade</h2>
+            <span class="tf-progress-txt" id="tfProgressTxt"></span>
+          </div>
+          <div class="tf-progress"><div class="tf-progress-fill" id="tfProgressFill"></div></div>
+        </div>
 
-    <div class="form-section-title">El trade</div>
-    <div class="form-grid">
-      <div class="field">
-        <label for="entryTimeInput">Fecha y hora de entrada</label>
-        <input type="datetime-local" id="entryTimeInput">
-        <div class="field-hint" id="sessionHint"></div>
+        <section class="fstep" data-step="plan">
+          <div class="fstep-head">
+                        <span class="fstep-ic"><i data-icon="list-checks" data-size="18"></i></span>
+            <div class="fstep-t"><span class="fstep-num">Paso 1 de 4</span><h3>Tu Trading Plan</h3><p>Tocá cada regla que cumpliste</p></div>
+            <span class="fstep-status" id="planStatus"></span>
+          </div>
+          <div id="checklist"></div>
+          <div class="plan-meter" id="planMeter"></div>
+        </section>
+
+        <section class="fstep" data-step="trade">
+          <div class="fstep-head">
+                        <span class="fstep-ic"><i data-icon="chart-line" data-size="18"></i></span>
+            <div class="fstep-t"><span class="fstep-num">Paso 2 de 4</span><h3>El trade</h3><p>Qué operaste y cómo salió</p></div>
+            <span class="fstep-status"></span>
+          </div>
+          <div class="field">
+            <label>Resultado</label>
+            <div class="bigseg" id="resultSeg">
+              <button type="button" data-v="win" class="bs-win"><i data-icon="trending-up" data-size="18"></i><span>Ganador</span><small>TP</small></button>
+              <button type="button" data-v="loss" class="bs-loss"><i data-icon="trending-down" data-size="18"></i><span>Perdedor</span><small>SL</small></button>
+              <button type="button" data-v="be" class="bs-be"><i data-icon="arrow-left-right" data-size="18"></i><span>Break even</span><small>BE</small></button>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Dirección</label>
+              <div class="bigseg bigseg-2" id="directionSeg">
+                <button type="button" data-v="long" class="bs-win"><i data-icon="arrow-up" data-size="16"></i><span>Long</span></button>
+                <button type="button" data-v="short" class="bs-loss"><i data-icon="arrow-down" data-size="16"></i><span>Short</span></button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="assetInput">Activo</label>
+              <input type="text" id="assetInput" list="assetList" placeholder="Ej. NQ, EURUSD" autocomplete="off">
+              <datalist id="assetList"></datalist>
+            </div>
+            <div class="field">
+              <label for="entryTimeInput">Fecha y hora de entrada</label>
+              <input type="datetime-local" id="entryTimeInput">
+              <div class="field-hint" id="sessionHint"></div>
+            </div>
+            <div class="field">
+              <label for="setupInput">Setup</label>
+              <input type="text" id="setupInput" list="setupList" placeholder="Ej. Sweep + IFVG" autocomplete="off">
+              <datalist id="setupList"></datalist>
+            </div>
+            <div class="field">
+              <label for="riskInput">Riesgo (%)</label>
+              <input type="text" inputmode="decimal" id="riskInput" placeholder="Ej. 0.5">
+            </div>
+            <div class="field">
+              <label for="rrPlanInput">R:R planeado</label>
+              <input type="text" inputmode="decimal" id="rrPlanInput" placeholder="Ej. 2 (para 1:2)">
+            </div>
+            <div class="field">
+              <label for="resultPctInput">Resultado real (%)</label>
+              <input type="text" inputmode="decimal" id="resultPctInput" placeholder="Ej. 1.2 o -0.5">
+              <div class="field-hint" id="rrRealHint"></div>
+            </div>
+            <div class="field">
+              <label for="durationInput">Duración (minutos)</label>
+              <input type="text" inputmode="decimal" id="durationInput" placeholder="Ej. 12">
+            </div>
+          </div>
+        </section>
+
+        <section class="fstep" data-step="mind">
+          <div class="fstep-head">
+                        <span class="fstep-ic"><i data-icon="brain" data-size="18"></i></span>
+            <div class="fstep-t"><span class="fstep-num">Paso 3 de 4</span><h3>Tu cabeza</h3><p>Cómo estabas cuando entraste</p></div>
+            <span class="fstep-status"></span>
+          </div>
+          <div class="field">
+            <label>¿Cómo te sentías al entrar?</label>
+            <div class="emo-groups" id="emotionChips"></div>
+          </div>
+          <div class="field">
+            <label>Nivel de confianza en el trade <span class="label-note" id="confidenceLabel"></span></label>
+            <div class="conf-meter" id="confidenceSeg">
+              <button type="button" data-v="1" aria-label="Confianza 1"></button><button type="button" data-v="2" aria-label="Confianza 2"></button><button type="button" data-v="3" aria-label="Confianza 3"></button><button type="button" data-v="4" aria-label="Confianza 4"></button><button type="button" data-v="5" aria-label="Confianza 5"></button>
+            </div>
+            <div class="conf-scale"><span>Nada seguro</span><span>Totalmente seguro</span></div>
+          </div>
+          <div class="field">
+            <label>¿Cometiste algún error? <span class="label-note">(podés marcar varios)</span></label>
+            <div class="chips" id="errorChips"></div>
+          </div>
+        </section>
+
+        <section class="fstep" data-step="notes">
+          <div class="fstep-head">
+                        <span class="fstep-ic"><i data-icon="notebook-pen" data-size="18"></i></span>
+            <div class="fstep-t"><span class="fstep-num">Paso 4 de 4</span><h3>Notas</h3><p>Lo que querés recordar de este trade</p></div>
+            <span class="fstep-status"></span>
+          </div>
+          <div class="field">
+            <label for="resultNote">¿Qué pasó en el desarrollo del trade?</label>
+            <textarea id="resultNote" rows="3" placeholder="Ej. Esperé la confirmación, pero cerré antes por miedo a que volviera."></textarea>
+          </div>
+          <div class="field">
+            <label>Captura del trade <span class="label-note">(opcional)</span></label>
+            <label class="dropzone" id="dropzone" for="tradeImageInput">
+              <i data-icon="image-up" data-size="26"></i>
+              <span class="dz-t">Arrastrá la imagen acá o <u>elegí un archivo</u></span>
+              <span class="dz-s">PNG o JPG · también podés pegarla con Ctrl+V</span>
+            </label>
+            <input type="file" id="tradeImageInput" class="visually-hidden" accept="image/*">
+            <div id="tradeImagePreview"></div>
+          </div>
+        </section>
+
+        <div class="tf-actions">
+          <button class="primary" id="addTradeBtn">Agregar trade</button>
+          <button class="ghost" id="cancelEditBtn" style="display:none;">Cancelar edición</button>
+        </div>
+        <div id="entryError" class="tf-error" style="display:none;"></div>
       </div>
-      <div class="field">
-        <label for="assetInput">Activo</label>
-        <input type="text" id="assetInput" list="assetList" placeholder="Ej. NQ, EURUSD" autocomplete="off">
-        <datalist id="assetList"></datalist>
-      </div>
-      <div class="field">
-        <label>Dirección</label>
-        <div class="seg" id="directionSeg">
-          <button type="button" data-v="long">Long</button>
-          <button type="button" data-v="short">Short</button>
+
+      <div class="stack tf-side">
+        <div class="card tp-card" id="tradePreview"></div>
+        <div class="streak" id="streakBox"></div>
+        <div class="card" id="fundedProgressCard" style="display:none;">
+          <h2>Cuenta de fondeo</h2>
+          <div id="fundedProgress"></div>
         </div>
       </div>
-      <div class="field">
-        <label for="setupInput">Setup</label>
-        <input type="text" id="setupInput" list="setupList" placeholder="Ej. Sweep + IFVG" autocomplete="off">
-        <datalist id="setupList"></datalist>
-      </div>
-      <div class="field">
-        <label for="riskInput">Riesgo (%)</label>
-        <input type="text" inputmode="decimal" id="riskInput" placeholder="Ej. 0.5">
-      </div>
-      <div class="field">
-        <label for="rrPlanInput">R:R planeado</label>
-        <input type="text" inputmode="decimal" id="rrPlanInput" placeholder="Ej. 2 (para 1:2)">
-      </div>
-      <div class="field">
-        <label for="resultSelect">Resultado</label>
-        <select id="resultSelect">
-          <option value="">Elegir…</option>
-          <option value="win">Ganador (TP)</option>
-          <option value="loss">Perdedor (SL)</option>
-          <option value="be">Break even</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="resultPctInput">Resultado real (%)</label>
-        <input type="text" inputmode="decimal" id="resultPctInput" placeholder="Ej. 1.2 o -0.5">
-        <div class="field-hint" id="rrRealHint"></div>
-      </div>
-      <div class="field">
-        <label for="durationInput">Duración (minutos)</label>
-        <input type="text" inputmode="decimal" id="durationInput" placeholder="Ej. 12">
-      </div>
-    </div>
-
-    <div class="form-section-title">Tu cabeza</div>
-    <div class="field">
-      <label>¿Cómo te sentías al entrar?</label>
-      <div class="chips" id="emotionChips"></div>
-    </div>
-    <div class="field">
-      <label>Nivel de confianza en el trade</label>
-      <div class="seg seg-5" id="confidenceSeg">
-        <button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button>
-      </div>
-      <div class="field-hint">1 = nada seguro · 5 = totalmente seguro</div>
-    </div>
-    <div class="field">
-      <label>¿Cometiste algún error? <span class="label-note">(podés marcar varios)</span></label>
-      <div class="chips" id="errorChips"></div>
-    </div>
-
-    <div class="form-section-title">Notas</div>
-    <div class="field">
-      <label for="resultNote">¿Qué pasó en el desarrollo del trade?</label>
-      <textarea id="resultNote" rows="3"></textarea>
-    </div>
-    <div class="field">
-      <label>Imagen del trade (opcional)</label>
-      <label class="file-btn" for="tradeImageInput">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>
-        <span>Subir captura</span>
-      </label>
-      <input type="file" id="tradeImageInput" class="visually-hidden" accept="image/*">
-      <div id="tradeImagePreview"></div>
-    </div>
-    <div class="row">
-      <button class="primary" id="addTradeBtn">Agregar trade</button>
-      <button class="ghost" id="cancelEditBtn" style="display:none;">Cancelar edición</button>
-    </div>
-    <div id="entryError" style="display:none; color:var(--danger); font-size:13px; margin-top:8px;"></div>
-  </div>
-
-
-    <div class="stack">
-      <div class="streak" id="streakBox"></div>
-      <div class="card" id="fundedProgressCard" style="display:none;">
-    <h2>Cuenta de fondeo</h2>
-    <div id="fundedProgress"></div>
-  </div>
-    </div>
     </div><!-- /tab register -->
 
     <div class="tabpage" data-tab="stats">
@@ -526,18 +559,18 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=18"></script>
-<script src="js/storage.js?v=18"></script>
-<script src="js/session.js?v=18"></script>
-<script src="js/app.js?v=18"></script>
-<script src="js/analytics.js?v=18"></script>
-<script src="js/charts.js?v=18"></script>
-<script src="js/achievements.js?v=18"></script>
-<script src="js/dashboard.js?v=18"></script>
-<script src="js/analysis.js?v=18"></script>
-<script src="js/review.js?v=18"></script>
-<script src="js/calendar.js?v=18"></script>
-<script src="js/onboarding.js?v=18"></script>
+<script src="js/icons.js?v=19"></script>
+<script src="js/storage.js?v=19"></script>
+<script src="js/session.js?v=19"></script>
+<script src="js/app.js?v=19"></script>
+<script src="js/analytics.js?v=19"></script>
+<script src="js/charts.js?v=19"></script>
+<script src="js/achievements.js?v=19"></script>
+<script src="js/dashboard.js?v=19"></script>
+<script src="js/analysis.js?v=19"></script>
+<script src="js/review.js?v=19"></script>
+<script src="js/calendar.js?v=19"></script>
+<script src="js/onboarding.js?v=19"></script>
 
 </body>
 </html>
