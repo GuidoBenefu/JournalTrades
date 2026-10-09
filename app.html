@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=23"></script>
+<script src="js/theme.js?v=24"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=23">
-<script src="js/auth.js?v=23"></script>
+<link rel="stylesheet" href="css/styles.css?v=24">
+<script src="js/auth.js?v=24"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -57,37 +57,72 @@
     <main class="content">
 
     <div class="tabpage active" data-tab="home">
-      <div class="card span-2 hello">
-        <div>
-          <div class="hello-kicker" id="helloDate"></div>
-          <h2 id="helloTitle"></h2>
-          <p id="helloSub"></p>
+      <section class="span-2 hero">
+        <div class="hero-main">
+          <div class="avatar hero-avatar" id="heroAvatar"></div>
+          <div class="hero-txt">
+            <div class="hello-kicker" id="helloDate"></div>
+            <h2 id="helloTitle"></h2>
+            <p id="helloSub"></p>
+          </div>
         </div>
-        <button class="primary" data-goto="register">+ Registrar trade</button>
-      </div>
+        <div class="hero-actions">
+          <button class="primary" data-goto="register"><i data-icon="plus" data-size="16"></i> Registrar trade</button>
+          <button type="button" class="hero-btn" data-goto="review"><i data-icon="notebook-pen" data-size="16"></i> Revisar semana</button>
+          <button type="button" class="hero-btn" data-goto="stats"><i data-icon="chart-line" data-size="16"></i> Ver stats</button>
+        </div>
+      </section>
+
+      <div class="span-2 daily-rule" id="homeRule" style="display:none;"></div>
       <div class="span-2 review-nudge" id="homeReviewNudge" style="display:none;"></div>
-      <div class="kpis span-2" id="homeKpis"></div>
-      <div class="card span-2">
-        <div class="card-head"><h2>Tu curva</h2><button type="button" class="link-btn" data-goto="stats">Ver análisis completo →</button></div>
-        <div class="chart" id="homeChart"></div>
-        <div class="legend"><span><i class="lg-real"></i>Resultado real</span><span><i class="lg-plan"></i>Si hubieras seguido tu plan</span></div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h2>Lo que dicen tus datos</h2><button type="button" class="link-btn" data-goto="stats">Ver todos →</button></div>
-        <div id="homeInsights"></div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h2>Último trade</h2><button type="button" class="link-btn" data-goto="history">Historial →</button></div>
-        <div id="homeLast"></div>
-      </div>
-      <div class="card span-2">
+      <section class="card span-2 starter" id="homeStarter" style="display:none;"></section>
+
+      <div class="span-2 home-kpis home-data" id="homeKpis"></div>
+
+      <section class="card home-data today-card">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="clock" data-size="18"></i></span>
+          <div><h2>Tu día de hoy</h2><p id="todayDate"></p></div>
+        </div>
+        <div id="homeToday"></div>
+      </section>
+      <section class="card home-data">
         <div class="card-head"><h2>Meta del mes</h2><button type="button" class="link-btn" data-goto="settings">Cambiar meta →</button></div>
         <div id="homeGoal"></div>
-      </div>
-      <div class="card span-2">
+      </section>
+
+      <section class="card span-2 home-data">
+        <div class="card-head"><h2>Tu semana</h2><button type="button" class="link-btn" data-goto="calendar">Calendario →</button></div>
+        <div class="week-strip" id="homeWeek"></div>
+      </section>
+
+      <section class="card span-2 home-data">
+        <div class="card-head">
+          <h2>Tu curva</h2>
+          <div class="card-head-r">
+            <div class="seg seg-sm" id="homeCurvePeriod">
+              <button type="button" data-p="7">7 días</button><button type="button" data-p="30">30 días</button><button type="button" data-p="all">Todo</button>
+            </div>
+            <button type="button" class="link-btn" data-goto="stats">Análisis →</button>
+          </div>
+        </div>
+        <div class="chart" id="homeChart"></div>
+        <div class="legend"><span><i class="lg-real"></i>Resultado real</span><span><i class="lg-plan"></i>Si hubieras seguido tu plan</span></div>
+      </section>
+
+      <section class="card home-data">
+        <div class="card-head"><h2>Últimos trades</h2><button type="button" class="link-btn" data-goto="history">Historial →</button></div>
+        <div id="homeLast"></div>
+      </section>
+      <section class="card home-data">
+        <div class="card-head"><h2>Lo que dicen tus datos</h2><button type="button" class="link-btn" data-goto="stats">Ver todos →</button></div>
+        <div id="homeInsights"></div>
+      </section>
+
+      <section class="card span-2">
         <div class="card-head"><h2>Logros</h2><span class="card-meta" id="badgeCount"></span></div>
-        <div class="badges" id="homeBadges"></div>
-      </div>
+        <div id="homeBadges"></div>
+      </section>
     </div><!-- /tab home -->
 
     <div class="tabpage" data-tab="register">
@@ -735,20 +770,20 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=23"></script>
-<script src="js/storage.js?v=23"></script>
-<script src="js/session.js?v=23"></script>
-<script src="js/app.js?v=23"></script>
-<script src="js/analytics.js?v=23"></script>
-<script src="js/charts.js?v=23"></script>
-<script src="js/achievements.js?v=23"></script>
-<script src="js/dashboard.js?v=23"></script>
-<script src="js/analysis.js?v=23"></script>
-<script src="js/review.js?v=23"></script>
-<script src="js/calendar.js?v=23"></script>
-<script src="js/onboarding.js?v=23"></script>
-<script src="js/settings.js?v=23"></script>
-<script src="js/history.js?v=23"></script>
+<script src="js/icons.js?v=24"></script>
+<script src="js/storage.js?v=24"></script>
+<script src="js/session.js?v=24"></script>
+<script src="js/app.js?v=24"></script>
+<script src="js/analytics.js?v=24"></script>
+<script src="js/charts.js?v=24"></script>
+<script src="js/achievements.js?v=24"></script>
+<script src="js/dashboard.js?v=24"></script>
+<script src="js/analysis.js?v=24"></script>
+<script src="js/review.js?v=24"></script>
+<script src="js/calendar.js?v=24"></script>
+<script src="js/onboarding.js?v=24"></script>
+<script src="js/settings.js?v=24"></script>
+<script src="js/history.js?v=24"></script>
 
 </body>
 </html>
