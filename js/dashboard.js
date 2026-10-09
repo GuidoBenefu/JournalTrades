@@ -5,7 +5,7 @@ function renderInsightList(el, list, emptyText){
     el.innerHTML = `<div class="empty">${emptyText}</div>`;
     return;
   }
-  el.innerHTML = list.map(i=> `<div class="insight ${i.tone}"><span class="insight-ic">${i.icon}</span><p>${i.text}</p></div>`).join('');
+  el.innerHTML = list.map(i=> `<div class="insight ${i.tone}"><span class="insight-ic">${Icons.svg(i.icon, 17)}</span><p>${i.text}</p></div>`).join('');
 }
 
 function equityChart(el, height){
@@ -83,7 +83,7 @@ function renderHome(){
       </div>
       <div class="tags">
         <span class="tag ${last.followedPlan ? 'good' : 'bad'}">${last.followedPlan ? 'Plan seguido' : 'Plan roto'}</span>
-        ${emo ? `<span class="tag">${emo.ic} ${emo.label}</span>` : ''}
+        ${emo ? `<span class="tag">${emo.label}</span>` : ''}
         ${r !== null ? `<span class="tag">${r > 0 ? '+' : ''}${r.toFixed(1)}R</span>` : ''}
         ${(last.errors || []).map(id=> errorById(id)).filter(Boolean).map(e=> `<span class="tag bad">${e.label}</span>`).join('')}
       </div>
@@ -107,7 +107,7 @@ function renderHome(){
   document.getElementById('homeBadges').innerHTML = ACHIEVEMENTS.map(a=>{
     const at = state.achievements[a.id];
     return `<div class="badge-card ${at ? 'on' : ''}" title="${a.desc}">
-      <div class="badge-ic">${at ? a.icon : '🔒'}</div>
+      <div class="badge-ic">${Icons.svg(at ? a.icon : 'lock', 20)}</div>
       <div class="badge-t">${a.title}</div>
       <div class="badge-d">${at ? 'Desbloqueado el ' + fmtDate(at) : a.desc}</div>
     </div>`;

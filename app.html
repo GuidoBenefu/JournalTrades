@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=17"></script>
+<script src="js/theme.js?v=18"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=17">
-<script src="js/auth.js?v=17"></script>
+<link rel="stylesheet" href="css/styles.css?v=18">
+<script src="js/auth.js?v=18"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -22,13 +22,13 @@
   <aside class="sidebar">
     <a class="brand" href="index.html"><img class="brand-logo" src="img/logo.png" alt="Journal Trading"></a>
     <nav class="tabbar">
-      <button class="tabbtn active" data-tab="home" data-title="Inicio"><span class="ic">🏠</span><span>Inicio</span></button>
-      <button class="tabbtn" data-tab="register" data-title="Registrar trade"><span class="ic">📝</span><span>Trade</span></button>
-      <button class="tabbtn" data-tab="stats" data-title="Estadísticas"><span class="ic">📊</span><span>Stats</span></button>
-      <button class="tabbtn" data-tab="calendar" data-title="Calendario"><span class="ic">📅</span><span>Calendario</span></button>
-      <button class="tabbtn" data-tab="history" data-title="Historial"><span class="ic">🕓</span><span>Historial</span></button>
-      <button class="tabbtn" data-tab="review" data-title="Revisión semanal"><span class="ic">🧠</span><span>Revisión</span></button>
-      <button class="tabbtn" data-tab="settings" data-title="Ajustes"><span class="ic">⚙️</span><span>Ajustes</span></button>
+      <button class="tabbtn active" data-tab="home" data-title="Inicio"><span class="ic"><i data-icon="dashboard" data-size="20"></i></span><span>Inicio</span></button>
+      <button class="tabbtn" data-tab="register" data-title="Registrar trade"><span class="ic"><i data-icon="circle-plus" data-size="20"></i></span><span>Trade</span></button>
+      <button class="tabbtn" data-tab="stats" data-title="Estadísticas"><span class="ic"><i data-icon="chart-line" data-size="20"></i></span><span>Stats</span></button>
+      <button class="tabbtn" data-tab="calendar" data-title="Calendario"><span class="ic"><i data-icon="calendar" data-size="20"></i></span><span>Calendario</span></button>
+      <button class="tabbtn" data-tab="history" data-title="Historial"><span class="ic"><i data-icon="history" data-size="20"></i></span><span>Historial</span></button>
+      <button class="tabbtn" data-tab="review" data-title="Revisión semanal"><span class="ic"><i data-icon="notebook-pen" data-size="20"></i></span><span>Revisión</span></button>
+      <button class="tabbtn" data-tab="settings" data-title="Ajustes"><span class="ic"><i data-icon="settings" data-size="20"></i></span><span>Ajustes</span></button>
     </nav>
     <div class="sidebar-foot">
       <div class="userbox">
@@ -256,10 +256,10 @@
       <div class="card span-2 cal-card">
         <div class="cal-toolbar">
           <div class="cal-nav">
-            <button type="button" class="icon-btn" id="calPrev" aria-label="Anterior">←</button>
+            <button type="button" class="icon-btn" id="calPrev" aria-label="Anterior"><i data-icon="arrow-left" data-size="16"></i></button>
             <select id="calMonth" class="select-sm" aria-label="Mes"></select>
             <select id="calYear" class="select-sm" aria-label="Año"></select>
-            <button type="button" class="icon-btn" id="calNext" aria-label="Siguiente">→</button>
+            <button type="button" class="icon-btn" id="calNext" aria-label="Siguiente"><i data-icon="arrow-right" data-size="16"></i></button>
             <button type="button" class="small" id="calToday">Hoy</button>
           </div>
           <div class="cal-switches">
@@ -411,7 +411,7 @@
 
 <div id="paywall" class="paywall" style="display:none;">
   <div class="paywall-box">
-    <div class="applogo" style="font-size:32px;" id="paywallIcon">⏳</div>
+    <div class="paywall-ic" id="paywallIcon"><i data-icon="hourglass" data-size="26"></i></div>
     <h2 id="paywallTitle">Tu prueba gratis terminó</h2>
     <p id="paywallText">Pasate a Pro para seguir registrando trades. Tus datos siguen guardados.</p>
     <div class="billing-choice">
@@ -445,8 +445,8 @@
       <h2 id="obTitle">¿Cómo operás?</h2>
       <p class="ob-sub">Así adaptamos tu journal a tu tipo de cuenta.</p>
       <div class="ob-choices">
-        <button type="button" class="ob-choice" data-type="retail"><span class="ob-ic">👤</span><span class="t">Trader retail</span><span class="s">Opero mi propia cuenta.</span></button>
-        <button type="button" class="ob-choice" data-type="funded"><span class="ob-ic">🏦</span><span class="t">Cuenta de fondeo</span><span class="s">Opero con una prop firm y tengo reglas de drawdown.</span></button>
+        <button type="button" class="ob-choice" data-type="retail"><span class="ob-ic"><i data-icon="user" data-size="20"></i></span><span class="t">Trader retail</span><span class="s">Opero mi propia cuenta.</span></button>
+        <button type="button" class="ob-choice" data-type="funded"><span class="ob-ic"><i data-icon="landmark" data-size="20"></i></span><span class="t">Cuenta de fondeo</span><span class="s">Opero con una prop firm y tengo reglas de drawdown.</span></button>
       </div>
       <div class="ob-funded" id="obFunded" style="display:none;">
         <div class="ob-grid">
@@ -511,7 +511,7 @@
         <div class="day-kicker" id="dayKicker"></div>
         <h2 id="dayTitle"></h2>
       </div>
-      <button type="button" class="icon-btn" data-close-day aria-label="Cerrar">✕</button>
+      <button type="button" class="icon-btn" data-close-day aria-label="Cerrar"><i data-icon="x" data-size="18"></i></button>
     </div>
     <div class="day-body" id="dayBody"></div>
     <div class="day-foot">
@@ -526,17 +526,18 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/storage.js?v=17"></script>
-<script src="js/session.js?v=17"></script>
-<script src="js/app.js?v=17"></script>
-<script src="js/analytics.js?v=17"></script>
-<script src="js/charts.js?v=17"></script>
-<script src="js/achievements.js?v=17"></script>
-<script src="js/dashboard.js?v=17"></script>
-<script src="js/analysis.js?v=17"></script>
-<script src="js/review.js?v=17"></script>
-<script src="js/calendar.js?v=17"></script>
-<script src="js/onboarding.js?v=17"></script>
+<script src="js/icons.js?v=18"></script>
+<script src="js/storage.js?v=18"></script>
+<script src="js/session.js?v=18"></script>
+<script src="js/app.js?v=18"></script>
+<script src="js/analytics.js?v=18"></script>
+<script src="js/charts.js?v=18"></script>
+<script src="js/achievements.js?v=18"></script>
+<script src="js/dashboard.js?v=18"></script>
+<script src="js/analysis.js?v=18"></script>
+<script src="js/review.js?v=18"></script>
+<script src="js/calendar.js?v=18"></script>
+<script src="js/onboarding.js?v=18"></script>
 
 </body>
 </html>

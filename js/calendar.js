@@ -287,7 +287,7 @@ function renderDayPanel(){
   document.getElementById('dayTitle').textContent = title.charAt(0).toUpperCase() + title.slice(1);
   const body = document.getElementById('dayBody');
   if(!d){
-    body.innerHTML = '<div class="day-empty"><div class="day-empty-ic">📭</div><p>No registraste trades este día.</p></div>';
+    body.innerHTML = `<div class="day-empty"><div class="day-empty-ic">${Icons.svg('inbox', 30)}</div><p>No registraste trades este día.</p></div>`;
     return;
   }
   const wins = d.trades.filter(h=> h.result === 'win').length;
@@ -314,7 +314,7 @@ function renderDayPanel(){
         <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? 'Plan seguido' : 'Plan roto'}</span>
         <span class="tag">${sessionOf(h.ts)}</span>
         ${h.setup ? `<span class="tag">${escapeHtml(h.setup)}</span>` : ''}
-        ${emo ? `<span class="tag">${emo.ic} ${emo.label}</span>` : ''}
+        ${emo ? `<span class="tag">${emo.label}</span>` : ''}
         ${r !== null ? `<span class="tag">${r > 0 ? '+' : ''}${r.toFixed(1)}R</span>` : ''}
         ${(h.errors || []).map(id=> errorById(id)).filter(Boolean).map(e=> `<span class="tag bad">${e.label}</span>`).join('')}
       </div>

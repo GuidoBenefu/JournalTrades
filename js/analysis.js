@@ -51,7 +51,7 @@ function renderHeatmap(){
 }
 
 const BREAKDOWNS = {
-  emotion: {label: 'Emoción', key: h=> h.emotion, name: k=>{ const e = emotionById(k); return e ? e.ic + ' ' + e.label : k; }, empty: 'Marcá cómo te sentías al entrar en cada trade para ver este desglose.'},
+  emotion: {label: 'Emoción', key: h=> h.emotion, name: k=>{ const e = emotionById(k); return e ? e.label : k; }, empty: 'Marcá cómo te sentías al entrar en cada trade para ver este desglose.'},
   error: {label: 'Error', key: h=> h.errors || [], name: k=>{ const e = errorById(k); return e ? e.label : k; }, empty: 'Todavía no marcaste errores en tus trades.'},
   session: {label: 'Sesión', key: h=> sessionOf(h.ts), name: k=> k},
   asset: {label: 'Activo', key: h=> h.asset, name: k=> escapeHtml(k), empty: 'Cargá el activo en tus trades para ver este desglose.'},

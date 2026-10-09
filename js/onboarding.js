@@ -43,8 +43,8 @@
         <span class="ob-num">${i + 1}</span>
         <div class="ob-text"><span class="t">${esc(it.label)}</span>${it.hint ? `<span class="h">${esc(it.hint)}</span>` : ''}</div>
         <div class="ob-actions">
-          <button type="button" class="ob-icon" data-edit="${i}" aria-label="Editar regla" title="Editar">✎</button>
-          <button type="button" class="ob-icon danger" data-del="${i}" aria-label="Eliminar regla" title="Eliminar">✕</button>
+          <button type="button" class="ob-icon" data-edit="${i}" aria-label="Editar regla" title="Editar">${Icons.svg('pencil', 15)}</button>
+          <button type="button" class="ob-icon danger" data-del="${i}" aria-label="Eliminar regla" title="Eliminar">${Icons.svg('x', 15)}</button>
         </div>
       </div>`).join('');
     $('obItems').querySelectorAll('[data-edit]').forEach(b=> b.addEventListener('click', ()=>{ editing = Number(b.dataset.edit); renderItems(); $('obItems').querySelector('.ob-edit-label').focus(); }));

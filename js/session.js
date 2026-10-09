@@ -36,7 +36,7 @@ document.getElementById('pwAnnualSub').textContent = 'por año · ' + JournalAut
 
 // expired: la prueba terminó y no se puede cerrar sin pasar a Pro.
 function openUpgrade(expired){
-  document.getElementById('paywallIcon').textContent = expired ? '⏳' : '🚀';
+  document.getElementById('paywallIcon').innerHTML = Icons.svg(expired ? 'hourglass' : 'rocket', 26);
   document.getElementById('paywallTitle').textContent = expired ? 'Tu prueba gratis terminó' : 'Pasate a Pro';
   document.getElementById('paywallText').textContent = expired
     ? 'Pasate a Pro para seguir registrando trades. Tus datos siguen guardados.'

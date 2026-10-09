@@ -5,12 +5,12 @@ function escapeHtml(str){
 
 // Datos extra de cada trade: emoción, errores y sesión.
 const EMOTIONS = [
-  {id:'calm', label:'Tranquilo', ic:'😌'},
-  {id:'confident', label:'Confiado', ic:'💪'},
-  {id:'anxious', label:'Ansioso', ic:'😰'},
-  {id:'fomo', label:'FOMO', ic:'🏃'},
-  {id:'revenge', label:'Revancha', ic:'😤'},
-  {id:'bored', label:'Aburrido', ic:'🥱'},
+  {id:'calm', label:'Tranquilo'},
+  {id:'confident', label:'Confiado'},
+  {id:'anxious', label:'Ansioso'},
+  {id:'fomo', label:'FOMO'},
+  {id:'revenge', label:'Revancha'},
+  {id:'bored', label:'Aburrido'},
 ];
 const ERROR_TAGS = [
   {id:'moved_sl', label:'Moví el stop'},
@@ -440,7 +440,7 @@ function sortHistory(){
 
 function renderChips(){
   const emo = document.getElementById('emotionChips');
-  emo.innerHTML = EMOTIONS.map(e=>`<button type="button" class="chip ${tradeForm.emotion === e.id ? 'active' : ''}" data-v="${e.id}"><span>${e.ic}</span> ${e.label}</button>`).join('');
+  emo.innerHTML = EMOTIONS.map(e=>`<button type="button" class="chip ${tradeForm.emotion === e.id ? 'active' : ''}" data-v="${e.id}">${e.label}</button>`).join('');
   emo.querySelectorAll('.chip').forEach(b=> b.addEventListener('click', ()=>{
     tradeForm.emotion = tradeForm.emotion === b.dataset.v ? null : b.dataset.v;
     renderChips();
@@ -700,7 +700,7 @@ function renderHistory(){
     tags.push(`<span class="tag">${sessionOf(h.ts)} · ${new Date(h.ts).toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}</span>`);
     if(h.setup) tags.push(`<span class="tag">${escapeHtml(h.setup)}</span>`);
     const emo = emotionById(h.emotion);
-    if(emo) tags.push(`<span class="tag">${emo.ic} ${emo.label}</span>`);
+    if(emo) tags.push(`<span class="tag">${emo.label}</span>`);
     if(h.confidence) tags.push(`<span class="tag">Confianza ${h.confidence}/5</span>`);
     details.push(`<div class="tags">${tags.join('')}</div>`);
     const facts = [];
