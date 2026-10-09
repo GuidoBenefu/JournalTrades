@@ -37,6 +37,32 @@ a{color:var(--accent);}
 .preview .pv-day.neg{background:var(--danger-bg); border-color:var(--danger);}
 .preview .pv-day.warn{background:var(--amber-bg); border-color:var(--amber);}
 
+.hero h1 .accent{color:var(--accent);}
+
+.band{background:var(--card); border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin:24px 0 8px;}
+.band-inner{max-width:860px; margin:0 auto; padding:48px 24px; text-align:center;}
+.manifesto{font-size:26px; line-height:1.35; font-weight:600; margin:0 0 14px; letter-spacing:-.01em; text-wrap:balance;}
+.manifesto-sub{font-size:16px; color:var(--text-2); margin:0;}
+
+.versus{display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:880px; margin:0 auto;}
+.vs-col{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px;}
+.vs-col h3{font-size:16px; margin:0 0 14px; color:var(--text-2);}
+.vs-col.ours{border:2px solid var(--accent);}
+.vs-col.ours h3{color:var(--accent);}
+.vs-list{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; font-size:15px;}
+.vs-list li{display:flex; gap:10px; line-height:1.4;}
+.vs-list.no li{color:var(--text-2);}
+.vs-list.no li::before{content:'✕'; color:var(--text-3); font-weight:700;}
+.vs-list.yes li::before{content:'✓'; color:var(--success); font-weight:700;}
+
+.steps{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+.step{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px;}
+.step-n{width:34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; font-weight:700;
+  display:flex; align-items:center; justify-content:center;}
+.step h3{font-size:16px; margin:14px 0 6px;}
+.step p{font-size:14px; color:var(--text-2); line-height:1.5; margin:0;}
+.steps-result{margin-top:20px; text-align:center; font-size:17px; font-weight:600; color:var(--success);}
+
 .section{max-width:1120px; width:100%; margin:0 auto; padding:48px 24px;}
 .section h2.title{font-size:30px; font-weight:700; margin:0 0 8px; letter-spacing:-.01em; text-align:center;}
 .section p.subtitle{color:var(--text-2); text-align:center; margin:0 0 32px; font-size:16px;}
@@ -86,6 +112,8 @@ a{color:var(--accent);}
 @media (max-width: 900px){
   .hero{grid-template-columns:1fr; padding-top:28px; gap:32px;}
   .hero h1{font-size:34px;}
-  .features{grid-template-columns:1fr;}
+  .features, .steps, .versus{grid-template-columns:1fr;}
+  .manifesto{font-size:21px;}
+  .site-nav .links .btn-link.ghost{display:none;}
   .plans{grid-template-columns:minmax(0,1fr);}
 }
