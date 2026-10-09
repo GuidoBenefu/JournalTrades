@@ -137,12 +137,12 @@ function renderFundedProgress(){
   const todayK = dayKeyFromTs(Date.now());
   const todayPnl = withPct.filter(h=>dayKeyFromTs(h.ts) === todayK).reduce((a,h)=>a+h.resultPct,0);
   const cum = withPct.reduce((a,h)=>a+h.resultPct,0);
-  const fmt = v => (v>0?'+':'') + v.toFixed(2) + '%';
+  const fmt = v => (v>0?'+':'') + v.toFixed(1) + '%';
 
   function colorFor(ratio){
     if(ratio >= 0.8) return 'var(--danger)';
     if(ratio >= 0.5) return 'var(--amber)';
-    return 'var(--success)';
+    return 'var(--brand)';
   }
   function limitRow(title, limit, used, extra){
     used = Math.max(0, used);
@@ -150,9 +150,9 @@ function renderFundedProgress(){
     const left = Math.max(0, limit - used);
     const breached = used >= limit;
     return `<div class="fp-row">
-      <div class="top"><span>${title}</span><span>${used.toFixed(2)}% / ${limit}%</span></div>
+      <div class="top"><span>${title}</span><span>${used.toFixed(1)}% / ${limit}%</span></div>
       <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:${colorFor(ratio)};"></div></div>
-      <div class="sub">${breached ? 'Límite alcanzado o superado' : 'Te quedan ' + left.toFixed(2) + '%'} · ${extra}</div>
+      <div class="sub">${breached ? 'Límite alcanzado o superado' : 'Te quedan ' + left.toFixed(1) + '%'} · ${extra}</div>
     </div>`;
   }
 
@@ -178,9 +178,9 @@ function renderFundedProgress(){
     const ratio = Math.min(prog/target, 1);
     const reached = prog >= target;
     html += `<div class="fp-row">
-      <div class="top"><span>Profit target</span><span>${prog.toFixed(2)}% / ${target}%</span></div>
-      <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:var(--success);"></div></div>
-      <div class="sub">${reached ? 'Objetivo alcanzado' : 'Te falta ' + (target-prog).toFixed(2) + '%'} · Acumulado: ${fmt(cum)}</div>
+      <div class="top"><span>Profit target</span><span>${prog.toFixed(1)}% / ${target}%</span></div>
+      <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:var(--brand);"></div></div>
+      <div class="sub">${reached ? 'Objetivo alcanzado' : 'Te falta ' + (target-prog).toFixed(1) + '%'} · Acumulado: ${fmt(cum)}</div>
     </div>`;
   }
   box.innerHTML = html || '<p style="font-size:13px; color:var(--text-2);">Cargá al menos una regla en "Tipo de cuenta".</p>';
@@ -504,12 +504,12 @@ function renderDailyRisk(){
   const used = dayRiskMap()[dayKeyFromTs(Date.now())] || 0;
   const broken = used > max;
   const ratio = Math.min(used / max, 1);
-  const color = broken ? 'var(--danger)' : (ratio >= 0.8 ? 'var(--danger)' : (ratio >= 0.5 ? 'var(--amber)' : 'var(--success)'));
+  const color = broken ? 'var(--danger)' : (ratio >= 0.8 ? 'var(--danger)' : (ratio >= 0.5 ? 'var(--amber)' : 'var(--brand)'));
   const msg = broken
-    ? '<span style="color:var(--danger); font-weight:600;">Risk management roto hoy: arriesgaste ' + used.toFixed(2) + '% y tu máximo es ' + max + '%.</span>'
-    : 'Te quedan ' + (max - used).toFixed(2) + '% de riesgo para hoy.';
+    ? '<span style="color:var(--danger); font-weight:600;">Risk management roto hoy: arriesgaste ' + used.toFixed(1) + '% y tu máximo es ' + max + '%.</span>'
+    : 'Te quedan ' + (max - used).toFixed(1) + '% de riesgo para hoy.';
   box.innerHTML = `<div class="fp-row">
-    <div class="top"><span>Riesgo tomado hoy</span><span>${used.toFixed(2)}% / ${max}%</span></div>
+    <div class="top"><span>Riesgo tomado hoy</span><span>${used.toFixed(1)}% / ${max}%</span></div>
     <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:${color};"></div></div>
     <div class="sub">${msg}</div>
   </div>`;
@@ -540,7 +540,7 @@ function renderHistory(){
     let resCls = 'neu', resTxt = '—';
     if(hasRes){
       resCls = h.resultPct > 0 ? 'pos' : (h.resultPct < 0 ? 'neg' : 'neu');
-      resTxt = (h.resultPct > 0 ? '+' : '') + h.resultPct + '%';
+      resTxt = (h.resultPct > 0 ? '+' : '') + h.resultPct.toFixed(1) + '%';
     } else if(h.result === 'win'){ resCls = 'pos'; resTxt = 'Ganador'; }
     else if(h.result === 'loss'){ resCls = 'neg'; resTxt = 'Perdedor'; }
     else if(h.result === 'be'){ resTxt = 'BE'; }
@@ -555,7 +555,7 @@ function renderHistory(){
     div.innerHTML = `
       <div class="hsum">
         <div class="hcol"><div class="hl">Fecha</div><div class="hv date">${fmtDate(h.ts)}</div></div>
-        <div class="hcol"><div class="hl">Riesgo</div><div class="hv">${hasRisk ? h.riskPct + '%' : '—'}</div></div>
+        <div class="hcol"><div class="hl">Riesgo</div><div class="hv">${hasRisk ? h.riskPct.toFixed(1) + '%' : '—'}</div></div>
         <div class="hcol"><div class="hl">Resultado</div><div class="hv ${resCls}">${resTxt}</div></div>
         <div class="hright">
           <div class="hplan ${planCls}">${planTxt}</div>
@@ -636,9 +636,9 @@ function renderStats(){
     <div class="stat"><div class="n">${total}</div><div class="l">Trades</div></div>
     <div class="stat"><div class="n">${pct}%</div><div class="l">Siguió el plan</div></div>
     <div class="stat"><div class="n">${winRate}%</div><div class="l">Win rate</div></div>
-    <div class="stat"><div class="n">${sumPct > 0 ? '+' : ''}${sumPct.toFixed(2)}%</div><div class="l">Resultado acumulado</div></div>
-    <div class="stat"><div class="n">${avgPct === null ? '—' : (avgPct > 0 ? '+' : '') + avgPct.toFixed(2) + '%'}</div><div class="l">Resultado prom./trade</div></div>
-    <div class="stat"><div class="n">${avgRisk === null ? '—' : avgRisk.toFixed(2) + '%'}</div><div class="l">Riesgo promedio</div></div>
+    <div class="stat"><div class="n">${sumPct > 0 ? '+' : ''}${sumPct.toFixed(1)}%</div><div class="l">Resultado acumulado</div></div>
+    <div class="stat"><div class="n">${avgPct === null ? '—' : (avgPct > 0 ? '+' : '') + avgPct.toFixed(1) + '%'}</div><div class="l">Resultado prom./trade</div></div>
+    <div class="stat"><div class="n">${avgRisk === null ? '—' : avgRisk.toFixed(1) + '%'}</div><div class="l">Riesgo promedio</div></div>
     <div class="stat"><div class="n">${avgDuration === null ? '—' : Math.round(avgDuration) + ' min'}</div><div class="l">Duración promedio</div></div>
     <div class="stat"><div class="n">${avgChecklistPct === null ? '—' : Math.round(avgChecklistPct) + '%'}</div><div class="l">Prom. ítems tildados</div></div>
   `;
@@ -657,7 +657,7 @@ function renderStreak(){
   }
   box.innerHTML = `
     <div class="n ${streak === 0 ? 'zero' : ''}">${streak}</div>
-    <div class="l">TRADES SEGUIDOS SIGUIENDO EL PLAN</div>
+    <div class="l">${streak === 1 ? 'trade seguido' : 'trades seguidos'} respetando tu Trading Plan</div>
     <div class="best">Mejor racha: ${state.bestStreak}</div>
   `;
 }
@@ -680,11 +680,11 @@ function renderCompare(){
         <h3>${title}</h3>
         <div class="n">${s.count}</div>
         <div class="l">trades</div>
-        <div class="n" style="margin-top:6px;">${s.avg === null ? '—' : (s.avg>0?'+':'') + s.avg.toFixed(2) + '%'}</div>
+        <div class="n" style="margin-top:6px;">${s.avg === null ? '—' : (s.avg>0?'+':'') + s.avg.toFixed(1) + '%'}</div>
         <div class="l">prom./trade</div>
         <div class="n" style="margin-top:6px;">${s.avgDuration === null ? '—' : Math.round(s.avgDuration) + ' min'}</div>
         <div class="l">duración prom./trade</div>
-        <div class="n" style="margin-top:6px;">${s.sum > 0 ? '+' : ''}${s.sum.toFixed(2)}%</div>
+        <div class="n" style="margin-top:6px;">${s.sum > 0 ? '+' : ''}${s.sum.toFixed(1)}%</div>
         <div class="l">acumulado</div>
       </div>`;
   }
@@ -724,7 +724,7 @@ function renderCalendar(){
     let cls = 'calday week', pctHtml = '';
     if(weekHas){
       cls += weekSum > 0 ? ' pos' : (weekSum < 0 ? ' neg' : '');
-      pctHtml = `<div class="pct">${weekSum>0?'+':''}${weekSum.toFixed(2)}%</div>`;
+      pctHtml = `<div class="pct">${weekSum>0?'+':''}${weekSum.toFixed(1)}%</div>`;
     }
     html += `<div class="${cls}"><div class="num">Sem</div>${pctHtml}</div>`;
     weekSum = 0; weekHas = false;
@@ -740,7 +740,7 @@ function renderCalendar(){
     let pctHtml = '';
     if(sum !== undefined){
       cls += sum > 0 ? ' pos' : (sum < 0 ? ' neg' : '');
-      pctHtml = `<div class="pct">${sum>0?'+':''}${sum.toFixed(2)}%</div>`;
+      pctHtml = `<div class="pct">${sum>0?'+':''}${sum.toFixed(1)}%</div>`;
       weekSum += sum; weekHas = true;
     }
     addCell(`<div class="${cls}"><div class="num">${day}</div>${pctHtml}</div>`);
@@ -853,7 +853,7 @@ function renderItemStats(){
   box.innerHTML = rows.map(r=>`
     <div class="itemstat">
       <div class="top"><span>${escapeHtml(r.label)}</span><span>${r.pct}% (${r.c})</span></div>
-      <div class="bar"><div class="fill" style="width:${r.pct}%; background:var(--success);"></div></div>
+      <div class="bar"><div class="fill" style="width:${r.pct}%; background:var(--brand);"></div></div>
     </div>
   `).join('');
 }
@@ -928,7 +928,7 @@ function renderCurrentPeriod(){
     <div class="stats">
       <div class="stat"><div class="n">${s.total}</div><div class="l">Trades</div></div>
       <div class="stat"><div class="n">${s.pct}%</div><div class="l">Siguió el plan</div></div>
-      <div class="stat"><div class="n">${s.sum>0?'+':''}${s.sum.toFixed(2)}%</div><div class="l">Acumulado</div></div>
+      <div class="stat"><div class="n">${s.sum>0?'+':''}${s.sum.toFixed(1)}%</div><div class="l">Acumulado</div></div>
       <div class="stat"><div class="n">${s.avgPerDay === null ? '—' : s.avgPerDay.toFixed(1)}</div><div class="l">Prom. trades/día</div></div>
       <div class="stat"><div class="n">${s.riskMgmtPct === null ? '—' : s.riskMgmtPct + '%'}</div><div class="l">Risk management</div></div>
     </div>
@@ -944,7 +944,7 @@ function renderClosedMonths(){
   box.innerHTML = state.closedMonths.slice().reverse().map(m=>`
     <div class="monthrow">
       <span>${m.label}</span>
-      <span>${m.sum>0?'+':''}${m.sum.toFixed(2)}% <span class="l">(${m.count} trades, ${m.followedPct}% plan${m.avgPerDay !== null && m.avgPerDay !== undefined ? ', ' + m.avgPerDay.toFixed(1) + ' trades/día' : ''}${m.riskMgmtPct !== null && m.riskMgmtPct !== undefined ? ', ' + m.riskMgmtPct + '% risk mgmt' : ''})</span></span>
+      <span>${m.sum>0?'+':''}${m.sum.toFixed(1)}% <span class="l">(${m.count} trades, ${m.followedPct}% plan${m.avgPerDay !== null && m.avgPerDay !== undefined ? ', ' + m.avgPerDay.toFixed(1) + ' trades/día' : ''}${m.riskMgmtPct !== null && m.riskMgmtPct !== undefined ? ', ' + m.riskMgmtPct + '% risk mgmt' : ''})</span></span>
     </div>
   `).join('');
 }
