@@ -123,6 +123,7 @@ a{color:var(--accent);}
 @media (max-width: 900px){
   .hero{grid-template-columns:1fr; padding-top:28px; gap:32px;}
   .hero h1{font-size:34px;}
+  .eyebrow{font-size:10.5px; letter-spacing:.02em; padding:5px 10px;}
   .features, .steps, .versus{grid-template-columns:1fr;}
   .manifesto{font-size:21px;}
   .site-nav .links .btn-link.ghost{display:none;}
