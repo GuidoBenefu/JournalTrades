@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=22"></script>
+<script src="js/theme.js?v=23"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=22">
-<script src="js/auth.js?v=22"></script>
+<link rel="stylesheet" href="css/styles.css?v=23">
+<script src="js/auth.js?v=23"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -343,10 +343,47 @@
     </div><!-- /tab calendar -->
 
     <div class="tabpage" data-tab="history">
-      <div class="card span-2">
-    <h2>Historial</h2>
-    <div class="hist" id="hist"></div>
-  </div>
+      <section class="card span-2 hx-tools">
+        <div class="hx-top">
+          <label class="hx-search">
+            <i data-icon="search" data-size="16"></i>
+            <input type="search" id="hxSearch" placeholder="Buscar por activo, setup o nota" autocomplete="off" aria-label="Buscar trades">
+          </label>
+          <div class="seg seg-sm" id="hxPeriod">
+            <button type="button" data-v="week">Esta semana</button>
+            <button type="button" data-v="month">Este mes</button>
+            <button type="button" data-v="all">Todo</button>
+          </div>
+          <select id="hxSort" class="select-sm" aria-label="Ordenar">
+            <option value="date">Más recientes</option>
+            <option value="date-asc">Más antiguos</option>
+            <option value="result">Mejor resultado</option>
+            <option value="result-asc">Peor resultado</option>
+            <option value="risk">Mayor riesgo</option>
+          </select>
+        </div>
+        <div class="hx-filters" id="hxFilters">
+          <button type="button" class="chip" data-f="result" data-v="win">Ganadores</button>
+          <button type="button" class="chip" data-f="result" data-v="loss">Perdedores</button>
+          <button type="button" class="chip" data-f="result" data-v="be">BE</button>
+          <span class="hx-sep"></span>
+          <button type="button" class="chip" data-f="plan" data-v="ok">Plan seguido</button>
+          <button type="button" class="chip" data-f="plan" data-v="bad">Plan roto</button>
+          <span class="hx-sep"></span>
+          <button type="button" class="chip" data-f="dir" data-v="long">Long</button>
+          <button type="button" class="chip" data-f="dir" data-v="short">Short</button>
+          <span class="hx-sep"></span>
+          <button type="button" class="chip" data-f="errors" data-v="1">Con errores</button>
+          <button type="button" class="chip" data-f="image" data-v="1">Con captura</button>
+        </div>
+      </section>
+
+      <div class="span-2 hx-summary" id="hxSummary"></div>
+
+      <section class="card span-2 hx-list-card">
+        <div class="hist" id="hist"></div>
+        <div class="hx-more" id="hxMore"></div>
+      </section>
     </div><!-- /tab history -->
 
     <div class="tabpage" data-tab="review">
@@ -675,6 +712,21 @@
   </aside>
 </div>
 
+<div class="day-panel trade-panel" id="tradePanel" aria-hidden="true">
+  <div class="day-backdrop" data-close-trade></div>
+  <aside class="day-sheet" role="dialog" aria-modal="true" aria-labelledby="tpTitle">
+    <div class="day-head">
+      <div>
+        <div class="day-kicker" id="tpKicker"></div>
+        <h2 id="tpTitle"></h2>
+      </div>
+      <button type="button" class="icon-btn" data-close-trade aria-label="Cerrar"><i data-icon="x" data-size="18"></i></button>
+    </div>
+    <div class="day-body" id="tpBody"></div>
+    <div class="day-foot tp-foot" id="tpFoot"></div>
+  </aside>
+</div>
+
 <div class="chart-tip" id="chartTip" role="tooltip"></div>
 <div class="saved-pill" id="savedPill" aria-live="polite"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -683,19 +735,20 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=22"></script>
-<script src="js/storage.js?v=22"></script>
-<script src="js/session.js?v=22"></script>
-<script src="js/app.js?v=22"></script>
-<script src="js/analytics.js?v=22"></script>
-<script src="js/charts.js?v=22"></script>
-<script src="js/achievements.js?v=22"></script>
-<script src="js/dashboard.js?v=22"></script>
-<script src="js/analysis.js?v=22"></script>
-<script src="js/review.js?v=22"></script>
-<script src="js/calendar.js?v=22"></script>
-<script src="js/onboarding.js?v=22"></script>
-<script src="js/settings.js?v=22"></script>
+<script src="js/icons.js?v=23"></script>
+<script src="js/storage.js?v=23"></script>
+<script src="js/session.js?v=23"></script>
+<script src="js/app.js?v=23"></script>
+<script src="js/analytics.js?v=23"></script>
+<script src="js/charts.js?v=23"></script>
+<script src="js/achievements.js?v=23"></script>
+<script src="js/dashboard.js?v=23"></script>
+<script src="js/analysis.js?v=23"></script>
+<script src="js/review.js?v=23"></script>
+<script src="js/calendar.js?v=23"></script>
+<script src="js/onboarding.js?v=23"></script>
+<script src="js/settings.js?v=23"></script>
+<script src="js/history.js?v=23"></script>
 
 </body>
 </html>
