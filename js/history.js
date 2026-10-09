@@ -13,9 +13,9 @@ function hxResult(h){
   if(h.result === 'loss') return {txt: 'Perdedor', cls: 'neg'};
   return {txt: 'BE', cls: ''};
 }
+// Ganador / perdedor / BE según lo que se marcó en el trade (el mismo criterio que el win rate).
 function hxTone(h){
-  const v = Analytics.pct(h);
-  return v > 0 || (v === 0 && h.result === 'win') ? 'win' : v < 0 || (v === 0 && h.result === 'loss') ? 'loss' : 'be';
+  return h.result === 'win' ? 'win' : h.result === 'loss' ? 'loss' : 'be';
 }
 
 function filtersActive(){
@@ -208,15 +208,17 @@ function renderTradePanel(){
   const r = hxResult(h);
   const rr = realR(h);
   const cell = (l, v, cls = '')=> `<div><span class="ds-v ${cls}">${v}</span><span class="ds-l">${l}</span></div>`;
+  // Reglas que existían cuando se registró el trade, más las que faltaron y después se borraron del plan.
   const missingIds = new Set(h.missingIds || []);
   const missingLabels = h.missing || [];
-  const rules = state.items.length
-    ? state.items.map(it=>{
-        const miss = missingIds.has(it.id) || (!h.missingIds && missingLabels.includes(it.label));
-        return `<li class="${miss ? 'miss' : 'ok'}">${Icons.svg(miss ? 'x' : 'check', 14)}<span>${escapeHtml(it.label)}</span></li>`;
-      }).join('')
-      + missingLabels.filter(l=> !state.items.some(it=> it.label === l) && !h.missingIds).map(l=> `<li class="miss">${Icons.svg('x', 14)}<span>${escapeHtml(l)}</span></li>`).join('')
-    : '';
+  const existed = state.items.filter(it=> ruleCreatedAt(it) <= Math.max(h.ts, h.loggedAt || 0) || missingIds.has(it.id));
+  const isMiss = it=> missingIds.has(it.id) || (!h.missingIds && missingLabels.includes(it.label));
+  const deleted = missingLabels.filter(l=> !existed.some(it=> it.label === l && isMiss(it)));
+  const rules = existed.map(it=>{
+      const miss = isMiss(it);
+      return `<li class="${miss ? 'miss' : 'ok'}">${Icons.svg(miss ? 'x' : 'check', 14)}<span>${escapeHtml(it.label)}</span></li>`;
+    }).join('')
+    + deleted.map(l=> `<li class="miss">${Icons.svg('x', 14)}<span>${escapeHtml(l)} <small>(regla que ya no está en tu plan)</small></span></li>`).join('');
   const emo = emotionById(h.emotion);
   const errs = (h.errors || []).map(id=> errorById(id)).filter(Boolean);
   const maxRisk = getMaxDailyRisk();
@@ -263,6 +265,8 @@ function renderTradePanel(){
   document.getElementById('tpDelete').addEventListener('click', ()=>{
     if(!confirm('¿Eliminar este trade? No se puede deshacer.')) return;
     state.history = state.history.filter(x=> x.id !== h.id);
+    // Si ese trade estaba abierto para editar, el formulario vuelve a cero.
+    if(editingTradeId === h.id) resetForm();
     closeTrade();
     saveState();
     renderAll();

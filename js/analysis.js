@@ -27,7 +27,7 @@ function periodSummary(list){
   const risks = list.map(h=> h.riskPct).filter(v=> v !== null && v !== undefined);
   const durs = list.map(h=> h.durationMin).filter(v=> v !== null && v !== undefined);
   const items = state.items.length;
-  const checked = items ? list.map(h=> (items - ((h.missing && h.missing.length) || 0)) / items * 100) : [];
+  const checked = items ? list.map(h=>{ const t = rulesTotalOf(h); return Math.max(0, (t - ((h.missing && h.missing.length) || 0)) / t * 100); }) : [];
   return {...s, avgRisk: avgOf(risks), avgDur: avgOf(durs), avgChecked: avgOf(checked)};
 }
 
@@ -184,7 +184,7 @@ function renderHeatmap(cur){
     const [di, h] = cell.dataset.k.split('-').map(Number);
     const c = cells[cell.dataset.k];
     const planPct = Math.round((c.n - c.broken) / c.n * 100);
-    const html = `<div class="tip-h">${WEEKDAYS_ONE[di].charAt(0).toUpperCase() + WEEKDAYS_ONE[di].slice(1)} · ${h}:00 a ${h + 1}:00</div>
+    const html = `<div class="tip-h">${WEEKDAYS_ONE[di].charAt(0).toUpperCase() + WEEKDAYS_ONE[di].slice(1)} · ${h}:00 a ${(h + 1) % 24}:00</div>
       <div class="tip-r"><span>Trades</span><b>${c.n}</b></div>
       <div class="tip-r"><span>Plan seguido</span><b class="${planPct >= 80 ? 'pos' : planPct < 50 ? 'neg' : ''}">${planPct}%</b></div>
       <div class="tip-r"><span>Resultado</span><b class="${toneCls(c.sum)}">${fmtSignedPct(c.sum)}</b></div>`;
@@ -279,13 +279,17 @@ function renderItemStats(cur){
   const box = document.getElementById('itemStats');
   if(!state.items.length){ box.innerHTML = '<div class="empty">Armá tu Trading Plan en Ajustes para ver qué reglas cumplís más.</div>'; return; }
   if(!cur.length){ box.innerHTML = '<div class="empty">Todavía no hay trades en el período.</div>'; return; }
+  // Cada regla se mide solo en los trades registrados después de crearla.
   const rows = state.items.map(it=>{
-    const miss = cur.filter(h=> (h.missingIds || []).includes(it.id) || (!h.missingIds && (h.missing || []).includes(it.label))).length;
-    const c = cur.length - miss;
-    return {label: it.label, c, pct: Math.round(c / cur.length * 100)};
-  }).sort((a, b)=> b.pct - a.pct);
+    const since = ruleCreatedAt(it);
+    const list = cur.filter(h=> h.ts >= since || h.loggedAt >= since);
+    const miss = list.filter(h=> (h.missingIds || []).includes(it.id) || (!h.missingIds && (h.missing || []).includes(it.label))).length;
+    const c = list.length - miss;
+    return {label: it.label, c, n: list.length, pct: list.length ? Math.round(c / list.length * 100) : 0};
+  }).filter(r=> r.n).sort((a, b)=> b.pct - a.pct);
+  if(!rows.length){ box.innerHTML = '<div class="empty">Tus reglas actuales son más nuevas que los trades del período.</div>'; return; }
   box.innerHTML = rows.map(r=> `<div class="itemstat ${r.pct >= 80 ? 'good' : r.pct >= 50 ? 'warn' : 'bad'}">
-    <div class="top"><span>${escapeHtml(r.label)}</span><span><b>${r.pct}%</b> · ${r.c}/${cur.length}</span></div>
+    <div class="top"><span>${escapeHtml(r.label)}</span><span><b>${r.pct}%</b> · ${r.c}/${r.n}</span></div>
     <div class="bar"><div class="fill" style="width:${r.pct}%"></div></div></div>`).join('');
 }
 
@@ -295,19 +299,20 @@ function renderMonths(){
   const curKey = monthKeyOf(Date.now());
   const cur = state.history.filter(h=> monthKeyOf(h.ts) === curKey);
   const s = summarizePeriod(cur);
-  const months = [{label: monthLabel(), count: s.total, sum: s.sum, followedPct: s.pct, avgPerDay: s.avgPerDay, riskMgmtPct: s.riskMgmtPct, current: true}]
-    .concat(state.closedMonths.slice().reverse());
+  const months = [{label: monthLabel(), count: s.total, sum: s.sum, followedPct: s.pct, followedPctRaw: s.pctRaw, avgPerDay: s.avgPerDay, riskMgmtPct: s.riskMgmtPct, current: true}]
+    .concat(closedMonthsList());
   const goal = goalPct();
   box.innerHTML = months.map(m=>{
     const tone = !m.count ? '' : m.sum > 0 ? 'pos' : m.sum < 0 ? 'neg' : '';
+    const met = m.followedPctRaw >= goal;
     return `<div class="month ${tone} ${m.current ? 'current' : ''}">
-      <div class="month-top"><span class="month-l">${m.label}</span>${m.current ? '<span class="month-tag">En curso</span>' : `<span class="month-tag ${m.followedPct >= goal ? 'good' : 'warn'}">${m.followedPct >= goal ? 'Meta cumplida' : 'Meta no cumplida'}</span>`}</div>
+      <div class="month-top"><span class="month-l">${m.label}</span>${m.current ? '<span class="month-tag">En curso</span>' : `<span class="month-tag ${met ? 'good' : 'warn'}">${met ? 'Meta cumplida' : 'Meta no cumplida'}</span>`}</div>
       <div class="month-v ${tone}">${m.count ? fmtSignedPct(m.sum) : '—'}</div>
       <div class="month-plan"><span>Plan seguido</span><b>${m.count ? m.followedPct + '%' : '—'}</b></div>
-      <div class="month-bar"><div class="${m.followedPct >= goal ? 'good' : 'warn'}" style="width:${m.count ? m.followedPct : 0}%"></div><i style="left:${goal}%"></i></div>
+      <div class="month-bar"><div class="${met ? 'good' : 'warn'}" style="width:${m.count ? m.followedPct : 0}%"></div><i style="left:${goal}%"></i></div>
       <div class="month-stats">
         <span><b>${m.count}</b> trades</span>
-        <span><b>${m.avgPerDay === null || m.avgPerDay === undefined ? '—' : m.avgPerDay.toFixed(1)}</b> por día</span>
+        <span><b>${m.avgPerDay === null || m.avgPerDay === undefined ? '—' : m.avgPerDay.toFixed(1)}</b> por día operado</span>
         <span><b>${m.riskMgmtPct === null || m.riskMgmtPct === undefined ? '—' : m.riskMgmtPct + '%'}</b> risk mgmt</span>
       </div>
     </div>`;

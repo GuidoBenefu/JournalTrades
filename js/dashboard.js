@@ -53,11 +53,14 @@ function achievementProgress(a){
     map.clean_10 = [b, 10];
   }
   if(a.id === 'goal_month'){
+    // Primero hacen falta 10 trades en el mes; después, llegar a la meta.
     const m = monthPlanPct(monthKeyOf(Date.now()));
-    map.goal_month = [Math.min(m.n, 10), 10];
+    const target = goalTarget();
+    if(m.n < 10) return {cur: m.n, max: 10, ratio: m.n / 10 * 0.5, label: `Vas ${m.n}/10 trades este mes`};
+    return {cur: Math.round(m.pct), max: target, ratio: Math.min(m.pct / target, 1), label: `Vas ${Math.round(m.pct)}% de ${target}% de plan este mes`};
   }
   const v = map[a.id];
-  return v ? {cur: Math.min(v[0], v[1]), max: v[1], ratio: Math.min(v[0] / v[1], 1)} : null;
+  return v ? {cur: Math.min(v[0], v[1]), max: v[1], ratio: Math.min(v[0] / v[1], 1), label: `Vas ${Math.min(v[0], v[1])}/${v[1]}`} : null;
 }
 
 function renderHero(user, streak){
@@ -211,7 +214,7 @@ function renderWeekStrip(){
     const sum = list.reduce((a, h)=> a + Analytics.pct(h), 0);
     const broke = list.some(h=> !h.followedPlan);
     const cls = !list.length ? 'none' : sum > 0 ? 'pos' : sum < 0 ? 'neg' : 'be';
-    return `<button type="button" class="wd ${cls} ${key === todayKey ? 'today' : ''} ${key > todayKey ? 'future' : ''}" data-day="${key}">
+    return `<button type="button" class="wd ${cls} ${key === todayKey ? 'today' : ''} ${key > todayKey ? 'future' : ''}" data-day="${key}" ${key > todayKey ? 'disabled' : ''}>
       <span class="wd-n">${n}</span><span class="wd-d">${new Date(ts).getDate()}</span>
       <span class="wd-v">${list.length ? fmtSignedPct(sum) : '—'}</span>
       <span class="wd-c">${list.length ? `${list.length} ${list.length === 1 ? 'trade' : 'trades'}` : ''}</span>
@@ -279,7 +282,7 @@ function renderBadges(){
         <div class="bn-k">Próximo logro</div>
         <div class="bn-top"><span class="bn-ic">${Icons.svg(next.a.icon, 20)}</span><div><b>${next.a.title}</b><span>${next.a.desc}</span></div></div>
         <div class="bn-bar"><div style="width:${next.p.ratio * 100}%"></div></div>
-        <div class="bn-p">Vas ${next.p.cur}/${next.p.max}</div>
+        <div class="bn-p">${next.p.label}</div>
       </div>` : ''}
     </div>
     <button type="button" class="link-btn badges-toggle" id="badgesToggle">${showAllBadges ? 'Ocultar' : 'Ver todos los logros'} ${Icons.svg(showAllBadges ? 'chevron-up' : 'chevron-down', 14)}</button>
