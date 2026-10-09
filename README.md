@@ -59,3 +59,13 @@ pasar a un backend:
 
 Si cambia la forma de los datos, subir `SCHEMA_VERSION` y agregar la migración
 correspondiente en `MIGRATIONS`.
+
+## Publicar cambios
+
+Las páginas cargan CSS y JS con un número de versión (`styles.css?v=12`). Al
+publicar cambios en `css/` o `js/`, subí ese número en todos los `.html` para que
+los navegadores no mezclen una página nueva con archivos viejos guardados:
+
+```bash
+sed -i 's/?v=[0-9]*"/?v=13"/g' *.html
+```
