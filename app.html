@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=15"></script>
+<script src="js/theme.js?v=17"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=15">
-<script src="js/auth.js?v=15"></script>
+<link rel="stylesheet" href="css/styles.css?v=17">
+<script src="js/auth.js?v=17"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -253,26 +253,30 @@
     </div><!-- /tab stats -->
 
     <div class="tabpage" data-tab="calendar">
-      <div class="card">
-    <h2>Calendario mensual</h2>
-    <div class="calnav">
-      <button class="ghost" id="calPrevBtn">←</button>
-      <div class="label" id="calMonthLabel"></div>
-      <button class="ghost" id="calNextBtn">→</button>
-    </div>
-    <div class="calendar" id="calendarGrid"></div>
-  </div>
-
-  <div class="card">
-    <h2>Calendario mensual — cumplimiento del plan</h2>
-    <div class="calnav">
-      <button class="ghost" id="calPrevBtn2">←</button>
-      <div class="label" id="calMonthLabel2"></div>
-      <button class="ghost" id="calNextBtn2">→</button>
-    </div>
-    <div class="calendar" id="calendarGrid2"></div>
-  </div>
-
+      <div class="card span-2 cal-card">
+        <div class="cal-toolbar">
+          <div class="cal-nav">
+            <button type="button" class="icon-btn" id="calPrev" aria-label="Anterior">←</button>
+            <select id="calMonth" class="select-sm" aria-label="Mes"></select>
+            <select id="calYear" class="select-sm" aria-label="Año"></select>
+            <button type="button" class="icon-btn" id="calNext" aria-label="Siguiente">→</button>
+            <button type="button" class="small" id="calToday">Hoy</button>
+          </div>
+          <div class="cal-switches">
+            <div class="seg seg-sm" id="calScope">
+              <button type="button" data-v="month" class="active">Mes</button>
+              <button type="button" data-v="year">Año</button>
+            </div>
+            <div class="seg seg-sm" id="calMode">
+              <button type="button" data-v="result" class="active">Resultado</button>
+              <button type="button" data-v="plan">Disciplina</button>
+            </div>
+          </div>
+        </div>
+        <div class="cal-summary" id="calSummary"></div>
+        <div id="calView"></div>
+        <div class="legend" id="calLegend"></div>
+      </div>
     </div><!-- /tab calendar -->
 
     <div class="tabpage" data-tab="history">
@@ -434,7 +438,6 @@
   <div class="ob-box">
     <div class="ob-head">
       <div class="ob-steps" id="obSteps"><span></span><span></span><span></span></div>
-      <button type="button" class="link-btn" id="obSkip">Omitir por ahora</button>
     </div>
 
     <section class="ob-step" data-step="1">
@@ -464,6 +467,7 @@
       <div class="ob-kicker">Paso 2 de 3</div>
       <h2>Tu Trading Plan</h2>
       <p class="ob-sub">Escribí las reglas que tiene que cumplir cada trade para ser válido. En cada operación vas a confirmar si las respetaste.</p>
+      <div class="ob-rules-head"><span class="ob-rule-count" id="obRuleCount"></span><span class="ob-rule-min">Mínimo 2 reglas</span></div>
       <div class="ob-items" id="obItems"></div>
       <div class="ob-add">
         <div class="field">
@@ -499,22 +503,40 @@
   </div>
 </div>
 
+<div class="day-panel" id="dayPanel" aria-hidden="true">
+  <div class="day-backdrop" data-close-day></div>
+  <aside class="day-sheet" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
+    <div class="day-head">
+      <div>
+        <div class="day-kicker" id="dayKicker"></div>
+        <h2 id="dayTitle"></h2>
+      </div>
+      <button type="button" class="icon-btn" data-close-day aria-label="Cerrar">✕</button>
+    </div>
+    <div class="day-body" id="dayBody"></div>
+    <div class="day-foot">
+      <button type="button" class="primary" id="dayAddTrade">+ Registrar trade en este día</button>
+    </div>
+  </aside>
+</div>
+
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <div id="lightbox" class="lightbox" style="display:none;">
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/storage.js?v=15"></script>
-<script src="js/session.js?v=15"></script>
-<script src="js/app.js?v=15"></script>
-<script src="js/analytics.js?v=15"></script>
-<script src="js/charts.js?v=15"></script>
-<script src="js/achievements.js?v=15"></script>
-<script src="js/dashboard.js?v=15"></script>
-<script src="js/analysis.js?v=15"></script>
-<script src="js/review.js?v=15"></script>
-<script src="js/onboarding.js?v=15"></script>
+<script src="js/storage.js?v=17"></script>
+<script src="js/session.js?v=17"></script>
+<script src="js/app.js?v=17"></script>
+<script src="js/analytics.js?v=17"></script>
+<script src="js/charts.js?v=17"></script>
+<script src="js/achievements.js?v=17"></script>
+<script src="js/dashboard.js?v=17"></script>
+<script src="js/analysis.js?v=17"></script>
+<script src="js/review.js?v=17"></script>
+<script src="js/calendar.js?v=17"></script>
+<script src="js/onboarding.js?v=17"></script>
 
 </body>
 </html>
