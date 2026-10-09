@@ -19,11 +19,11 @@
 <meta name="twitter:description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade.">
 <meta name="twitter:image" content="https://guidobenefu.github.io/JournalTrades/img/og-image.png">
 <meta name="theme-color" content="#161615">
-<script src="js/theme.js"></script>
+<script src="js/theme.js?v=12"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css">
-<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/styles.css?v=12">
+<link rel="stylesheet" href="css/site.css?v=12">
 </head>
 <body>
 <div class="site">
@@ -191,9 +191,8 @@
     <div class="plans">
       <div class="plan">
         <h3>Prueba gratis</h3>
-        <div class="price">USD 0 <span>/ 7 días</span></div>
-        <div class="price-note neutral">Sin tarjeta. Si pasás a Pro, tus datos se mantienen.</div>
-        <p class="desc">Todo Pro, durante 7 días.</p>
+        <div class="price"><span class="old-price is-hidden" aria-hidden="true">&nbsp;</span>USD 0 <span>/ 7 días</span></div>
+        <p class="desc">Todo Pro durante 7 días, sin tarjeta. Si después pasás a Pro, tus datos se mantienen.</p>
         <ul>
           <li>Checklist de tu plan, personalizada</li>
           <li>Racha y estadísticas de disciplina</li>
@@ -209,7 +208,7 @@
           <h3>Pro</h3>
           <span class="tag">Recomendado</span>
         </div>
-        <div class="price"><s class="old-price" id="proOld" hidden></s><span class="amount" id="proPrice">USD 14,99</span> <span id="proPeriod">/ mes</span></div>
+        <div class="price"><s class="old-price is-hidden" id="proOld"></s><span class="amount" id="proPrice">USD 14,99</span> <span id="proPeriod">/ mes</span></div>
         <div class="price-note" id="proNote">O pagá anual con un 20% de descuento.</div>
         <p class="desc">Todo, sin límite de tiempo.</p>
         <ul>
@@ -239,7 +238,7 @@
   <footer class="site-footer">Journal Trading</footer>
 </div>
 
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=12"></script>
 <script>
   const pricing = JournalAuth.PRO_PRICING;
   function renderBilling(billing){
@@ -248,7 +247,8 @@
     document.getElementById('proPrice').textContent = JournalAuth.formatUSD(annual ? pricing.annual.price : pricing.monthly.price);
     document.getElementById('proPeriod').textContent = annual ? '/ año' : '/ mes';
     const old = document.getElementById('proOld');
-    old.hidden = !annual;
+    // Se oculta sin sacarlo del flujo para que el precio no salte al cambiar.
+    old.classList.toggle('is-hidden', !annual);
     old.textContent = JournalAuth.formatUSD(pricing.annual.fullYear);
     document.getElementById('proNote').innerHTML = annual
       ? '<strong>20% de descuento pagando anual.</strong> Equivale a ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes: ahorrás ' + JournalAuth.formatUSD(pricing.annual.savings) + ' al año.'
@@ -280,7 +280,7 @@
   const demo = {streak: 3, hist: ['ok','ok','bad','ok','ok','ok']};
   function renderDemo(){
     document.getElementById('demoStreak').textContent = 'Racha: ' + demo.streak + (demo.streak === 1 ? ' trade' : ' trades');
-    document.getElementById('demoStreak').className = 'badge ' + (demo.streak > 0 ? 'ok' : 'bad');
+    document.getElementById('demoStreak').className = 'badge ' + (demo.streak > 0 ? 'ok' : 'muted');
     document.getElementById('demoDots').innerHTML = demo.hist.slice(-12)
       .map(h=> '<span class="demo-dot ' + h + '" title="' + (h === 'ok' ? 'Plan seguido' : 'Plan roto') + '"></span>').join('');
   }
