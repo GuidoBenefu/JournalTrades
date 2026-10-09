@@ -19,11 +19,11 @@
 <meta name="twitter:description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade.">
 <meta name="twitter:image" content="https://guidobenefu.github.io/JournalTrades/img/og-image.png">
 <meta name="theme-color" content="#161615">
-<script src="js/theme.js?v=12"></script>
+<script src="js/theme.js?v=13"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=12">
-<link rel="stylesheet" href="css/site.css?v=12">
+<link rel="stylesheet" href="css/styles.css?v=13">
+<link rel="stylesheet" href="css/site.css?v=13">
 </head>
 <body>
 <div class="site">
@@ -107,7 +107,7 @@
         <ul class="vs-list yes">
           <li>Gira alrededor de tu comportamiento</li>
           <li>Un buen trade es el que respetó tu plan, gane o pierda</li>
-          <li>Cada trade pasa por tu checklist, con honestidad</li>
+          <li>Cada trade pasa por tu Trading Plan, con honestidad</li>
           <li>Te muestra qué te cuesta romper tus reglas</li>
         </ul>
       </div>
@@ -121,7 +121,7 @@
       <div class="step">
         <div class="step-n">1</div>
         <h3>Escribí tus reglas</h3>
-        <p>Armá tu checklist con las condiciones de tu plan. Son tus reglas, no las de otro, y quedan por escrito antes de operar.</p>
+        <p>Armá tu Trading Plan con las condiciones de tu estrategia. Son tus reglas, no las de otro, y quedan por escrito antes de operar.</p>
       </div>
       <div class="step">
         <div class="step-n">2</div>
@@ -141,7 +141,7 @@
     <h2 class="title">Herramientas para entrenar tu disciplina</h2>
     <p class="subtitle">Para traders retail y para cuentas de fondeo.</p>
     <div class="features">
-      <div class="feature"><div class="ic">✅</div><h3>Checklist de tu plan</h3><p>Cada trade se valida contra tus reglas. Si faltó algo, queda registrado como plan roto, aunque haya salido bien.</p></div>
+      <div class="feature"><div class="ic">✅</div><h3>Tu Trading Plan</h3><p>Cada trade se valida contra tus reglas. Si faltó algo, queda registrado como plan roto, aunque haya salido bien.</p></div>
       <div class="feature"><div class="ic">🔥</div><h3>Racha de disciplina</h3><p>Contá cuántos trades seguidos respetaste tu plan. Romperla duele, y eso es lo que te frena antes del próximo impulso.</p></div>
       <div class="feature"><div class="ic">📊</div><h3>Plan seguido vs. plan roto</h3><p>Compará tus resultados cuando seguís el plan y cuando no. Ver el costo real de la impulsividad cambia cómo operás.</p></div>
       <div class="feature"><div class="ic">🛡️</div><h3>Freno al sobre-riesgo</h3><p>Definí tu riesgo máximo por día y mirá cuánto te queda. Se acabó el “un trade más para recuperar”.</p></div>
@@ -172,7 +172,7 @@
       </details>
       <details>
         <summary>¿Sirve para mi estrategia y mi mercado?</summary>
-        <p>Sí. La checklist la armás vos con las reglas de tu propio plan, así que funciona con cualquier estrategia y en cualquier mercado: futuros, forex, acciones o cripto.</p>
+        <p>Sí. El Trading Plan lo armás vos con tus propias reglas, así que funciona con cualquier estrategia y en cualquier mercado: futuros, forex, acciones o cripto.</p>
       </details>
       <details>
         <summary>¿Dónde quedan mis datos?</summary>
@@ -194,7 +194,7 @@
         <div class="price"><span class="old-price is-hidden" aria-hidden="true">&nbsp;</span>USD 0 <span>/ 7 días</span></div>
         <p class="desc">Todo Pro durante 7 días, sin tarjeta. Si después pasás a Pro, tus datos se mantienen.</p>
         <ul>
-          <li>Checklist de tu plan, personalizada</li>
+          <li>Tu Trading Plan, personalizado</li>
           <li>Racha y estadísticas de disciplina</li>
           <li>Calendarios de resultados y de cumplimiento</li>
           <li>Risk management diario</li>
@@ -212,7 +212,7 @@
         <div class="price-note" id="proNote">O pagá anual con un 20% de descuento.</div>
         <p class="desc">Todo, sin límite de tiempo.</p>
         <ul>
-          <li>Checklist de tu plan, personalizada</li>
+          <li>Tu Trading Plan, personalizado</li>
           <li>Racha y estadísticas de disciplina</li>
           <li>Calendarios de resultados y de cumplimiento</li>
           <li>Risk management diario</li>
@@ -238,7 +238,7 @@
   <footer class="site-footer">Journal Trading</footer>
 </div>
 
-<script src="js/auth.js?v=12"></script>
+<script src="js/auth.js?v=13"></script>
 <script>
   const pricing = JournalAuth.PRO_PRICING;
   function renderBilling(billing){
@@ -276,7 +276,7 @@
   menuToggle.addEventListener('click', ()=> setMenu(menu.hidden));
   menu.querySelectorAll('a').forEach(a=> a.addEventListener('click', ()=> setMenu(false)));
 
-  // Demo: registrar un trade contra la checklist
+  // Demo: registrar un trade contra el Trading Plan
   const demo = {streak: 3, hist: ['ok','ok','bad','ok','ok','ok']};
   function renderDemo(){
     document.getElementById('demoStreak').textContent = 'Racha: ' + demo.streak + (demo.streak === 1 ? ' trade' : ' trades');

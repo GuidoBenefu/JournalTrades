@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=12"></script>
+<script src="js/theme.js?v=13"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=12">
-<script src="js/auth.js?v=12"></script>
+<link rel="stylesheet" href="css/styles.css?v=13">
+<script src="js/auth.js?v=13"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -222,17 +222,17 @@
         </div>
 
     <div class="card">
-      <h2>Personalizar checklist</h2>
+      <h2>Tu Trading Plan</h2>
       <div id="itemsManager"></div>
     <div class="field" style="margin-top:10px;">
-      <label>Nuevo ítem</label>
+      <label>Nueva regla</label>
       <input type="text" id="newItemLabel">
     </div>
     <div class="field">
       <label>Aclaración (opcional)</label>
       <input type="text" id="newItemHint">
     </div>
-    <button class="ghost" id="addItemBtn">Agregar ítem</button>
+    <button class="ghost" id="addItemBtn">+ Agregar regla</button>
 
     </div>
 
@@ -299,13 +299,21 @@
 
     <section class="ob-step" data-step="2">
       <div class="ob-kicker">Paso 2 de 3</div>
-      <h2>Tu checklist</h2>
-      <p class="ob-sub">Son las reglas que vas a confirmar en cada trade. Dejá tildadas las que son parte de tu plan y agregá las tuyas.</p>
+      <h2>Tu Trading Plan</h2>
+      <p class="ob-sub">Escribí las reglas que tiene que cumplir cada trade para ser válido. En cada operación vas a confirmar si las respetaste.</p>
       <div class="ob-items" id="obItems"></div>
       <div class="ob-add">
-        <input type="text" id="obNewItem" placeholder="Agregá una regla de tu plan">
-        <button type="button" id="obAddItem">Agregar</button>
+        <div class="field">
+          <label for="obNewItem">Nueva regla</label>
+          <input type="text" id="obNewItem" placeholder="Ej. Entré solo dentro de mi horario operativo">
+        </div>
+        <div class="field">
+          <label for="obNewHint">Aclaración (opcional)</label>
+          <input type="text" id="obNewHint" placeholder="Ej. De 9:30 a 11:00 hora de Nueva York">
+        </div>
+        <button type="button" id="obAddItem">+ Agregar regla</button>
       </div>
+      <div class="field-error" id="obItemsError"></div>
     </section>
 
     <section class="ob-step" data-step="3">
@@ -332,10 +340,10 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/storage.js?v=12"></script>
-<script src="js/session.js?v=12"></script>
-<script src="js/app.js?v=12"></script>
-<script src="js/onboarding.js?v=12"></script>
+<script src="js/storage.js?v=13"></script>
+<script src="js/session.js?v=13"></script>
+<script src="js/app.js?v=13"></script>
+<script src="js/onboarding.js?v=13"></script>
 
 </body>
 </html>
