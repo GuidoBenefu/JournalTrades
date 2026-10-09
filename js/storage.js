@@ -7,30 +7,16 @@
 const STORAGE_KEY = 'tradingChecklistState';
 const SCHEMA_VERSION = 1;
 
-// Cada usuario tiene su propio journal bajo `tradingChecklistState:<userId>`.
-// La clave sin usuario es la de la versión anterior a las cuentas: el primer
-// usuario que entra sin datos propios la adopta.
 const LocalStorageAdapter = {
-  userId: null,
-  key(){
-    return STORAGE_KEY + ':' + this.userId;
-  },
   load(){
-    const raw = localStorage.getItem(this.key());
-    if(raw) return JSON.parse(raw);
-    const legacy = localStorage.getItem(STORAGE_KEY);
-    if(legacy){
-      localStorage.setItem(this.key(), legacy);
-      localStorage.removeItem(STORAGE_KEY);
-      return JSON.parse(legacy);
-    }
-    return null;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
   },
   save(data){
-    localStorage.setItem(this.key(), JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   },
   clear(){
-    localStorage.removeItem(this.key());
+    localStorage.removeItem(STORAGE_KEY);
   },
 };
 
@@ -58,10 +44,6 @@ function isQuotaError(e){
 const JournalStore = {
   adapter: LocalStorageAdapter,
   onSaveError: null,
-
-  setUser(userId){
-    this.adapter.userId = userId;
-  },
 
   load(){
     try{

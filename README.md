@@ -5,8 +5,7 @@ guardan en `localStorage`, sin backend ni build.
 
 ## Cómo usarlo
 
-Abrí `index.html` en el navegador (pantalla de inicio → elegir plan → crear
-cuenta → journal), o servilo localmente:
+Abrí `index.html` en el navegador, o servilo localmente:
 
 ```bash
 python3 -m http.server 8000
@@ -20,24 +19,12 @@ python3 -m http.server 8000
 ## Estructura
 
 ```
-index.html       Pantalla de inicio: funciones y planes (prueba gratis 7 días / Pro)
-auth.html        Login y registro, con elección de plan
-app.html         El journal (pestañas Trade, Stats, Calendario, Historial, Ajustes)
-css/styles.css   Tokens de color (claro/oscuro) y estilos de la app
-css/site.css     Estilos de inicio y login
-js/auth.js       Usuarios, sesión y planes (simulados en localStorage)
-js/session.js    Header del usuario, plan, paywall al vencer la prueba y logout
-js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
-                 versión de esquema, migraciones, export/import
-js/app.js        Lógica y renderizado del journal
+index.html       Markup de la app (pestañas Trade, Stats, Calendario, Historial, Ajustes)
+css/styles.css   Estilos (claro/oscuro)
+js/storage.js    Capa de persistencia: adapter de localStorage, versión de esquema,
+                 migraciones, export/import
+js/app.js        Lógica y renderizado
 ```
-
-### Cuentas simuladas
-
-Todavía no hay backend: los usuarios, la sesión y el plan viven en el
-`localStorage` del navegador (`jt_users`, `jt_session`). Cada usuario tiene su
-propio journal (`tradingChecklistState:<userId>`). La prueba gratis dura 7 días;
-al vencer aparece un paywall. Pasar a Pro no cobra nada todavía.
 
 ## Camino a SaaS
 
@@ -48,8 +35,7 @@ pasar a un backend:
    llame a una API, y asignarlo a `JournalStore.adapter`.
 2. Mover las imágenes de los trades fuera del JSON (hoy van en base64 y
    `localStorage` tiene ~5 MB de límite) a un storage de archivos.
-3. Reemplazar `js/auth.js` por autenticación real y una pasarela de pagos
-   para Pro; el backup JSON sirve para migrar los datos que ya
+3. Agregar autenticación; el backup JSON sirve para migrar los datos que ya
    tengan los usuarios en su navegador.
 
 Si cambia la forma de los datos, subir `SCHEMA_VERSION` y agregar la migración

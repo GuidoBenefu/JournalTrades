@@ -3,107 +3,215 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Journal de trades · Seguí tu plan, trade por trade</title>
-<meta name="description" content="Checklist y journal de trading: registrá cada trade, medí si seguiste tu plan y controlá tu riesgo y tu cuenta de fondeo.">
+<title>Journal de trades</title>
 <link rel="stylesheet" href="css/styles.css">
-<link rel="stylesheet" href="css/site.css">
 </head>
 <body>
-<div class="site">
 
-  <header class="site-nav">
-    <a class="brand" href="index.html"><span class="applogo">📓</span><span>Journal de trades</span></a>
-    <div class="links" id="navLinks">
-      <a class="btn-link ghost" href="#planes">Planes</a>
-      <a class="btn-link" href="auth.html?mode=login">Iniciar sesión</a>
-    </div>
+<div class="appshell">
+  <header class="appbar">
+    <div class="appbar-title"><span class="applogo">📓</span><span>Journal de trades</span></div>
+    <div id="storageWarning" style="display:none; margin-top:8px; font-size:12px; padding:8px 10px; border-radius:8px; background:var(--danger-bg); color:var(--danger-text);"></div>
   </header>
 
-  <section class="hero">
-    <div>
-      <span class="eyebrow">Journal de trading con checklist</span>
-      <h1>Dejá de romper tu plan sin darte cuenta.</h1>
-      <p class="lead">Registrá cada trade contra tu checklist, controlá tu riesgo diario y el drawdown de tu cuenta de fondeo, y mirá en números cuánto te cuesta no seguir tu plan.</p>
-      <div class="ctas">
-        <a class="btn-link primary lg" href="auth.html?mode=register&plan=trial">Probar gratis 7 días</a>
-        <a class="btn-link lg" href="auth.html?mode=register&plan=pro">Ir directo a Pro</a>
+  <main class="content">
+
+  <div class="tabpage active" data-tab="register">
+  <div class="streak" id="streakBox"></div>
+
+
+
+  <div class="card" id="checklistCard">
+    <h2>Registrar trade</h2>
+    <div id="checklist"></div>
+    <div class="field" style="margin-top:14px;">
+      <label>Riesgo en este trade (%)</label>
+      <input type="text" inputmode="decimal" id="riskInput">
+    </div>
+    <div class="field">
+      <label>Duración del trade (minutos)</label>
+      <input type="text" inputmode="decimal" id="durationInput">
+    </div>
+    <div class="field">
+      <label>¿Cuál fue el resultado?</label>
+      <select id="resultSelect">
+        <option value="">Elegir…</option>
+        <option value="win">Ganador (TP)</option>
+        <option value="loss">Perdedor (SL)</option>
+        <option value="be">Break even</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Resultado real (%)</label>
+      <input type="text" inputmode="decimal" id="resultPctInput">
+    </div>
+    <div class="field">
+      <label>¿Qué pasó en el desarrollo del trade?</label>
+      <textarea id="resultNote" rows="3"></textarea>
+    </div>
+    <div class="field">
+      <label>Imagen del trade (opcional)</label>
+      <input type="file" id="tradeImageInput" accept="image/*">
+      <div id="tradeImagePreview"></div>
+    </div>
+    <button class="primary" id="addTradeBtn">Agregar trade</button>
+    <div id="entryError" style="display:none; color:var(--danger); font-size:13px; margin-top:8px;"></div>
+  </div>
+
+  <div class="card" id="fundedProgressCard" style="display:none;">
+    <h2>Cuenta de fondeo</h2>
+    <div id="fundedProgress"></div>
+  </div>
+  </div><!-- /tab register -->
+
+  <div class="tabpage" data-tab="stats">
+  <div class="card">
+    <h2>Estadísticas</h2>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="card">
+    <h2>Plan seguido vs. plan roto</h2>
+    <div class="compare" id="compareBox"></div>
+  </div>
+
+  </div><!-- /tab stats -->
+
+  <div class="tabpage" data-tab="calendar">
+  <div class="card">
+    <h2>Calendario mensual</h2>
+    <div class="calnav">
+      <button class="ghost" id="calPrevBtn">←</button>
+      <div class="label" id="calMonthLabel"></div>
+      <button class="ghost" id="calNextBtn">→</button>
+    </div>
+    <div class="calendar" id="calendarGrid"></div>
+  </div>
+
+  <div class="card">
+    <h2>Calendario mensual — cumplimiento del plan</h2>
+    <div class="calnav">
+      <button class="ghost" id="calPrevBtn2">←</button>
+      <div class="label" id="calMonthLabel2"></div>
+      <button class="ghost" id="calNextBtn2">→</button>
+    </div>
+    <div class="calendar" id="calendarGrid2"></div>
+  </div>
+
+  </div><!-- /tab calendar -->
+
+  <div class="tabpage" data-tab="stats">
+  <div class="card">
+    <h2>Qué ítem se confirma más seguido</h2>
+    <div id="itemStats"></div>
+  </div>
+
+  <div class="card">
+    <h2>Cierre mensual</h2>
+    <div id="currentPeriod"></div>
+    <div id="closedMonths" style="margin-top:8px;"></div>
+  </div>
+
+  </div><!-- /tab stats -->
+
+  <div class="tabpage" data-tab="history">
+  <div class="card">
+    <h2>Historial</h2>
+    <div class="hist" id="hist"></div>
+    <div id="resetArea" style="margin-top:10px;">
+      <button class="ghost" id="resetBtn">Borrar todo el historial</button>
+    </div>
+  </div>
+  </div><!-- /tab history -->
+
+  <div class="tabpage" data-tab="settings">
+  <div class="card" id="itemsCard">
+    <h2>Tipo de cuenta</h2>
+    <div class="field" style="margin-bottom:6px;">
+      <label>¿Cómo operás?</label>
+      <div class="pillrow" id="accountTypePills">
+        <button type="button" class="pill" data-type="retail">Trader retail independiente</button>
+        <button type="button" class="pill" data-type="funded">Cuenta de fondeo (prop firm)</button>
       </div>
-      <div class="note">Sin tarjeta para la prueba gratis.</div>
     </div>
 
-    <div class="preview" aria-hidden="true">
-      <div class="pv-top">
-        <div class="pv-title">Octubre</div>
-        <span class="badge ok">Racha: 6 trades siguiendo el plan</span>
+    <div id="fundedRulesSection" style="display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+      <div class="field">
+        <label>Drawdown diario (%)</label>
+        <input type="text" inputmode="decimal" id="dailyDrawdownInput">
       </div>
-      <div class="pv-grid">
-        <div class="pv-stat"><div class="n">84%</div><div class="l">Siguió el plan</div></div>
-        <div class="pv-stat"><div class="n">58%</div><div class="l">Win rate</div></div>
-        <div class="pv-stat"><div class="n" style="color:var(--success);">+6.4%</div><div class="l">Acumulado</div></div>
+      <div class="field">
+        <label>Tipo de drawdown total</label>
+        <div class="pillrow" id="ddTypePills">
+          <button type="button" class="pill" data-dd="static">Estático</button>
+          <button type="button" class="pill" data-dd="trailing">Trailing</button>
+        </div>
       </div>
-      <div class="pv-cal">
-        <div class="pv-day"></div><div class="pv-day"></div><div class="pv-day pos"></div><div class="pv-day pos"></div><div class="pv-day neg"></div><div class="pv-day"></div><div class="pv-day"></div>
-        <div class="pv-day pos"></div><div class="pv-day warn"></div><div class="pv-day pos"></div><div class="pv-day"></div><div class="pv-day pos"></div><div class="pv-day"></div><div class="pv-day"></div>
-        <div class="pv-day neg"></div><div class="pv-day pos"></div><div class="pv-day pos"></div><div class="pv-day pos"></div><div class="pv-day warn"></div><div class="pv-day"></div><div class="pv-day"></div>
-        <div class="pv-day pos"></div><div class="pv-day pos"></div><div class="pv-day"></div><div class="pv-day"></div><div class="pv-day"></div><div class="pv-day"></div><div class="pv-day"></div>
+      <div class="field" id="ddLockField" style="display:none;">
+        <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="ddLockInput" style="margin-top:2px;">
+          <span>El piso deja de subir cuando llega al balance inicial (mi firma congela el trailing)</span>
+        </label>
       </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <h2 class="title">Todo lo que necesitás para operar con disciplina</h2>
-    <p class="subtitle">Pensado para traders retail y para cuentas de fondeo.</p>
-    <div class="features">
-      <div class="feature"><div class="ic">✅</div><h3>Checklist de tu plan</h3><p>Armá tu propia checklist y tildala en cada trade. La app marca si seguiste el plan o lo rompiste.</p></div>
-      <div class="feature"><div class="ic">🛡️</div><h3>Risk management diario</h3><p>Definí tu riesgo máximo por día y mirá cuánto te queda antes de pasarte.</p></div>
-      <div class="feature"><div class="ic">🏦</div><h3>Cuentas de fondeo</h3><p>Drawdown diario, drawdown total estático o trailing y profit target, siempre a la vista.</p></div>
-      <div class="feature"><div class="ic">📅</div><h3>Calendario de resultados</h3><p>Tu PnL y tu cumplimiento del plan, día por día y semana por semana.</p></div>
-      <div class="feature"><div class="ic">📊</div><h3>Plan seguido vs. plan roto</h3><p>Compará tus resultados cuando seguís el plan y cuando no. Los números no mienten.</p></div>
-      <div class="feature"><div class="ic">🖼️</div><h3>Historial con capturas</h3><p>Guardá la imagen del trade y qué pasó, y cerrá cada mes con su resumen.</p></div>
-    </div>
-  </section>
-
-  <section class="section" id="planes">
-    <h2 class="title">Elegí cómo empezar</h2>
-    <p class="subtitle">Probalo gratis o pasate a Pro desde el primer día.</p>
-    <div class="plans">
-      <div class="plan">
-        <h3>Prueba gratis</h3>
-        <div class="price">USD 0 <span>/ 7 días</span></div>
-        <p class="desc">Acceso completo para que veas si te sirve.</p>
-        <ul>
-          <li>Todas las funciones de Pro</li>
-          <li>Sin tarjeta</li>
-          <li>Tus datos se mantienen si pasás a Pro</li>
-        </ul>
-        <a class="btn-link lg" href="auth.html?mode=register&plan=trial">Empezar prueba gratis</a>
+      <div class="field">
+        <label>Drawdown total (%)</label>
+        <input type="text" inputmode="decimal" id="totalDrawdownInput">
       </div>
-      <div class="plan featured">
-        <span class="tag">Recomendado</span>
-        <h3>Pro</h3>
-        <div class="price">USD 9.99 <span>/ mes</span></div>
-        <p class="desc">Para llevar tu journal todos los días, sin límite.</p>
-        <ul>
-          <li>Trades ilimitados</li>
-          <li>Estadísticas y calendarios completos</li>
-          <li>Seguimiento de cuentas de fondeo</li>
-          <li>Backup de tus datos</li>
-        </ul>
-        <a class="btn-link primary lg" href="auth.html?mode=register&plan=pro">Ir a Pro</a>
+      <div class="field">
+        <label>Profit target (%)</label>
+        <input type="text" inputmode="decimal" id="profitTargetInput">
       </div>
     </div>
-  </section>
 
-  <footer class="site-footer">Journal de trades</footer>
+    <h2 style="margin-top:18px;">Personalizar checklist</h2>
+    <div id="itemsManager"></div>
+    <div class="field" style="margin-top:10px;">
+      <label>Nuevo ítem</label>
+      <input type="text" id="newItemLabel">
+    </div>
+    <div class="field">
+      <label>Aclaración (opcional)</label>
+      <input type="text" id="newItemHint">
+    </div>
+    <button class="ghost" id="addItemBtn">Agregar ítem</button>
+
+    <h2 style="margin-top:18px;">Risk management</h2>
+    <div class="field">
+      <label>Riesgo máximo por día según mi trading plan (%)</label>
+      <input type="text" inputmode="decimal" id="maxDailyRiskInput">
+    </div>
+    <div id="dailyRiskStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>Copia de seguridad</h2>
+    <p style="font-size:13px; color:var(--text-2); margin:0 0 10px;">Tus datos se guardan solo en este navegador. Exportá un backup para no perderlos o para pasarlos a otro dispositivo.</p>
+    <div class="row">
+      <button id="exportBtn">Exportar backup</button>
+      <button class="ghost" id="importBtn">Importar backup</button>
+    </div>
+    <input type="file" id="importInput" accept="application/json,.json" style="display:none;">
+    <div id="backupMsg" style="display:none; color:var(--danger); font-size:13px; margin-top:8px;"></div>
+  </div>
+  </div><!-- /tab settings -->
+
+  </main>
+
+  <nav class="tabbar">
+    <button class="tabbtn active" data-tab="register"><span class="ic">📝</span><span>Trade</span></button>
+    <button class="tabbtn" data-tab="stats"><span class="ic">📊</span><span>Stats</span></button>
+    <button class="tabbtn" data-tab="calendar"><span class="ic">📅</span><span>Calendario</span></button>
+    <button class="tabbtn" data-tab="history"><span class="ic">🕓</span><span>Historial</span></button>
+    <button class="tabbtn" data-tab="settings"><span class="ic">⚙️</span><span>Ajustes</span></button>
+  </nav>
 </div>
 
-<script src="js/auth.js"></script>
-<script>
-  const user = JournalAuth.currentUser();
-  if(user){
-    document.getElementById('navLinks').innerHTML =
-      '<a class="btn-link ghost" href="#planes">Planes</a><a class="btn-link primary" href="app.html">Ir a mi journal</a>';
-  }
-</script>
+<div id="lightbox" class="lightbox" style="display:none;">
+  <img id="lightboxImg" src="">
+</div>
+
+<script src="js/storage.js"></script>
+<script src="js/app.js"></script>
+
 </body>
 </html>

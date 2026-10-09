@@ -986,7 +986,6 @@ document.querySelectorAll('.tabbtn').forEach(btn=>{
     const tab = btn.dataset.tab;
     document.querySelectorAll('.tabpage').forEach(p=> p.classList.toggle('active', p.dataset.tab === tab));
     document.querySelectorAll('.tabbtn').forEach(b=> b.classList.toggle('active', b === btn));
-    document.getElementById('pageTitle').textContent = btn.dataset.title;
     document.querySelector('main.content').scrollTop = 0;
     window.scrollTo(0,0);
   });
