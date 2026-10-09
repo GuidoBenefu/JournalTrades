@@ -464,7 +464,8 @@ function renderChecklist(){
     </button>`).join('')}</div>`;
   box.querySelectorAll('.rule-tile').forEach(t=> t.addEventListener('click', ()=>{
     state.checked[t.dataset.id] = !state.checked[t.dataset.id];
-    tradeForm.planTouched = true;
+    // Si se desmarcan todas, el paso vuelve a quedar sin responder.
+    tradeForm.planTouched = state.items.some(it=> state.checked[it.id]);
     saveState();
     renderChecklist();
   }));
