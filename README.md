@@ -40,6 +40,7 @@ js/achievements.js Meta mensual de disciplina y logros
 js/dashboard.js  Pestaña Inicio
 js/analysis.js   Curva, patrones, mapa de calor y desglose en Estadísticas
 js/review.js     Revisión semanal guiada
+js/calendar.js   Calendario mensual/anual y panel con el detalle de cada día
 img/og-image.png Imagen para compartir el link en redes y WhatsApp
 ```
 

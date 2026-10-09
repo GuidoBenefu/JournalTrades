@@ -549,8 +549,6 @@ function renderAll(){
   renderItemStats();
   renderCurrentPeriod();
   renderClosedMonths();
-  renderCalendar();
-  renderPlanCalendar();
   renderFundedProgress();
   renderDatalists();
   onDataChange.forEach(fn=> fn());
@@ -851,140 +849,6 @@ function renderCompare(){
   box.innerHTML = col('Plan seguido', followed) + col('Plan roto', broken);
 }
 
-let calViewDate = new Date();
-
-function dayKeyFromTs(ts){
-  const d = new Date(ts);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
-function renderCalendar(){
-  const label = document.getElementById('calMonthLabel');
-  const grid = document.getElementById('calendarGrid');
-  const year = calViewDate.getFullYear();
-  const month = calViewDate.getMonth();
-  label.textContent = calViewDate.toLocaleDateString('es-AR', {month:'long', year:'numeric'});
-
-  const sums = {};
-  state.history.forEach(h=>{
-    if(h.resultPct === null || h.resultPct === undefined) return;
-    const d = new Date(h.ts);
-    if(d.getFullYear() !== year || d.getMonth() !== month) return;
-    const key = dayKeyFromTs(h.ts);
-    sums[key] = (sums[key] || 0) + h.resultPct;
-  });
-
-  const firstDay = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const startOffset = (firstDay.getDay() + 6) % 7; // lunes=0
-
-  let html = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom','Sem'].map(d=>`<div class="dow">${d}</div>`).join('');
-  let cellCount = 0, weekSum = 0, weekHas = false;
-  function flushWeek(){
-    let cls = 'calday week', pctHtml = '';
-    if(weekHas){
-      cls += weekSum > 0 ? ' pos' : (weekSum < 0 ? ' neg' : '');
-      pctHtml = `<div class="pct">${weekSum>0?'+':''}${weekSum.toFixed(1)}%</div>`;
-    }
-    html += `<div class="${cls}"><div class="num">Sem</div>${pctHtml}</div>`;
-    weekSum = 0; weekHas = false;
-  }
-  function addCell(cell){ html += cell; cellCount++; if(cellCount % 7 === 0) flushWeek(); }
-  for(let i=0;i<startOffset;i++){
-    addCell('<div class="calday empty"></div>');
-  }
-  for(let day=1; day<=daysInMonth; day++){
-    const key = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
-    const sum = sums[key];
-    let cls = 'calday';
-    let pctHtml = '';
-    if(sum !== undefined){
-      cls += sum > 0 ? ' pos' : (sum < 0 ? ' neg' : '');
-      pctHtml = `<div class="pct">${sum>0?'+':''}${sum.toFixed(1)}%</div>`;
-      weekSum += sum; weekHas = true;
-    }
-    addCell(`<div class="${cls}"><div class="num">${day}</div>${pctHtml}</div>`);
-  }
-  while(cellCount % 7 !== 0){ addCell('<div class="calday empty"></div>'); }
-  grid.innerHTML = html;
-}
-
-document.getElementById('calPrevBtn').addEventListener('click', ()=>{
-  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()-1, 1);
-  renderCalendar();
-});
-document.getElementById('calNextBtn').addEventListener('click', ()=>{
-  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()+1, 1);
-  renderCalendar();
-});
-
-let calViewDate2 = new Date();
-
-function renderPlanCalendar(){
-  const label = document.getElementById('calMonthLabel2');
-  const grid = document.getElementById('calendarGrid2');
-  const year = calViewDate2.getFullYear();
-  const month = calViewDate2.getMonth();
-  label.textContent = calViewDate2.toLocaleDateString('es-AR', {month:'long', year:'numeric'});
-
-  const dayCounts = {};
-  state.history.forEach(h=>{
-    const d = new Date(h.ts);
-    if(d.getFullYear() !== year || d.getMonth() !== month) return;
-    const key = dayKeyFromTs(h.ts);
-    if(!dayCounts[key]) dayCounts[key] = {total:0, followed:0};
-    dayCounts[key].total++;
-    if(h.followedPlan) dayCounts[key].followed++;
-  });
-
-  const firstDay = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const startOffset = (firstDay.getDay() + 6) % 7;
-
-  let html = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom','Sem'].map(d=>`<div class="dow">${d}</div>`).join('');
-  let cellCount = 0, weekTotal = 0, weekFollowed = 0;
-  function flushWeek(){
-    let cls = 'calday week', pctHtml = '';
-    if(weekTotal > 0){
-      const wp = Math.round((weekFollowed/weekTotal)*100);
-      cls += wp === 100 ? ' pos' : (wp === 0 ? ' neg' : ' warn');
-      pctHtml = `<div class="pct">${wp}%</div>`;
-    }
-    html += `<div class="${cls}"><div class="num">Sem</div>${pctHtml}</div>`;
-    weekTotal = 0; weekFollowed = 0;
-  }
-  function addCell(cell){ html += cell; cellCount++; if(cellCount % 7 === 0) flushWeek(); }
-  for(let i=0;i<startOffset;i++){
-    addCell('<div class="calday empty"></div>');
-  }
-  for(let day=1; day<=daysInMonth; day++){
-    const key = year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
-    const info = dayCounts[key];
-    let cls = 'calday';
-    let pctHtml = '';
-    if(info){
-      const pct = Math.round((info.followed/info.total)*100);
-      if(pct === 100) cls += ' pos';
-      else if(pct === 0) cls += ' neg';
-      else cls += ' warn';
-      pctHtml = `<div class="pct">${pct}%</div>`;
-      weekTotal += info.total; weekFollowed += info.followed;
-    }
-    addCell(`<div class="${cls}"><div class="num">${day}</div>${pctHtml}</div>`);
-  }
-  while(cellCount % 7 !== 0){ addCell('<div class="calday empty"></div>'); }
-  grid.innerHTML = html;
-}
-
-document.getElementById('calPrevBtn2').addEventListener('click', ()=>{
-  calViewDate2 = new Date(calViewDate2.getFullYear(), calViewDate2.getMonth()-1, 1);
-  renderPlanCalendar();
-});
-document.getElementById('calNextBtn2').addEventListener('click', ()=>{
-  calViewDate2 = new Date(calViewDate2.getFullYear(), calViewDate2.getMonth()+1, 1);
-  renderPlanCalendar();
-});
-
 function renderItemStats(){
   const box = document.getElementById('itemStats');
   if(!state.items.length){
@@ -1016,6 +880,11 @@ function renderItemStats(){
       <div class="bar"><div class="fill" style="width:${r.pct}%; background:var(--brand);"></div></div>
     </div>
   `).join('');
+}
+
+function dayKeyFromTs(ts){
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
 function monthKeyOf(ts){
