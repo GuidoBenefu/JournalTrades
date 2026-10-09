@@ -1,11 +1,7 @@
-const DEFAULT_ITEMS = [
-  {id:'horario', label:'Entré dentro de la kill zone NY (9:30–11am)', hint:'Si entré fuera de ese horario, este ítem no se cumplió.'},
-  {id:'bias', label:'Tenía el bias direccional definido antes de la apertura', hint:'HTF, no decidido mirando el precio moverse en el momento.'},
-  {id:'sweep', label:'Ya había ocurrido el liquidity sweep (no lo anticipé)', hint:'El high/low relevante ya estaba tomado, no "parecía que iba para ahí".'},
-  {id:'ifvg', label:'Se había formado el IFVG con la estructura que pide el plan', hint:'No un FVG que todavía no había invertido.'},
-  {id:'tendencia', label:'El trade fue a favor de la tendencia definida', hint:'No fue un trade en contra que racionalicé.'},
-  {id:'fomo', label:'Hubiera tomado esta entrada igual si no hubiera visto el movimiento de los últimos 2 minutos', hint:'Si la respuesta real es "no", fue FOMO, no tu setup.'},
-];
+// Escapa texto escrito por el usuario (reglas del Trading Plan) antes de meterlo en HTML.
+function escapeHtml(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 let currentImageData = null;
 
@@ -73,10 +69,8 @@ const state = {
 function loadState(){
   const saved = JournalStore.load();
   if(saved) Object.assign(state, saved);
-  if(!state.items || !state.items.length){
-    state.items = DEFAULT_ITEMS.map(it=>({...it}));
-    saveState();
-  }
+  // Cada usuario arma su propio Trading Plan: no hay reglas por defecto.
+  if(!Array.isArray(state.items)) state.items = [];
 }
 function saveState(){
   if(JournalStore.save(state)) hideStorageWarning();
@@ -265,15 +259,15 @@ function renderItemsManager(){
     return `
       <div class="manageItem">
         <div class="txt">
-          <div>${it.label}</div>
-          ${it.hint ? `<div class="hint">${it.hint}</div>` : ''}
+          <div>${escapeHtml(it.label)}</div>
+          ${it.hint ? `<div class="hint">${escapeHtml(it.hint)}</div>` : ''}
         </div>
         <div class="actions">
           <button class="ghost editBtn" data-id="${it.id}">Editar</button>
           <button class="danger-o delBtn" data-id="${it.id}">Eliminar</button>
         </div>
       </div>`;
-  }).join('') || '<p style="font-size:13px; color:var(--text-2);">No hay ítems todavía. Agregá el primero abajo.</p>';
+  }).join('') || '<p style="font-size:13px; color:var(--text-2);">Tu Trading Plan está vacío. Agregá la primera regla abajo.</p>';
 
   box.querySelectorAll('.editBtn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -331,14 +325,25 @@ document.getElementById('addItemBtn').addEventListener('click', ()=>{
 function renderChecklist(){
   const box = document.getElementById('checklist');
   box.innerHTML = '';
+  if(!state.items.length){
+    box.innerHTML = `<div class="plan-empty">
+      <p>Todavía no armaste tu Trading Plan. Cargá las reglas que tiene que cumplir cada trade y acá vas a poder tildarlas.</p>
+      <button type="button" class="primary small" id="goToPlanBtn">Armar mi Trading Plan</button>
+    </div>`;
+    document.getElementById('goToPlanBtn').addEventListener('click', ()=>{
+      document.querySelector('.tabbtn[data-tab="settings"]').click();
+      document.getElementById('newItemLabel').focus();
+    });
+    return;
+  }
   state.items.forEach(it=>{
     const div = document.createElement('div');
     div.className = 'item' + (state.checked[it.id] ? ' checked' : '');
     div.innerHTML = `
       <input type="checkbox" ${state.checked[it.id] ? 'checked' : ''} data-id="${it.id}">
       <div>
-        <div class="label">${it.label}</div>
-        <div class="hint">${it.hint}</div>
+        <div class="label">${escapeHtml(it.label)}</div>
+        ${it.hint ? `<div class="hint">${escapeHtml(it.hint)}</div>` : ''}
       </div>`;
     box.appendChild(div);
   });
@@ -545,7 +550,7 @@ function renderHistory(){
     const details = [];
     details.push(`<div class="hl">¿Qué pasó en el desarrollo del trade?</div><div class="hnote">${h.note ? h.note.replace(/</g,'&lt;').replace(/\n/g,'<br>') : '<span style="color:var(--text-3);">Sin comentarios.</span>'}</div>`);
     if(h.image) details.push(`<img src="${h.image}" class="tradeThumb histThumb" data-full="${h.image}">`);
-    if(h.missing && h.missing.length) details.push(`<div class="miss">Faltó: ${h.missing.join(', ')}</div>`);
+    if(h.missing && h.missing.length) details.push(`<div class="miss">Faltó: ${h.missing.map(escapeHtml).join(', ')}</div>`);
     if(h.durationMin !== null && h.durationMin !== undefined) details.push(`<div class="note">Duración: ${h.durationMin} min</div>`);
     div.innerHTML = `
       <div class="hsum">
@@ -620,11 +625,11 @@ function renderStats(){
   const durations = state.history.filter(h=>h.durationMin !== null && h.durationMin !== undefined).map(h=>h.durationMin);
   const avgDuration = durations.length ? (durations.reduce((a,b)=>a+b,0)/durations.length) : null;
 
-  const checklistPcts = state.history.map(h=>{
+  const checklistPcts = state.items.length ? state.history.map(h=>{
     const missingCount = (h.missing && h.missing.length) ? h.missing.length : 0;
     const checkedCount = state.items.length - missingCount;
     return (checkedCount / state.items.length) * 100;
-  });
+  }) : [];
   const avgChecklistPct = checklistPcts.length ? (checklistPcts.reduce((a,b)=>a+b,0)/checklistPcts.length) : null;
 
   box.innerHTML = `
@@ -822,6 +827,10 @@ document.getElementById('calNextBtn2').addEventListener('click', ()=>{
 
 function renderItemStats(){
   const box = document.getElementById('itemStats');
+  if(!state.items.length){
+    box.innerHTML = '<div class="empty">Armá tu Trading Plan en Ajustes para ver qué reglas cumplís más.</div>';
+    return;
+  }
   if(state.history.length === 0){
     box.innerHTML = '<div class="empty">Todavía no hay datos suficientes.</div>';
     return;
@@ -843,7 +852,7 @@ function renderItemStats(){
   }).sort((a,b)=> b.pct - a.pct);
   box.innerHTML = rows.map(r=>`
     <div class="itemstat">
-      <div class="top"><span>${r.label}</span><span>${r.pct}% (${r.c})</span></div>
+      <div class="top"><span>${escapeHtml(r.label)}</span><span>${r.pct}% (${r.c})</span></div>
       <div class="bar"><div class="fill" style="width:${r.pct}%; background:var(--success);"></div></div>
     </div>
   `).join('');

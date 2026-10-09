@@ -1,4 +1,4 @@
-// Configuración guiada para cuentas nuevas: tipo de cuenta, checklist y riesgo
+// Configuración guiada para cuentas nuevas: tipo de cuenta, Trading Plan y riesgo
 // máximo diario. Usa el estado y las funciones de render de app.js.
 (function(){
   const user = JournalAuth.currentUser();
@@ -15,18 +15,46 @@
   const draft = {
     accountType: state.accountType || 'retail',
     ddType: (state.fundedRules && state.fundedRules.ddType) || 'static',
-    items: state.items.map(it => ({...it, keep: true})),
+    items: state.items.map(it => ({...it})),
   };
+  let editing = null;
 
   function renderItems(){
-    $('obItems').innerHTML = draft.items.map((it, i)=>`
-      <label class="ob-item">
-        <input type="checkbox" data-i="${i}" ${it.keep ? 'checked' : ''}>
-        <span><span class="t">${esc(it.label)}</span>${it.hint ? `<span class="h">${esc(it.hint)}</span>` : ''}</span>
-      </label>`).join('');
-    $('obItems').querySelectorAll('input').forEach(cb=>{
-      cb.addEventListener('change', ()=>{ draft.items[cb.dataset.i].keep = cb.checked; });
-    });
+    if(!draft.items.length){
+      $('obItems').innerHTML = '<div class="ob-empty">Todavía no agregaste reglas. Empezá por la más importante de tu estrategia.</div>';
+      return;
+    }
+    $('obItems').innerHTML = draft.items.map((it, i)=> editing === i ? `
+      <div class="ob-item editing">
+        <span class="ob-num">${i + 1}</span>
+        <div class="ob-edit">
+          <input type="text" class="ob-edit-label" value="${esc(it.label)}" aria-label="Regla">
+          <input type="text" class="ob-edit-hint" value="${esc(it.hint || '')}" placeholder="Aclaración (opcional)" aria-label="Aclaración">
+          <div class="ob-edit-actions">
+            <button type="button" class="primary small" data-save="${i}">Guardar</button>
+            <button type="button" class="ghost small" data-cancel>Cancelar</button>
+          </div>
+        </div>
+      </div>` : `
+      <div class="ob-item">
+        <span class="ob-num">${i + 1}</span>
+        <div class="ob-text"><span class="t">${esc(it.label)}</span>${it.hint ? `<span class="h">${esc(it.hint)}</span>` : ''}</div>
+        <div class="ob-actions">
+          <button type="button" class="ob-icon" data-edit="${i}" aria-label="Editar regla" title="Editar">✎</button>
+          <button type="button" class="ob-icon danger" data-del="${i}" aria-label="Eliminar regla" title="Eliminar">✕</button>
+        </div>
+      </div>`).join('');
+    $('obItems').querySelectorAll('[data-edit]').forEach(b=> b.addEventListener('click', ()=>{ editing = Number(b.dataset.edit); renderItems(); $('obItems').querySelector('.ob-edit-label').focus(); }));
+    $('obItems').querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{ draft.items.splice(Number(b.dataset.del), 1); editing = null; renderItems(); }));
+    $('obItems').querySelectorAll('[data-cancel]').forEach(b=> b.addEventListener('click', ()=>{ editing = null; renderItems(); }));
+    $('obItems').querySelectorAll('[data-save]').forEach(b=> b.addEventListener('click', ()=>{
+      const row = b.closest('.ob-item');
+      const label = row.querySelector('.ob-edit-label').value.trim();
+      if(!label) return;
+      Object.assign(draft.items[Number(b.dataset.save)], {label, hint: row.querySelector('.ob-edit-hint').value.trim()});
+      editing = null;
+      renderItems();
+    }));
   }
 
   function render(){
@@ -49,13 +77,16 @@
 
   function addItem(){
     const label = $('obNewItem').value.trim();
-    if(!label) return;
-    draft.items.push({id: genItemId(), label, hint: '', keep: true});
+    if(!label){ $('obNewItem').focus(); return; }
+    draft.items.push({id: genItemId(), label, hint: $('obNewHint').value.trim()});
     $('obNewItem').value = '';
+    $('obNewHint').value = '';
+    $('obItemsError').textContent = '';
     renderItems();
+    $('obNewItem').focus();
   }
   $('obAddItem').addEventListener('click', addItem);
-  $('obNewItem').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); addItem(); } });
+  ['obNewItem', 'obNewHint'].forEach(id=> $(id).addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); addItem(); } }));
 
   function close(){
     JournalAuth.completeOnboarding();
@@ -68,8 +99,7 @@
       $('obError').textContent = 'Ingresá un número mayor a 0 (ej. 1).';
       return;
     }
-    const kept = draft.items.filter(it=> it.keep).map(({keep, ...it})=> it);
-    if(kept.length) state.items = kept;
+    state.items = draft.items.map(it=> ({id: it.id, label: it.label, hint: it.hint || ''}));
     state.accountType = draft.accountType;
     if(draft.accountType === 'funded'){
       Object.assign(state.fundedRules, {
@@ -94,8 +124,11 @@
   }
 
   $('obNext').addEventListener('click', ()=>{
-    if(step === 2 && !draft.items.some(it=> it.keep)){
-      alert('Dejá al menos una regla en tu checklist.');
+    // Si escribió una regla y no tocó "Agregar", la sumamos igual.
+    if(step === 2 && $('obNewItem').value.trim()) addItem();
+    if(step === 2 && !draft.items.length){
+      $('obItemsError').textContent = 'Agregá al menos una regla a tu Trading Plan para seguir.';
+      $('obNewItem').focus();
       return;
     }
     if(step < 3){ step++; render(); } else finish();
