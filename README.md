@@ -34,6 +34,12 @@ js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
                  versión de esquema, migraciones, export/import
 js/app.js        Lógica y renderizado del journal
 js/onboarding.js Configuración guiada al entrar por primera vez (cuentas nuevas)
+js/analytics.js  Curvas, agrupaciones y patrones automáticos sobre el historial
+js/charts.js     Gráfico de líneas en SVG (sin librerías)
+js/achievements.js Meta mensual de disciplina y logros
+js/dashboard.js  Pestaña Inicio
+js/analysis.js   Curva, patrones, mapa de calor y desglose en Estadísticas
+js/review.js     Revisión semanal guiada
 img/og-image.png Imagen para compartir el link en redes y WhatsApp
 ```
 

@@ -3,6 +3,58 @@ function escapeHtml(str){
   return String(str == null ? '' : str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// Datos extra de cada trade: emoción, errores y sesión.
+const EMOTIONS = [
+  {id:'calm', label:'Tranquilo', ic:'😌'},
+  {id:'confident', label:'Confiado', ic:'💪'},
+  {id:'anxious', label:'Ansioso', ic:'😰'},
+  {id:'fomo', label:'FOMO', ic:'🏃'},
+  {id:'revenge', label:'Revancha', ic:'😤'},
+  {id:'bored', label:'Aburrido', ic:'🥱'},
+];
+const ERROR_TAGS = [
+  {id:'moved_sl', label:'Moví el stop'},
+  {id:'early_exit', label:'Cerré antes de tiempo'},
+  {id:'late_entry', label:'Entré tarde'},
+  {id:'no_confirmation', label:'Entré sin confirmación'},
+  {id:'overtrading', label:'Sobreoperé'},
+  {id:'size_up', label:'Aumenté el tamaño'},
+  {id:'ignored_tp', label:'No respeté el TP'},
+];
+const emotionById = id => EMOTIONS.find(e=>e.id === id);
+// Nombre de la emoción dentro de una frase ("con ansioso" → "con ansioso", pero FOMO en mayúsculas).
+const emotionWord = e => e.id === 'fomo' ? 'FOMO' : e.label.toLowerCase();
+const errorById = id => ERROR_TAGS.find(e=>e.id === id);
+
+// Sesión según la hora de Nueva York del momento de entrada.
+function sessionOf(ts){
+  const h = Number(new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', hour:'numeric', hourCycle:'h23'}).format(new Date(ts)));
+  if(h >= 19 || h < 3) return 'Asia';
+  if(h < 8) return 'Londres';
+  if(h < 17) return 'Nueva York';
+  return 'Fuera de sesión';
+}
+
+// R real = resultado / riesgo (ej. +1% arriesgando 0.5% = +2R).
+function realR(h){
+  if(h.resultPct === null || h.resultPct === undefined || !h.riskPct) return null;
+  return h.resultPct / h.riskPct;
+}
+
+function fmtSignedPct(v){
+  return (v > 0 ? '+' : '') + v.toFixed(1) + '%';
+}
+
+function toLocalInputValue(ts){
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+// Lo que se eligió en el formulario y no vive en un input.
+const tradeForm = {direction: null, confidence: null, emotion: null, errors: []};
+let editingTradeId = null;
+
 let currentImageData = null;
 
 function resizeImage(file, maxDim, quality){
@@ -64,6 +116,9 @@ const state = {
   accountType: null,
   maxDailyRisk: '',
   fundedRules: {dailyDrawdown: '', totalDrawdown: '', profitTarget: '', ddType: 'static', ddLock: false},
+  goals: {planPct: 80},
+  reviews: {},
+  achievements: {},
 };
 
 function loadState(){
@@ -71,6 +126,10 @@ function loadState(){
   if(saved) Object.assign(state, saved);
   // Cada usuario arma su propio Trading Plan: no hay reglas por defecto.
   if(!Array.isArray(state.items)) state.items = [];
+  if(!state.goals) state.goals = {planPct: 80};
+  if(!state.reviews) state.reviews = {};
+  if(!state.achievements) state.achievements = {};
+  sortHistory();
 }
 function saveState(){
   if(JournalStore.save(state)) hideStorageWarning();
@@ -368,27 +427,120 @@ function renderChecklist(){
 function updateAddButton(){
   const btn = document.getElementById('addTradeBtn');
   btn.disabled = false;
-  btn.textContent = 'Agregar trade';
+  btn.textContent = editingTradeId ? 'Guardar cambios' : 'Agregar trade';
+  document.getElementById('cancelEditBtn').style.display = editingTradeId ? '' : 'none';
+  document.getElementById('tradeFormTitle').textContent = editingTradeId ? 'Editar trade' : 'Registrar trade';
+}
+
+// El historial se mantiene ordenado del trade más nuevo al más viejo según
+// la hora de entrada (se pueden cargar trades de días anteriores).
+function sortHistory(){
+  state.history.sort((a, b)=> b.ts - a.ts);
+}
+
+function renderChips(){
+  const emo = document.getElementById('emotionChips');
+  emo.innerHTML = EMOTIONS.map(e=>`<button type="button" class="chip ${tradeForm.emotion === e.id ? 'active' : ''}" data-v="${e.id}"><span>${e.ic}</span> ${e.label}</button>`).join('');
+  emo.querySelectorAll('.chip').forEach(b=> b.addEventListener('click', ()=>{
+    tradeForm.emotion = tradeForm.emotion === b.dataset.v ? null : b.dataset.v;
+    renderChips();
+  }));
+  const err = document.getElementById('errorChips');
+  err.innerHTML = ERROR_TAGS.map(e=>`<button type="button" class="chip chip-bad ${tradeForm.errors.includes(e.id) ? 'active' : ''}" data-v="${e.id}">${e.label}</button>`).join('');
+  err.querySelectorAll('.chip').forEach(b=> b.addEventListener('click', ()=>{
+    const id = b.dataset.v;
+    tradeForm.errors = tradeForm.errors.includes(id) ? tradeForm.errors.filter(x=> x !== id) : [...tradeForm.errors, id];
+    renderChips();
+  }));
+  document.querySelectorAll('#directionSeg button').forEach(b=> b.classList.toggle('active', b.dataset.v === tradeForm.direction));
+  document.querySelectorAll('#confidenceSeg button').forEach(b=> b.classList.toggle('active', b.dataset.v === String(tradeForm.confidence)));
+}
+
+document.querySelectorAll('#directionSeg button').forEach(b=> b.addEventListener('click', ()=>{
+  tradeForm.direction = tradeForm.direction === b.dataset.v ? null : b.dataset.v;
+  renderChips();
+}));
+document.querySelectorAll('#confidenceSeg button').forEach(b=> b.addEventListener('click', ()=>{
+  const v = Number(b.dataset.v);
+  tradeForm.confidence = tradeForm.confidence === v ? null : v;
+  renderChips();
+}));
+
+function parseNum(raw){
+  raw = String(raw || '').trim().replace(',', '.');
+  if(raw === '') return null;
+  const n = parseFloat(raw);
+  return isNaN(n) ? NaN : n;
+}
+
+function renderFormHints(){
+  const val = document.getElementById('entryTimeInput').value;
+  const ts = val ? new Date(val).getTime() : Date.now();
+  document.getElementById('sessionHint').textContent = isNaN(ts) ? '' : 'Sesión: ' + sessionOf(ts);
+  const risk = parseNum(document.getElementById('riskInput').value);
+  const res = parseNum(document.getElementById('resultPctInput').value);
+  const r = (typeof risk === 'number' && !isNaN(risk) && risk > 0 && typeof res === 'number' && !isNaN(res)) ? res / risk : null;
+  document.getElementById('rrRealHint').textContent = r === null ? '' : 'R real: ' + (r > 0 ? '+' : '') + r.toFixed(1) + 'R';
+}
+['entryTimeInput', 'riskInput', 'resultPctInput'].forEach(id=> document.getElementById(id).addEventListener('input', renderFormHints));
+
+// Sugerencias de activos y setups a partir de lo que ya cargó.
+function renderDatalists(){
+  const uniq = key => [...new Set(state.history.map(h=> h[key]).filter(Boolean))];
+  document.getElementById('assetList').innerHTML = uniq('asset').map(v=> `<option value="${escapeHtml(v)}">`).join('');
+  document.getElementById('setupList').innerHTML = uniq('setup').map(v=> `<option value="${escapeHtml(v)}">`).join('');
 }
 
 function resetForm(){
+  editingTradeId = null;
   state.items.forEach(it=> state.checked[it.id] = false);
   saveState();
   renderChecklist();
-  document.getElementById('riskInput').value = '';
-  document.getElementById('durationInput').value = '';
-  document.getElementById('resultSelect').value = '';
-  document.getElementById('resultPctInput').value = '';
-  document.getElementById('resultNote').value = '';
+  ['riskInput', 'durationInput', 'resultSelect', 'resultPctInput', 'resultNote', 'rrPlanInput', 'setupInput'].forEach(id=> document.getElementById(id).value = '');
+  // El activo se mantiene: suele repetirse de un trade al siguiente.
+  if(!state.history.length) document.getElementById('assetInput').value = '';
+  else document.getElementById('assetInput').value = state.history[0].asset || '';
+  document.getElementById('entryTimeInput').value = toLocalInputValue(Date.now());
+  Object.assign(tradeForm, {direction: null, confidence: null, emotion: null, errors: []});
   currentImageData = null;
   document.getElementById('tradeImageInput').value = '';
   renderImagePreview();
+  renderChips();
+  renderFormHints();
   updateAddButton();
 }
 
-function addEntry(entry){
-  state.history.unshift(entry);
-  saveState();
+function startEditTrade(id){
+  const h = state.history.find(x=> x.id === id);
+  if(!h) return;
+  editingTradeId = id;
+  const missing = new Set(h.missingIds || []);
+  state.items.forEach(it=> state.checked[it.id] = !missing.has(it.id));
+  renderChecklist();
+  document.getElementById('entryTimeInput').value = toLocalInputValue(h.ts);
+  document.getElementById('assetInput').value = h.asset || '';
+  document.getElementById('setupInput').value = h.setup || '';
+  document.getElementById('riskInput').value = h.riskPct ?? '';
+  document.getElementById('rrPlanInput').value = h.rrPlanned ?? '';
+  document.getElementById('resultSelect').value = h.result || '';
+  document.getElementById('resultPctInput').value = h.resultPct ?? '';
+  document.getElementById('durationInput').value = h.durationMin ?? '';
+  document.getElementById('resultNote').value = h.note || '';
+  Object.assign(tradeForm, {direction: h.direction || null, confidence: h.confidence || null, emotion: h.emotion || null, errors: [...(h.errors || [])]});
+  currentImageData = h.image || null;
+  renderImagePreview();
+  renderChips();
+  renderFormHints();
+  updateAddButton();
+  showTab('register');
+}
+
+document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+// Vuelve a dibujar todo lo que depende de los trades. Los módulos nuevos
+// (inicio, análisis, revisión) se suman con onDataChange.push(fn).
+const onDataChange = [];
+function renderAll(){
   autoCloseCompletedMonths();
   renderHistory();
   renderStats();
@@ -400,66 +552,63 @@ function addEntry(entry){
   renderCalendar();
   renderPlanCalendar();
   renderFundedProgress();
+  renderDatalists();
+  onDataChange.forEach(fn=> fn());
 }
 
 document.getElementById('addTradeBtn').addEventListener('click', ()=>{
   const errBox = document.getElementById('entryError');
   errBox.style.display = 'none';
+  const fail = msg=>{ errBox.textContent = msg; errBox.style.display = 'block'; };
 
-  const riskRaw = document.getElementById('riskInput').value.trim().replace(',', '.');
-  const riskPct = riskRaw === '' ? null : parseFloat(riskRaw);
-  if(riskRaw !== '' && isNaN(riskPct)){
-    errBox.textContent = 'El riesgo tiene que ser un número (ej. 0.5).';
-    errBox.style.display = 'block';
-    return;
-  }
-
-  const durationRaw = document.getElementById('durationInput').value.trim().replace(',', '.');
-  const durationMin = durationRaw === '' ? null : parseFloat(durationRaw);
-  if(durationRaw !== '' && isNaN(durationMin)){
-    errBox.textContent = 'La duración tiene que ser un número de minutos (ej. 12).';
-    errBox.style.display = 'block';
-    return;
-  }
-
+  const riskPct = parseNum(document.getElementById('riskInput').value);
+  if(Number.isNaN(riskPct)) return fail('El riesgo tiene que ser un número (ej. 0.5).');
+  const rrPlanned = parseNum(document.getElementById('rrPlanInput').value);
+  if(Number.isNaN(rrPlanned)) return fail('El R:R planeado tiene que ser un número (ej. 2).');
+  const durationMin = parseNum(document.getElementById('durationInput').value);
+  if(Number.isNaN(durationMin)) return fail('La duración tiene que ser un número de minutos (ej. 12).');
   const result = document.getElementById('resultSelect').value;
-  if(!result){
-    errBox.textContent = 'Elegí un resultado antes de registrar.';
-    errBox.style.display = 'block';
-    return;
-  }
+  if(!result) return fail('Elegí un resultado antes de registrar.');
+  const resultPct = parseNum(document.getElementById('resultPctInput').value);
+  if(Number.isNaN(resultPct)) return fail('El resultado tiene que ser un número (ej. 1.2 o -0.5).');
+  const timeVal = document.getElementById('entryTimeInput').value;
+  const ts = timeVal ? new Date(timeVal).getTime() : Date.now();
+  if(isNaN(ts)) return fail('Revisá la fecha y hora de entrada.');
+  if(ts > Date.now() + 5 * 60 * 1000) return fail('La fecha de entrada no puede ser futura.');
 
-  const pctRaw = document.getElementById('resultPctInput').value.trim().replace(',', '.');
-  let resultPct = null;
-  if(pctRaw !== ''){
-    resultPct = parseFloat(pctRaw);
-    if(isNaN(resultPct)){
-      errBox.textContent = 'El resultado tiene que ser un número (ej. 1.2 o -0.5).';
-      errBox.style.display = 'block';
-      return;
-    }
-  }
-
-  const note = document.getElementById('resultNote').value.trim();
-  const missing = state.items.filter(it=>!state.checked[it.id]).map(it=>it.label);
-  const missingIds = state.items.filter(it=>!state.checked[it.id]).map(it=>it.id);
-  const followedPlan = missing.length === 0;
-
-  addEntry({
-    id: genItemId(),
-    ts: Date.now(),
-    followedPlan,
-    missing,
-    missingIds,
+  const missingItems = state.items.filter(it=>!state.checked[it.id]);
+  const data = {
+    ts,
+    followedPlan: missingItems.length === 0,
+    missing: missingItems.map(it=>it.label),
+    missingIds: missingItems.map(it=>it.id),
     result,
     resultPct,
     riskPct,
+    rrPlanned,
     durationMin,
-    note,
-    image: currentImageData
-  });
+    asset: document.getElementById('assetInput').value.trim().toUpperCase() || null,
+    setup: document.getElementById('setupInput').value.trim() || null,
+    direction: tradeForm.direction,
+    emotion: tradeForm.emotion,
+    confidence: tradeForm.confidence,
+    errors: [...tradeForm.errors],
+    note: document.getElementById('resultNote').value.trim(),
+    image: currentImageData,
+  };
 
+  if(editingTradeId){
+    const h = state.history.find(x=> x.id === editingTradeId);
+    if(h) Object.assign(h, data, {editedAt: Date.now()});
+  } else {
+    state.history.push({id: genItemId(), loggedAt: Date.now(), ...data});
+  }
+  sortHistory();
+  saveState();
+  const wasEditing = !!editingTradeId;
   resetForm();
+  renderAll();
+  if(wasEditing) showTab('history');
 });
 
 function fmtDate(ts){
@@ -518,8 +667,7 @@ function renderDailyRisk(){
 document.getElementById('maxDailyRiskInput').addEventListener('input', e=>{
   state.maxDailyRisk = e.target.value;
   saveState();
-  renderHistory();
-  renderCurrentPeriod();
+  renderAll();
 });
 
 function renderHistory(){
@@ -532,7 +680,7 @@ function renderHistory(){
   box.innerHTML = '';
   const riskMap = dayRiskMap();
   const maxRisk = getMaxDailyRisk();
-  state.history.slice(0,50).forEach(h=>{
+  state.history.forEach(h=>{
     const div = document.createElement('div');
     div.className = 'hentry';
     const hasRisk = h.riskPct !== null && h.riskPct !== undefined;
@@ -548,10 +696,25 @@ function renderHistory(){
     const planCls = h.followedPlan ? 'ok' : 'bad';
     const planTxt = h.followedPlan ? 'Plan seguido' : 'Plan roto';
     const details = [];
-    details.push(`<div class="hl">¿Qué pasó en el desarrollo del trade?</div><div class="hnote">${h.note ? h.note.replace(/</g,'&lt;').replace(/\n/g,'<br>') : '<span style="color:var(--text-3);">Sin comentarios.</span>'}</div>`);
+    const tags = [];
+    if(h.asset) tags.push(`<span class="tag strong">${escapeHtml(h.asset)}</span>`);
+    if(h.direction) tags.push(`<span class="tag">${h.direction === 'long' ? 'Long ↑' : 'Short ↓'}</span>`);
+    tags.push(`<span class="tag">${sessionOf(h.ts)} · ${new Date(h.ts).toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})}</span>`);
+    if(h.setup) tags.push(`<span class="tag">${escapeHtml(h.setup)}</span>`);
+    const emo = emotionById(h.emotion);
+    if(emo) tags.push(`<span class="tag">${emo.ic} ${emo.label}</span>`);
+    if(h.confidence) tags.push(`<span class="tag">Confianza ${h.confidence}/5</span>`);
+    details.push(`<div class="tags">${tags.join('')}</div>`);
+    const facts = [];
+    const r = realR(h);
+    if(h.rrPlanned) facts.push(`R:R planeado 1:${h.rrPlanned}`);
+    if(r !== null) facts.push(`R real ${r > 0 ? '+' : ''}${r.toFixed(1)}R`);
+    if(h.durationMin !== null && h.durationMin !== undefined) facts.push(`Duración ${h.durationMin} min`);
+    if(facts.length) details.push(`<div class="note">${facts.join(' · ')}</div>`);
+    if(h.errors && h.errors.length) details.push(`<div class="tags">${h.errors.map(id=> errorById(id)).filter(Boolean).map(e=>`<span class="tag bad">${e.label}</span>`).join('')}</div>`);
+    if(h.missing && h.missing.length) details.push(`<div class="miss">Faltó del plan: ${h.missing.map(escapeHtml).join(', ')}</div>`);
+    details.push(`<div class="hl" style="margin-top:10px;">¿Qué pasó en el desarrollo del trade?</div><div class="hnote">${h.note ? escapeHtml(h.note).replace(/\n/g,'<br>') : '<span style="color:var(--text-3);">Sin comentarios.</span>'}</div>`);
     if(h.image) details.push(`<img src="${h.image}" class="tradeThumb histThumb" data-full="${h.image}">`);
-    if(h.missing && h.missing.length) details.push(`<div class="miss">Faltó: ${h.missing.map(escapeHtml).join(', ')}</div>`);
-    if(h.durationMin !== null && h.durationMin !== undefined) details.push(`<div class="note">Duración: ${h.durationMin} min</div>`);
     div.innerHTML = `
       <div class="hsum">
         <div class="hcol"><div class="hl">Fecha</div><div class="hv date">${fmtDate(h.ts)}</div></div>
@@ -564,8 +727,9 @@ function renderHistory(){
       </div>
       <div class="hdetail" style="display:none;">
         ${details.join('')}
-        <div class="row" style="margin-top:10px;">
-          <button class="danger-o delTradeBtn" data-id="${h.id || ''}" data-ts="${h.ts}" style="padding:4px 10px; font-size:12px;">Eliminar trade</button>
+        <div class="row" style="margin-top:12px;">
+          <button class="small editTradeBtn" data-id="${h.id || ''}">Editar</button>
+          <button class="danger-o small delTradeBtn" data-id="${h.id || ''}" data-ts="${h.ts}">Eliminar</button>
         </div>
       </div>
     `;
@@ -583,6 +747,9 @@ function renderHistory(){
       document.getElementById('lightbox').style.display = 'flex';
     });
   });
+  box.querySelectorAll('.editTradeBtn').forEach(btn=>{
+    btn.addEventListener('click', ()=> startEditTrade(btn.dataset.id));
+  });
   box.querySelectorAll('.delTradeBtn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const id = btn.dataset.id;
@@ -591,17 +758,10 @@ function renderHistory(){
         ? state.history.findIndex(h=>h.id === id)
         : state.history.findIndex(h=>h.ts === ts);
       if(idx === -1) return;
+      if(!confirm('¿Eliminar este trade? No se puede deshacer.')) return;
       state.history.splice(idx, 1);
       saveState();
-      renderHistory();
-      renderStats();
-      renderStreak();
-      renderCompare();
-      renderItemStats();
-      renderCurrentPeriod();
-      renderCalendar();
-      renderPlanCalendar();
-      renderFundedProgress();
+      renderAll();
     });
   });
 }
@@ -967,17 +1127,7 @@ function showResetConfirm(){
     state.bestStreak = 0;
     state.closedMonths = [];
     saveState();
-    renderHistory();
-    renderStats();
-    updateAddButton();
-    renderStreak();
-    renderCompare();
-    renderItemStats();
-    renderCurrentPeriod();
-    renderClosedMonths();
-    renderCalendar();
-    renderPlanCalendar();
-    renderFundedProgress();
+    renderAll();
     restoreResetButton();
   });
   document.getElementById('resetCancelBtn').addEventListener('click', restoreResetButton);
@@ -990,31 +1140,29 @@ function restoreResetButton(){
 
 attachResetHandler();
 
+function showTab(tab){
+  const btn = document.querySelector('.tabbtn[data-tab="' + tab + '"]');
+  if(!btn) return;
+  document.querySelectorAll('.tabpage').forEach(p=> p.classList.toggle('active', p.dataset.tab === tab));
+  document.querySelectorAll('.tabbtn').forEach(b=> b.classList.toggle('active', b === btn));
+  document.getElementById('pageTitle').textContent = btn.dataset.title;
+  window.scrollTo(0, 0);
+  // Los gráficos se dibujan con el ancho real de su tarjeta.
+  window.dispatchEvent(new Event('tabshown'));
+}
+
 document.querySelectorAll('.tabbtn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const tab = btn.dataset.tab;
-    document.querySelectorAll('.tabpage').forEach(p=> p.classList.toggle('active', p.dataset.tab === tab));
-    document.querySelectorAll('.tabbtn').forEach(b=> b.classList.toggle('active', b === btn));
-    document.getElementById('pageTitle').textContent = btn.dataset.title;
-    document.querySelector('main.content').scrollTop = 0;
-    window.scrollTo(0,0);
-  });
+  btn.addEventListener('click', ()=> showTab(btn.dataset.tab));
+});
+// Links internos: <button data-goto="stats">
+document.addEventListener('click', e=>{
+  const go = e.target.closest('[data-goto]');
+  if(go) showTab(go.dataset.goto);
 });
 
 loadState();
-autoCloseCompletedMonths();
 renderAccountTypePills();
 document.getElementById('maxDailyRiskInput').value = state.maxDailyRisk || '';
 renderItemsManager();
-renderChecklist();
-renderHistory();
-renderStats();
-updateAddButton();
-renderStreak();
-renderCompare();
-renderItemStats();
-renderCurrentPeriod();
-renderClosedMonths();
-renderCalendar();
-renderPlanCalendar();
-renderFundedProgress();
+resetForm();
+renderAll();

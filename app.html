@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=14"></script>
+<script src="js/theme.js?v=15"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=14">
-<script src="js/auth.js?v=14"></script>
+<link rel="stylesheet" href="css/styles.css?v=15">
+<script src="js/auth.js?v=15"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -22,10 +22,12 @@
   <aside class="sidebar">
     <a class="brand" href="index.html"><img class="brand-logo" src="img/logo.png" alt="Journal Trading"></a>
     <nav class="tabbar">
-      <button class="tabbtn active" data-tab="register" data-title="Registrar trade"><span class="ic">📝</span><span>Trade</span></button>
+      <button class="tabbtn active" data-tab="home" data-title="Inicio"><span class="ic">🏠</span><span>Inicio</span></button>
+      <button class="tabbtn" data-tab="register" data-title="Registrar trade"><span class="ic">📝</span><span>Trade</span></button>
       <button class="tabbtn" data-tab="stats" data-title="Estadísticas"><span class="ic">📊</span><span>Stats</span></button>
       <button class="tabbtn" data-tab="calendar" data-title="Calendario"><span class="ic">📅</span><span>Calendario</span></button>
       <button class="tabbtn" data-tab="history" data-title="Historial"><span class="ic">🕓</span><span>Historial</span></button>
+      <button class="tabbtn" data-tab="review" data-title="Revisión semanal"><span class="ic">🧠</span><span>Revisión</span></button>
       <button class="tabbtn" data-tab="settings" data-title="Ajustes"><span class="ic">⚙️</span><span>Ajustes</span></button>
     </nav>
     <div class="sidebar-foot">
@@ -42,7 +44,7 @@
 
   <div class="mainpane">
     <header class="topbar">
-      <h1 id="pageTitle">Registrar trade</h1>
+      <h1 id="pageTitle">Inicio</h1>
       <div class="topbar-right">
         <button type="button" class="theme-toggle" data-theme-toggle></button>
         <span class="planbadge" id="planBadge"></span>
@@ -54,33 +56,117 @@
 
     <main class="content">
 
-    <div class="tabpage active" data-tab="register">
+    <div class="tabpage active" data-tab="home">
+      <div class="card span-2 hello">
+        <div>
+          <div class="hello-kicker" id="helloDate"></div>
+          <h2 id="helloTitle"></h2>
+          <p id="helloSub"></p>
+        </div>
+        <button class="primary" data-goto="register">+ Registrar trade</button>
+      </div>
+      <div class="kpis span-2" id="homeKpis"></div>
+      <div class="card span-2">
+        <div class="card-head"><h2>Tu curva</h2><button type="button" class="link-btn" data-goto="stats">Ver análisis completo →</button></div>
+        <div class="chart" id="homeChart"></div>
+        <div class="legend"><span><i class="lg-real"></i>Resultado real</span><span><i class="lg-plan"></i>Si hubieras seguido tu plan</span></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Lo que dicen tus datos</h2><button type="button" class="link-btn" data-goto="stats">Ver todos →</button></div>
+        <div id="homeInsights"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Último trade</h2><button type="button" class="link-btn" data-goto="history">Historial →</button></div>
+        <div id="homeLast"></div>
+      </div>
+      <div class="card span-2">
+        <div class="card-head"><h2>Meta del mes</h2><button type="button" class="link-btn" data-goto="settings">Cambiar meta →</button></div>
+        <div id="homeGoal"></div>
+      </div>
+      <div class="card span-2">
+        <div class="card-head"><h2>Logros</h2><span class="card-meta" id="badgeCount"></span></div>
+        <div class="badges" id="homeBadges"></div>
+      </div>
+    </div><!-- /tab home -->
+
+    <div class="tabpage" data-tab="register">
       <div class="card" id="checklistCard">
-    <h2>Registrar trade</h2>
+    <h2 id="tradeFormTitle">Registrar trade</h2>
+    <div class="form-section-title">Tu Trading Plan</div>
     <div id="checklist"></div>
-    <div class="field" style="margin-top:14px;">
-      <label>Riesgo en este trade (%)</label>
-      <input type="text" inputmode="decimal" id="riskInput">
+
+    <div class="form-section-title">El trade</div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="entryTimeInput">Fecha y hora de entrada</label>
+        <input type="datetime-local" id="entryTimeInput">
+        <div class="field-hint" id="sessionHint"></div>
+      </div>
+      <div class="field">
+        <label for="assetInput">Activo</label>
+        <input type="text" id="assetInput" list="assetList" placeholder="Ej. NQ, EURUSD" autocomplete="off">
+        <datalist id="assetList"></datalist>
+      </div>
+      <div class="field">
+        <label>Dirección</label>
+        <div class="seg" id="directionSeg">
+          <button type="button" data-v="long">Long</button>
+          <button type="button" data-v="short">Short</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="setupInput">Setup</label>
+        <input type="text" id="setupInput" list="setupList" placeholder="Ej. Sweep + IFVG" autocomplete="off">
+        <datalist id="setupList"></datalist>
+      </div>
+      <div class="field">
+        <label for="riskInput">Riesgo (%)</label>
+        <input type="text" inputmode="decimal" id="riskInput" placeholder="Ej. 0.5">
+      </div>
+      <div class="field">
+        <label for="rrPlanInput">R:R planeado</label>
+        <input type="text" inputmode="decimal" id="rrPlanInput" placeholder="Ej. 2 (para 1:2)">
+      </div>
+      <div class="field">
+        <label for="resultSelect">Resultado</label>
+        <select id="resultSelect">
+          <option value="">Elegir…</option>
+          <option value="win">Ganador (TP)</option>
+          <option value="loss">Perdedor (SL)</option>
+          <option value="be">Break even</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="resultPctInput">Resultado real (%)</label>
+        <input type="text" inputmode="decimal" id="resultPctInput" placeholder="Ej. 1.2 o -0.5">
+        <div class="field-hint" id="rrRealHint"></div>
+      </div>
+      <div class="field">
+        <label for="durationInput">Duración (minutos)</label>
+        <input type="text" inputmode="decimal" id="durationInput" placeholder="Ej. 12">
+      </div>
+    </div>
+
+    <div class="form-section-title">Tu cabeza</div>
+    <div class="field">
+      <label>¿Cómo te sentías al entrar?</label>
+      <div class="chips" id="emotionChips"></div>
     </div>
     <div class="field">
-      <label>Duración del trade (minutos)</label>
-      <input type="text" inputmode="decimal" id="durationInput">
+      <label>Nivel de confianza en el trade</label>
+      <div class="seg seg-5" id="confidenceSeg">
+        <button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button>
+      </div>
+      <div class="field-hint">1 = nada seguro · 5 = totalmente seguro</div>
     </div>
     <div class="field">
-      <label>¿Cuál fue el resultado?</label>
-      <select id="resultSelect">
-        <option value="">Elegir…</option>
-        <option value="win">Ganador (TP)</option>
-        <option value="loss">Perdedor (SL)</option>
-        <option value="be">Break even</option>
-      </select>
+      <label>¿Cometiste algún error? <span class="label-note">(podés marcar varios)</span></label>
+      <div class="chips" id="errorChips"></div>
     </div>
+
+    <div class="form-section-title">Notas</div>
     <div class="field">
-      <label>Resultado real (%)</label>
-      <input type="text" inputmode="decimal" id="resultPctInput">
-    </div>
-    <div class="field">
-      <label>¿Qué pasó en el desarrollo del trade?</label>
+      <label for="resultNote">¿Qué pasó en el desarrollo del trade?</label>
       <textarea id="resultNote" rows="3"></textarea>
     </div>
     <div class="field">
@@ -92,7 +178,10 @@
       <input type="file" id="tradeImageInput" class="visually-hidden" accept="image/*">
       <div id="tradeImagePreview"></div>
     </div>
-    <button class="primary" id="addTradeBtn">Agregar trade</button>
+    <div class="row">
+      <button class="primary" id="addTradeBtn">Agregar trade</button>
+      <button class="ghost" id="cancelEditBtn" style="display:none;">Cancelar edición</button>
+    </div>
     <div id="entryError" style="display:none; color:var(--danger); font-size:13px; margin-top:8px;"></div>
   </div>
 
@@ -110,6 +199,40 @@
     <div class="card span-2">
       <h2>Estadísticas</h2>
       <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="card span-2">
+      <div class="card-head"><h2>Curva de resultados</h2><span class="card-meta" id="curveMeta"></span></div>
+      <div class="chart" id="equityChart"></div>
+      <div class="legend"><span><i class="lg-real"></i>Resultado real</span><span><i class="lg-plan"></i>Si hubieras seguido tu plan</span><span><i class="lg-dot"></i>Plan roto</span></div>
+      <div class="curve-cost" id="curveCost"></div>
+    </div>
+
+    <div class="card span-2">
+      <h2>Lo que dicen tus datos</h2>
+      <div id="allInsights"></div>
+    </div>
+
+    <div class="card span-2">
+      <div class="card-head"><h2>Mapa de calor: cuándo rompés el plan</h2></div>
+      <p class="card-sub">Cada celda es un día y una hora de entrada. Cuanto más rojo, más veces rompiste el plan en ese momento.</p>
+      <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
+      <div class="legend"><span><i class="hm-ok"></i>Plan seguido</span><span><i class="hm-warn"></i>A veces roto</span><span><i class="hm-bad"></i>Mayormente roto</span></div>
+    </div>
+
+    <div class="card span-2">
+      <div class="card-head">
+        <h2>Desglose</h2>
+        <div class="pillrow" id="breakdownPills">
+          <button type="button" class="pill active" data-by="emotion">Emoción</button>
+          <button type="button" class="pill" data-by="error">Errores</button>
+          <button type="button" class="pill" data-by="session">Sesión</button>
+          <button type="button" class="pill" data-by="asset">Activo</button>
+          <button type="button" class="pill" data-by="setup">Setup</button>
+          <button type="button" class="pill" data-by="direction">Dirección</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="breakdown" id="breakdownTable"></table></div>
     </div>
 
     <div class="card">
@@ -162,6 +285,34 @@
   </div>
     </div><!-- /tab history -->
 
+    <div class="tabpage" data-tab="review">
+      <div class="card span-2">
+        <div class="card-head">
+          <h2 id="reviewTitle">Tu semana</h2>
+          <select id="reviewWeek" class="select-sm" aria-label="Semana"></select>
+        </div>
+        <div class="stats" id="reviewSummary"></div>
+        <div id="reviewAuto"></div>
+      </div>
+      <div class="card">
+        <h2>Revisión guiada</h2>
+        <p class="card-sub">Cinco minutos al final de la semana para mirar cómo operaste, no solo cuánto ganaste.</p>
+        <div class="field"><label for="rvGood">¿Qué hiciste bien esta semana?</label><textarea id="rvGood" rows="3"></textarea></div>
+        <div class="field"><label for="rvError">¿Qué error se repitió y por qué creés que pasó?</label><textarea id="rvError" rows="3"></textarea></div>
+        <div class="field"><label for="rvChange">¿Qué vas a hacer distinto la semana que viene?</label><textarea id="rvChange" rows="3"></textarea></div>
+        <div class="field">
+          <label>Del 1 al 10, ¿cómo calificás tu disciplina esta semana?</label>
+          <div class="seg seg-10" id="rvScore"></div>
+        </div>
+        <div class="row"><button class="primary" id="rvSave">Guardar revisión</button></div>
+        <div class="form-ok" id="rvSaved"></div>
+      </div>
+      <div class="card">
+        <h2>Revisiones anteriores</h2>
+        <div id="reviewList"></div>
+      </div>
+    </div><!-- /tab review -->
+
     <div class="tabpage" data-tab="settings">
     <div class="stack">
     <div class="card">
@@ -202,6 +353,14 @@
       </div>
     </div>
 
+    </div>
+
+    <div class="card">
+      <h2>Meta del mes</h2>
+      <div class="field">
+        <label for="goalPlanInput">Porcentaje de trades con el plan seguido que querés lograr cada mes</label>
+        <input type="text" inputmode="numeric" id="goalPlanInput" placeholder="Ej. 80">
+      </div>
     </div>
 
     <div class="card">
@@ -340,14 +499,22 @@
   </div>
 </div>
 
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
 <div id="lightbox" class="lightbox" style="display:none;">
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/storage.js?v=14"></script>
-<script src="js/session.js?v=14"></script>
-<script src="js/app.js?v=14"></script>
-<script src="js/onboarding.js?v=14"></script>
+<script src="js/storage.js?v=15"></script>
+<script src="js/session.js?v=15"></script>
+<script src="js/app.js?v=15"></script>
+<script src="js/analytics.js?v=15"></script>
+<script src="js/charts.js?v=15"></script>
+<script src="js/achievements.js?v=15"></script>
+<script src="js/dashboard.js?v=15"></script>
+<script src="js/analysis.js?v=15"></script>
+<script src="js/review.js?v=15"></script>
+<script src="js/onboarding.js?v=15"></script>
 
 </body>
 </html>
