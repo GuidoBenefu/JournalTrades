@@ -92,6 +92,7 @@ a{color:var(--accent);}
 .billing-toggle button.active{background:var(--brand); color:var(--on-brand); font-weight:600;}
 .billing-toggle button.active .save-pill{background:var(--on-brand); color:var(--brand);}
 .plan .desc{font-size:14px; color:var(--text-2); margin:0 0 16px;}
+.plan .price + ul{margin-top:16px;}
 .plan ul{list-style:none; padding:0; margin:0 0 22px; display:flex; flex-direction:column; gap:8px; font-size:14px;}
 .plan li::before{content:'✓'; color:var(--success); font-weight:700; margin-right:8px;}
 .plan .btn-link{margin-top:auto;}

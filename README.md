@@ -1,4 +1,4 @@
-# Journal de trades
+# Journal Trading
 
 Checklist y journal de trading que corre 100% en el navegador. Los datos se
 guardan en `localStorage`, sin backend ni build.
