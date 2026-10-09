@@ -242,11 +242,24 @@
 
 <div id="paywall" class="paywall" style="display:none;">
   <div class="paywall-box">
-    <div class="applogo" style="font-size:32px;">⏳</div>
-    <h2>Tu prueba gratis terminó</h2>
-    <p>Pasate a Pro para seguir registrando trades. Tus datos siguen guardados.</p>
+    <div class="applogo" style="font-size:32px;" id="paywallIcon">⏳</div>
+    <h2 id="paywallTitle">Tu prueba gratis terminó</h2>
+    <p id="paywallText">Pasate a Pro para seguir registrando trades. Tus datos siguen guardados.</p>
+    <div class="billing-choice">
+      <button type="button" class="billing-card" data-billing="monthly">
+        <div class="bc-title">Mensual</div>
+        <div class="bc-price" id="pwMonthly"></div>
+        <div class="bc-sub">por mes</div>
+      </button>
+      <button type="button" class="billing-card best" data-billing="annual">
+        <div class="bc-title">Anual <span class="save-pill">-20%</span></div>
+        <div class="bc-price" id="pwAnnual"></div>
+        <div class="bc-sub" id="pwAnnualSub"></div>
+      </button>
+    </div>
+    <p class="paywall-note">20% de descuento pagando anual. Los pagos todavía no están integrados: Pro se activa sin cobro.</p>
     <div class="row" style="justify-content:center;">
-      <button class="primary" id="paywallUpgradeBtn">Pasar a Pro</button>
+      <button class="ghost" id="paywallCloseBtn">Ahora no</button>
       <button class="ghost" id="paywallLogoutBtn">Cerrar sesión</button>
     </div>
   </div>
