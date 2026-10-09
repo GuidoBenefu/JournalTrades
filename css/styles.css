@@ -41,6 +41,7 @@ button.small{padding:6px 12px; font-size:13px;}
 .sidebar{position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:20px;
   background:var(--card); border-right:1px solid var(--border); padding:20px 14px;}
 .brand{display:flex; align-items:center; gap:10px; font-size:16px; font-weight:600; color:var(--text); text-decoration:none; padding:4px 8px;}
+.brand-logo{height:44px; width:auto; display:block;}
 .tabbar{display:flex; flex-direction:column; gap:2px;}
 .tabbtn{background:none; border:none; display:flex; align-items:center; gap:10px; width:100%;
   padding:10px 12px; border-radius:8px; font-size:14px; font-weight:500; color:var(--text-2); font-family:inherit; cursor:pointer; text-align:left;}
