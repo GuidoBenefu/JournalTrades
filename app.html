@@ -259,10 +259,71 @@
         <div class="bc-sub" id="pwAnnualSub"></div>
       </button>
     </div>
-    <p class="paywall-note">20% de descuento pagando anual. Los pagos todavía no están integrados: Pro se activa sin cobro.</p>
+    <p class="paywall-note">20% de descuento pagando anual.</p>
     <div class="row" style="justify-content:center;">
       <button class="ghost" id="paywallCloseBtn">Ahora no</button>
       <button class="ghost" id="paywallLogoutBtn">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<div id="onboarding" class="onboarding" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="obTitle">
+  <div class="ob-box">
+    <div class="ob-head">
+      <div class="ob-steps" id="obSteps"><span></span><span></span><span></span></div>
+      <button type="button" class="link-btn" id="obSkip">Omitir por ahora</button>
+    </div>
+
+    <section class="ob-step" data-step="1">
+      <div class="ob-kicker">Paso 1 de 3</div>
+      <h2 id="obTitle">¿Cómo operás?</h2>
+      <p class="ob-sub">Así adaptamos tu journal a tu tipo de cuenta.</p>
+      <div class="ob-choices">
+        <button type="button" class="ob-choice" data-type="retail"><span class="ob-ic">👤</span><span class="t">Trader retail</span><span class="s">Opero mi propia cuenta.</span></button>
+        <button type="button" class="ob-choice" data-type="funded"><span class="ob-ic">🏦</span><span class="t">Cuenta de fondeo</span><span class="s">Opero con una prop firm y tengo reglas de drawdown.</span></button>
+      </div>
+      <div class="ob-funded" id="obFunded" style="display:none;">
+        <div class="ob-grid">
+          <div class="field"><label for="obDaily">Drawdown diario (%)</label><input type="text" inputmode="decimal" id="obDaily" placeholder="Ej. 5"></div>
+          <div class="field"><label for="obTotal">Drawdown total (%)</label><input type="text" inputmode="decimal" id="obTotal" placeholder="Ej. 10"></div>
+          <div class="field"><label for="obTarget">Profit target (%)</label><input type="text" inputmode="decimal" id="obTarget" placeholder="Ej. 8"></div>
+          <div class="field"><label>Drawdown total</label>
+            <div class="pillrow" id="obDdType">
+              <button type="button" class="pill" data-dd="static">Estático</button>
+              <button type="button" class="pill" data-dd="trailing">Trailing</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ob-step" data-step="2">
+      <div class="ob-kicker">Paso 2 de 3</div>
+      <h2>Tu checklist</h2>
+      <p class="ob-sub">Son las reglas que vas a confirmar en cada trade. Dejá tildadas las que son parte de tu plan y agregá las tuyas.</p>
+      <div class="ob-items" id="obItems"></div>
+      <div class="ob-add">
+        <input type="text" id="obNewItem" placeholder="Agregá una regla de tu plan">
+        <button type="button" id="obAddItem">Agregar</button>
+      </div>
+    </section>
+
+    <section class="ob-step" data-step="3">
+      <div class="ob-kicker">Paso 3 de 3</div>
+      <h2>Tu riesgo máximo por día</h2>
+      <p class="ob-sub">Cuánto estás dispuesto a arriesgar como máximo en un día. Te avisamos cuando te acerques y marcamos los días en que te pasaste.</p>
+      <div class="pillrow ob-quick" id="obRiskQuick">
+        <button type="button" class="pill" data-risk="0.5">0,5%</button>
+        <button type="button" class="pill" data-risk="1">1%</button>
+        <button type="button" class="pill" data-risk="2">2%</button>
+      </div>
+      <div class="field"><label for="obRisk">Riesgo máximo diario (%)</label><input type="text" inputmode="decimal" id="obRisk" placeholder="Ej. 1"></div>
+      <div class="field-error" id="obError"></div>
+    </section>
+
+    <div class="ob-foot">
+      <button type="button" class="ghost" id="obBack">Atrás</button>
+      <button type="button" class="primary" id="obNext">Siguiente</button>
     </div>
   </div>
 </div>
@@ -274,6 +335,7 @@
 <script src="js/storage.js"></script>
 <script src="js/session.js"></script>
 <script src="js/app.js"></script>
+<script src="js/onboarding.js"></script>
 
 </body>
 </html>

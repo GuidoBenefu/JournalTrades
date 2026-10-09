@@ -22,13 +22,22 @@
   </header>
 
   <div class="auth-wrap">
+    <div class="auth-layout">
     <form class="auth-card" id="authForm" novalidate>
       <h1 id="authTitle"></h1>
       <p class="muted" id="authSubtitle"></p>
 
-      <div class="auth-tabs">
+      <div class="auth-tabs" id="authTabs">
         <button type="button" data-mode="login">Iniciar sesión</button>
         <button type="button" data-mode="register">Crear cuenta</button>
+      </div>
+
+      <div id="googleBlock">
+        <button type="button" class="google-btn" id="googleBtn">
+          <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>
+          <span>Continuar con Google</span>
+        </button>
+        <div class="divider"><span>o con tu email</span></div>
       </div>
 
       <div class="field" id="planField">
@@ -48,23 +57,51 @@
         <div class="price-note" id="billingNote"></div>
       </div>
 
-      <div class="field" id="nameField">
+      <div class="field" id="nameField" data-field="name">
         <label for="nameInput">Nombre</label>
-        <input type="text" id="nameInput" autocomplete="name">
+        <input type="text" id="nameInput" autocomplete="name" aria-describedby="nameError">
+        <div class="field-error" id="nameError"></div>
       </div>
-      <div class="field">
+      <div class="field" data-field="email">
         <label for="emailInput">Email</label>
-        <input type="email" id="emailInput" autocomplete="email">
+        <input type="email" id="emailInput" autocomplete="email" aria-describedby="emailError">
+        <div class="field-error" id="emailError"></div>
       </div>
-      <div class="field">
-        <label for="passwordInput">Contraseña</label>
-        <input type="password" id="passwordInput">
+      <div class="field" id="passwordField" data-field="password">
+        <div class="label-row">
+          <label for="passwordInput">Contraseña</label>
+          <button type="button" class="link-btn" id="forgotBtn">¿Olvidaste tu contraseña?</button>
+        </div>
+        <div class="password-wrap">
+          <input type="password" id="passwordInput" aria-describedby="passwordHint passwordError">
+          <button type="button" class="pw-toggle" id="pwToggle" aria-label="Mostrar contraseña" title="Mostrar contraseña"></button>
+        </div>
+        <div class="field-hint" id="passwordHint">Mínimo 6 caracteres.</div>
+        <div class="field-error" id="passwordError"></div>
       </div>
 
+      <p class="legal" id="legalText">Al crear tu cuenta aceptás los <a href="terminos.html" target="_blank">Términos y condiciones</a> y la <a href="privacidad.html" target="_blank">Política de privacidad</a>.</p>
+
       <button type="submit" class="primary submit" id="submitBtn"></button>
-      <div class="form-error" id="formError"></div>
+      <div class="form-error" id="formError" role="alert"></div>
+      <div class="form-success" id="formSuccess" role="status"></div>
       <div class="form-note" id="formNote"></div>
+      <button type="button" class="link-btn back-link" id="backToLogin">← Volver a iniciar sesión</button>
     </form>
+
+    <aside class="auth-side">
+      <img class="auth-side-logo" src="img/logo.png" alt="">
+      <h2>Dominá tu mente.<br><span class="accent">Dominá tu trading.</span></h2>
+      <p>El journal que mide si fuiste el trader que dijiste que ibas a ser.</p>
+      <ul class="auth-benefits">
+        <li>Checklist de tu plan en cada trade</li>
+        <li>Racha y estadísticas de disciplina</li>
+        <li>Risk management diario y cuentas de fondeo</li>
+        <li>Calendarios de resultados y de cumplimiento</li>
+      </ul>
+      <div class="auth-quote">“Un trader disciplinado con una estrategia promedio le gana a un trader impulsivo con la mejor estrategia del mundo.”</div>
+    </aside>
+    </div>
   </div>
 </div>
 
@@ -72,59 +109,142 @@
 <script>
   if(JournalAuth.currentUser()) location.replace('app.html');
 
+  // Funciones que todavía necesitan servidor (Google, emails). Cuando estén
+  // conectadas, se pone en false y desaparecen los avisos.
+  const BACKEND_PENDING = true;
+
   const params = new URLSearchParams(location.search);
-  let mode = params.get('mode') === 'register' ? 'register' : 'login';
+  let mode = ['register', 'reset'].includes(params.get('mode')) ? params.get('mode') : 'login';
   let plan = params.get('plan') === 'pro' ? 'pro' : 'trial';
   let billing = params.get('billing') === 'annual' ? 'annual' : 'monthly';
   const pricing = JournalAuth.PRO_PRICING;
-  document.getElementById('monthlyPrice').textContent = JournalAuth.formatUSD(pricing.monthly.price) + ' / mes';
-  document.getElementById('annualPrice').textContent = JournalAuth.formatUSD(pricing.annual.price) + ' / año';
+  const $ = id => document.getElementById(id);
+  $('monthlyPrice').textContent = JournalAuth.formatUSD(pricing.monthly.price) + ' / mes';
+  $('annualPrice').textContent = JournalAuth.formatUSD(pricing.annual.price) + ' / año';
+
+  const ICON_SHOW = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const ICON_HIDE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a18.6 18.6 0 0 1 4.1-5.1M9.9 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a18.7 18.7 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2M2 2l20 20"/></svg>';
+
+  function show(id, visible){ $(id).style.display = visible ? '' : 'none'; }
+
+  function clearMessages(){
+    document.querySelectorAll('.field').forEach(f=> f.classList.remove('has-error'));
+    document.querySelectorAll('.field-error').forEach(e=> e.textContent = '');
+    ['formError', 'formSuccess', 'formNote'].forEach(id=> $(id).textContent = '');
+  }
+
+  function setFieldError(field, message){
+    const box = document.querySelector('.field[data-field="' + field + '"]');
+    if(!box){ $('formError').textContent = message; return; }
+    box.classList.add('has-error');
+    $(field + 'Error').textContent = message;
+  }
 
   function render(){
-    const reg = mode === 'register';
-    document.getElementById('authTitle').textContent = reg ? 'Creá tu cuenta' : 'Bienvenido de nuevo';
-    document.getElementById('authSubtitle').textContent = reg
+    const reg = mode === 'register', reset = mode === 'reset';
+    $('authTitle').textContent = reg ? 'Creá tu cuenta' : reset ? 'Recuperá tu contraseña' : 'Qué bueno verte de nuevo';
+    $('authSubtitle').textContent = reg
       ? (plan === 'pro' ? 'Empezá con el plan Pro.' : 'Empezá tu prueba gratis de 7 días.')
+      : reset ? 'Ingresá tu email y te mandamos un link para crear una contraseña nueva.'
       : 'Ingresá para ir a tu journal.';
     document.querySelectorAll('.auth-tabs button').forEach(b=> b.classList.toggle('active', b.dataset.mode === mode));
     document.querySelectorAll('.plan-opt[data-plan]').forEach(b=> b.classList.toggle('active', b.dataset.plan === plan));
     document.querySelectorAll('.billing-opt').forEach(b=> b.classList.toggle('active', b.dataset.billing === billing));
-    document.getElementById('planField').style.display = reg ? '' : 'none';
-    document.getElementById('billingField').style.display = reg && plan === 'pro' ? '' : 'none';
-    document.getElementById('billingNote').innerHTML = billing === 'annual'
+    show('authTabs', !reset);
+    show('googleBlock', !reset);
+    show('planField', reg);
+    show('billingField', reg && plan === 'pro');
+    $('billingNote').innerHTML = billing === 'annual'
       ? '<strong>20% de descuento pagando anual.</strong> Equivale a ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes: ahorrás ' + JournalAuth.formatUSD(pricing.annual.savings) + ' al año.'
       : 'Pagando anual tenés un 20% de descuento: ' + JournalAuth.formatUSD(pricing.annual.price) + ' / año.';
-    document.getElementById('nameField').style.display = reg ? '' : 'none';
-    document.getElementById('passwordInput').autocomplete = reg ? 'new-password' : 'current-password';
-    document.getElementById('submitBtn').textContent = reg
+    show('nameField', reg);
+    show('passwordField', !reset);
+    show('forgotBtn', mode === 'login');
+    show('passwordHint', reg);
+    show('legalText', reg);
+    show('backToLogin', reset);
+    $('passwordInput').autocomplete = reg ? 'new-password' : 'current-password';
+    $('submitBtn').textContent = reg
       ? (plan === 'pro' ? 'Crear cuenta Pro ' + (billing === 'annual' ? 'anual' : 'mensual') : 'Empezar prueba gratis')
-      : 'Iniciar sesión';
-    document.getElementById('formNote').textContent = reg && plan === 'pro'
-      ? 'Los pagos todavía no están integrados: el plan Pro se activa sin cobro.'
-      : '';
-    document.getElementById('formError').style.display = 'none';
+      : reset ? 'Enviar link' : 'Iniciar sesión';
+    clearMessages();
   }
 
-  document.querySelectorAll('.auth-tabs button').forEach(b=> b.addEventListener('click', ()=>{ mode = b.dataset.mode; render(); }));
+  function setMode(m){ mode = m; render(); }
+
+  document.querySelectorAll('.auth-tabs button').forEach(b=> b.addEventListener('click', ()=> setMode(b.dataset.mode)));
   document.querySelectorAll('.plan-opt[data-plan]').forEach(b=> b.addEventListener('click', ()=>{ plan = b.dataset.plan; render(); }));
   document.querySelectorAll('.billing-opt').forEach(b=> b.addEventListener('click', ()=>{ billing = b.dataset.billing; render(); }));
+  $('forgotBtn').addEventListener('click', ()=> setMode('reset'));
+  $('backToLogin').addEventListener('click', ()=> setMode('login'));
 
-  document.getElementById('authForm').addEventListener('submit', async e=>{
+  // Mostrar / ocultar contraseña
+  function renderPwToggle(){
+    const visible = $('passwordInput').type === 'text';
+    $('pwToggle').innerHTML = visible ? ICON_HIDE : ICON_SHOW;
+    const label = visible ? 'Ocultar contraseña' : 'Mostrar contraseña';
+    $('pwToggle').setAttribute('aria-label', label);
+    $('pwToggle').title = label;
+  }
+  $('pwToggle').addEventListener('click', ()=>{
+    $('passwordInput').type = $('passwordInput').type === 'password' ? 'text' : 'password';
+    renderPwToggle();
+    $('passwordInput').focus();
+  });
+  renderPwToggle();
+
+  // Al corregir un campo se borra su error.
+  [['nameInput', 'name'], ['emailInput', 'email'], ['passwordInput', 'password']].forEach(([input, field])=>{
+    $(input).addEventListener('input', ()=>{
+      document.querySelector('.field[data-field="' + field + '"]').classList.remove('has-error');
+      $(field + 'Error').textContent = '';
+    });
+  });
+
+  $('googleBtn').addEventListener('click', ()=>{
+    clearMessages();
+    if(BACKEND_PENDING) $('formNote').textContent = 'El ingreso con Google se activa cuando conectemos el servidor. Por ahora usá tu email.';
+  });
+
+  function validate(){
+    const errors = {};
+    const email = $('emailInput').value.trim();
+    const password = $('passwordInput').value;
+    if(mode === 'register' && !$('nameInput').value.trim()) errors.name = 'Ingresá tu nombre.';
+    if(!email) errors.email = 'Ingresá tu email.';
+    else if(!JournalAuth.EMAIL_RE.test(email)) errors.email = 'Ese email no parece válido.';
+    if(mode === 'register' && password.length < JournalAuth.MIN_PASSWORD) errors.password = 'La contraseña tiene que tener al menos ' + JournalAuth.MIN_PASSWORD + ' caracteres.';
+    if(mode === 'login' && !password) errors.password = 'Ingresá tu contraseña.';
+    return errors;
+  }
+
+  $('authForm').addEventListener('submit', async e=>{
     e.preventDefault();
-    const err = document.getElementById('formError');
-    err.style.display = 'none';
-    const email = document.getElementById('emailInput').value;
-    const password = document.getElementById('passwordInput').value;
+    clearMessages();
+    const errors = validate();
+    const fields = Object.keys(errors);
+    if(fields.length){
+      fields.forEach(f=> setFieldError(f, errors[f]));
+      $(fields[0] + 'Input').focus();
+      return;
+    }
+    const email = $('emailInput').value;
+    const password = $('passwordInput').value;
+    if(mode === 'reset'){
+      $('formSuccess').textContent = 'Si hay una cuenta con ese email, te vamos a mandar un link para crear una contraseña nueva.';
+      if(BACKEND_PENDING) $('formNote').textContent = 'El envío de emails se activa cuando conectemos el servidor.';
+      return;
+    }
     try{
       if(mode === 'register'){
-        await JournalAuth.register({name: document.getElementById('nameInput').value, email, password, plan, billing});
+        await JournalAuth.register({name: $('nameInput').value, email, password, plan, billing});
       } else {
         await JournalAuth.login({email, password});
       }
       location.href = 'app.html';
     }catch(ex){
-      err.textContent = ex.message;
-      err.style.display = 'block';
+      if(ex.field) setFieldError(ex.field, ex.message);
+      else $('formError').textContent = ex.message;
     }
   });
 
