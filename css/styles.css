@@ -53,7 +53,10 @@ button.small{padding:6px 12px; font-size:13px;}
 .tabbtn{background:none; border:none; display:flex; align-items:center; gap:10px; width:100%;
   padding:10px 12px; border-radius:8px; font-size:14px; font-weight:500; color:var(--text-2); font-family:inherit; cursor:pointer; text-align:left;}
 .tabbtn:hover{background:var(--bg); color:var(--text);}
-.tabbtn .ic{font-size:17px; line-height:1; width:22px; text-align:center;}
+.tabbtn .ic{width:22px; display:inline-flex; align-items:center; justify-content:center; color:var(--text-3);}
+.tabbtn:hover .ic{color:var(--text-2);}
+.tabbtn.active .ic{color:var(--accent);}
+.icon{display:block; flex-shrink:0;}
 .tabbtn.active{background:var(--accent-bg); color:var(--accent-text);}
 .sidebar-foot{margin-top:auto; border-top:1px solid var(--border); padding-top:14px; display:flex; flex-direction:column; gap:8px;}
 .sidebar-foot button{width:100%;}
@@ -88,6 +91,7 @@ button.small{padding:6px 12px; font-size:13px;}
 .paywall{position:fixed; inset:0; z-index:900; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; padding:16px;}
 .paywall-box{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; max-width:420px; text-align:center;}
 .paywall-box h2{margin:8px 0;}
+.paywall-ic{width:56px; height:56px; margin:0 auto 6px; border-radius:50%; background:var(--accent-bg); color:var(--accent); display:flex; align-items:center; justify-content:center;}
 .paywall-box p{color:var(--text-2); font-size:14px; margin:0 0 18px;}
 .paywall-box p.paywall-note{font-size:12px; color:var(--text-3); margin:12px 0 10px;}
 .billing-choice{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
@@ -125,7 +129,8 @@ button.small{padding:6px 12px; font-size:13px;}
 .ob-sub{font-size:14px; color:var(--text-2); line-height:1.5; margin:0 0 18px;}
 .ob-choices{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
 .ob-choice{display:flex; flex-direction:column; align-items:flex-start; gap:4px; text-align:left; padding:16px; border-radius:12px;}
-.ob-choice .ob-ic{font-size:22px; margin-bottom:4px;}
+.ob-choice .ob-ic{width:38px; height:38px; border-radius:10px; background:var(--bg); color:var(--text-2); display:flex; align-items:center; justify-content:center; margin-bottom:6px;}
+.ob-choice.active .ob-ic{background:var(--card); color:var(--accent);}
 .ob-choice .t{font-weight:600; font-size:15px;}
 .ob-choice .s{font-size:12px; color:var(--text-2); font-weight:400; line-height:1.4;}
 .ob-choice.active{border:2px solid var(--accent); background:var(--accent-bg); padding:15px;}
@@ -145,7 +150,7 @@ button.small{padding:6px 12px; font-size:13px;}
 .ob-text .t{display:block; font-size:14px; line-height:1.4; overflow-wrap:anywhere;}
 .ob-text .h{display:block; font-size:12px; color:var(--text-3); margin-top:2px; overflow-wrap:anywhere;}
 .ob-actions{display:flex; gap:4px; flex-shrink:0;}
-.ob-icon{width:30px; height:30px; padding:0; border-color:transparent; color:var(--text-3); font-size:14px; display:flex; align-items:center; justify-content:center;}
+.ob-icon{width:30px; height:30px; padding:0; border-color:transparent; color:var(--text-3); display:flex; align-items:center; justify-content:center;}
 .ob-icon:hover{color:var(--text); border-color:var(--border-strong);}
 .ob-icon.danger:hover{color:var(--danger); border-color:var(--danger);}
 .ob-edit{flex:1; display:flex; flex-direction:column; gap:6px;}
@@ -318,9 +323,9 @@ input[type=datetime-local]{width:100%; font-family:inherit; font-size:14px; padd
 .insight:last-child{border-bottom:none; padding-bottom:0;}
 .insight p{margin:0; font-size:14px; line-height:1.5; color:var(--text-2);}
 .insight p b{color:var(--text);}
-.insight-ic{width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--bg); font-size:16px;}
-.insight.good .insight-ic{background:var(--success-bg);}
-.insight.bad .insight-ic{background:var(--danger-bg);}
+.insight-ic{width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--bg); color:var(--text-2);}
+.insight.good .insight-ic{background:var(--success-bg); color:var(--success);}
+.insight.bad .insight-ic{background:var(--danger-bg); color:var(--danger);}
 .last-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:6px;}
 .last-asset{font-size:17px; font-weight:700;}
 .last-dir{font-size:12px; font-weight:500; color:var(--text-2);}
@@ -337,10 +342,11 @@ input[type=datetime-local]{width:100%; font-family:inherit; font-size:14px; padd
 .goal-fill{height:100%; background:var(--brand); border-radius:6px; transition:width .4s;}
 .goal-sub{font-size:12px; color:var(--text-3);}
 .badges{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px;}
-.badge-card{border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg); opacity:.55;}
+.badge-card{border:1px solid var(--border); border-radius:12px; padding:14px; background:var(--bg); opacity:.6;}
 .badge-card.on{opacity:1; border-color:var(--accent); background:var(--card);}
-.badge-ic{font-size:22px;}
-.badge-t{font-size:13px; font-weight:700; margin-top:6px;}
+.badge-ic{width:40px; height:40px; border-radius:50%; border:1.5px solid var(--border-strong); color:var(--text-3); display:flex; align-items:center; justify-content:center;}
+.badge-card.on .badge-ic{border-color:var(--accent); color:var(--accent); background:var(--accent-bg);}
+.badge-t{font-size:13px; font-weight:700; margin-top:10px;}
 .badge-d{font-size:11px; color:var(--text-3); margin-top:2px; line-height:1.35;}
 
 /* ---- Gráficos ---- */
@@ -389,7 +395,9 @@ input[type=datetime-local]{width:100%; font-family:inherit; font-size:14px; padd
 .mini-bar div{height:100%; background:var(--brand);}
 
 /* ---- Revisión ---- */
-.review-auto{list-style:none; padding:0; margin:14px 0 0; display:flex; flex-direction:column; gap:8px; font-size:14px; color:var(--text-2); line-height:1.5;}
+.review-auto{list-style:none; padding:0; margin:14px 0 0; display:flex; flex-direction:column; gap:10px; font-size:14px; color:var(--text-2); line-height:1.5;}
+.review-auto li{display:flex; gap:10px; align-items:flex-start;}
+.review-auto li .icon{color:var(--accent); margin-top:3px;}
 .review-auto b{color:var(--text);}
 .review-item{display:block; width:100%; text-align:left; padding:12px; margin-bottom:8px; border-radius:10px; background:var(--bg); border:1px solid var(--border);}
 .review-item:hover{border-color:var(--accent);}
@@ -403,7 +411,7 @@ input[type=datetime-local]{width:100%; font-family:inherit; font-size:14px; padd
 .toast{display:flex; gap:12px; align-items:flex-start; background:var(--card); border:1px solid var(--accent); border-radius:12px; padding:14px 16px;
   font-size:13px; line-height:1.45; box-shadow:0 12px 30px -10px rgba(0,0,0,.45); animation:toastIn .25s ease-out; transition:opacity .4s, transform .4s;}
 .toast.out{opacity:0; transform:translateY(8px);}
-.toast-ic{font-size:24px;}
+.toast-ic{width:38px; height:38px; border-radius:50%; background:var(--accent-bg); color:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
 @keyframes toastIn{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
 
 /* ---- Calendario ---- */
@@ -494,7 +502,7 @@ body.no-scroll{overflow:hidden;}
 .dt-note{font-size:13px; color:var(--text-2); line-height:1.5; margin:8px 0 0;}
 .dt-actions{margin-top:10px;}
 .day-empty{text-align:center; padding:40px 10px; color:var(--text-3);}
-.day-empty-ic{font-size:34px;}
+.day-empty-ic{display:flex; justify-content:center; color:var(--text-3); margin-bottom:6px;}
 
 /* ---- Pantallas chicas: la barra lateral pasa a ser una barra inferior ---- */
 @media (max-width: 900px){
@@ -506,7 +514,6 @@ body.no-scroll{overflow:hidden;}
   .tabbtn{flex-direction:column; gap:2px; padding:9px 2px 8px; font-size:10.5px; border-radius:0; text-align:center; justify-content:center;}
   .tabbtn:hover{background:none;}
   .tabbtn.active{background:none; color:var(--accent);}
-  .tabbtn .ic{font-size:19px;}
   .topbar{padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;}
   .topbar h1{font-size:18px;}
   .mobile-only{display:inline-block;}
@@ -530,7 +537,6 @@ body.no-scroll{overflow:hidden;}
   .tabpage[data-tab="register"] .stack{display:contents;}
   #streakBox{order:-1;}
   .tabbtn{font-size:9.5px; padding:8px 0 7px;}
-  .tabbtn .ic{font-size:17px;}
   .kpis{grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px;}
   .kpi{padding:12px;}
   .kpi-v{font-size:20px;}

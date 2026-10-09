@@ -61,8 +61,8 @@ a{color:var(--accent);}
 .section p.subtitle{color:var(--text-2); text-align:center; margin:0 0 32px; font-size:16px;}
 .features{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
 .feature{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px;}
-.feature .ic{font-size:22px;}
-.feature h3{font-size:16px; margin:10px 0 6px;}
+.feature .ic{width:42px; height:42px; border-radius:11px; background:var(--accent-bg); color:var(--accent); display:flex; align-items:center; justify-content:center;}
+.feature h3{font-size:16px; margin:14px 0 6px;}
 .feature p{font-size:14px; color:var(--text-2); line-height:1.5; margin:0;}
 
 .plans{display:grid; grid-template-columns:repeat(2, minmax(0,360px)); gap:20px; justify-content:center;}

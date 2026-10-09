@@ -45,20 +45,20 @@ function renderReviewSummary(){
   const errs = Analytics.group(trades, h=> h.errors || []).sort((a, b)=> b.n - a.n);
   if(errs.length){
     const e = errorById(errs[0].key);
-    lines.push(`<li>🔁 Error más repetido: <b>${e ? e.label : errs[0].key}</b> (${errs[0].n} ${errs[0].n === 1 ? 'vez' : 'veces'}).</li>`);
-  } else lines.push('<li>🧼 No marcaste errores esta semana.</li>');
+    lines.push(`<li>${Icons.svg('repeat', 16)}<span>Error más repetido: <b>${e ? e.label : errs[0].key}</b> (${errs[0].n} ${errs[0].n === 1 ? 'vez' : 'veces'}).</span></li>`);
+  } else lines.push(`<li>${Icons.svg('check-check', 16)}<span>No marcaste errores esta semana.</span></li>`);
   const emos = Analytics.group(trades, h=> h.emotion).sort((a, b)=> b.n - a.n);
   if(emos.length){
     const e = emotionById(emos[0].key);
-    lines.push(`<li>${e.ic} Emoción más frecuente: <b>${emotionWord(e)}</b> (${emos[0].n} ${emos[0].n === 1 ? 'trade' : 'trades'}, ${fmtSignedPct(emos[0].avg)} promedio).</li>`);
+    lines.push(`<li>${Icons.svg('smile', 16)}<span>Emoción más frecuente: <b>${emotionWord(e)}</b> (${emos[0].n} ${emos[0].n === 1 ? 'trade' : 'trades'}, ${fmtSignedPct(emos[0].avg)} promedio).</span></li>`);
   }
   const broken = trades.filter(h=> !h.followedPlan);
-  if(broken.length) lines.push(`<li>📐 Rompiste el plan en ${broken.length} ${broken.length === 1 ? 'trade' : 'trades'}, que sumaron ${fmtSignedPct(broken.reduce((a, h)=> a + Analytics.pct(h), 0))}.</li>`);
-  else lines.push('<li>✨ Respetaste tu plan en todos los trades de la semana.</li>');
+  if(broken.length) lines.push(`<li>${Icons.svg('chart-column', 16)}<span>Rompiste el plan en ${broken.length} ${broken.length === 1 ? 'trade' : 'trades'}, que sumaron ${fmtSignedPct(broken.reduce((a, h)=> a + Analytics.pct(h), 0))}.</span></li>`);
+  else lines.push(`<li>${Icons.svg('sparkles', 16)}<span>Respetaste tu plan en todos los trades de la semana.</span></li>`);
   const sorted = trades.slice().sort((a, b)=> Analytics.pct(b) - Analytics.pct(a));
   if(sorted.length >= 2){
     const best = sorted[0], worst = sorted[sorted.length - 1];
-    lines.push(`<li>📈 Mejor trade: ${fmtSignedPct(Analytics.pct(best))}${best.asset ? ' en ' + escapeHtml(best.asset) : ''} · Peor: ${fmtSignedPct(Analytics.pct(worst))}${worst.asset ? ' en ' + escapeHtml(worst.asset) : ''}.</li>`);
+    lines.push(`<li>${Icons.svg('trending-up', 16)}<span>Mejor trade: ${fmtSignedPct(Analytics.pct(best))}${best.asset ? ' en ' + escapeHtml(best.asset) : ''} · Peor: ${fmtSignedPct(Analytics.pct(worst))}${worst.asset ? ' en ' + escapeHtml(worst.asset) : ''}.</span></li>`);
   }
   auto.innerHTML = `<ul class="review-auto">${lines.join('')}</ul>`;
 }
