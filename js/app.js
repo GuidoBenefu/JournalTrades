@@ -276,7 +276,7 @@ function renderFundedProgress(){
 }
 
 function renderAccountTypePills(){
-  document.querySelectorAll('#accountTypePills .pill').forEach(btn=>{
+  document.querySelectorAll('#accountTypePills .type-card').forEach(btn=>{
     btn.classList.toggle('active', state.accountType === btn.dataset.type);
   });
   const section = document.getElementById('fundedRulesSection');
@@ -285,7 +285,7 @@ function renderAccountTypePills(){
   document.getElementById('totalDrawdownInput').value = state.fundedRules.totalDrawdown || '';
   document.getElementById('profitTargetInput').value = state.fundedRules.profitTarget || '';
   const curDd = state.fundedRules.ddType === 'trailing' ? 'trailing' : 'static';
-  document.querySelectorAll('#ddTypePills .pill').forEach(btn=>{
+  document.querySelectorAll('#ddTypePills button').forEach(btn=>{
     btn.classList.toggle('active', btn.dataset.dd === curDd);
   });
   document.getElementById('ddLockField').style.display = curDd === 'trailing' ? 'block' : 'none';
@@ -299,7 +299,7 @@ document.getElementById('ddLockInput').addEventListener('change', e=>{
   renderFundedProgress();
 });
 
-document.querySelectorAll('#ddTypePills .pill').forEach(btn=>{
+document.querySelectorAll('#ddTypePills button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     state.fundedRules.ddType = btn.dataset.dd;
     saveState();
@@ -307,7 +307,7 @@ document.querySelectorAll('#ddTypePills .pill').forEach(btn=>{
   });
 });
 
-document.querySelectorAll('#accountTypePills .pill').forEach(btn=>{
+document.querySelectorAll('#accountTypePills .type-card').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     state.accountType = (state.accountType === btn.dataset.type) ? null : btn.dataset.type;
     saveState();
@@ -331,67 +331,89 @@ document.getElementById('profitTargetInput').addEventListener('input', e=>{
   renderFundedProgress();
 });
 
+function afterPlanChange(){
+  saveState();
+  renderItemsManager();
+  renderChecklist();
+  updateAddButton();
+}
+
+function moveItem(id, toIndex){
+  const from = state.items.findIndex(it=> it.id === id);
+  if(from < 0 || toIndex < 0 || toIndex >= state.items.length || from === toIndex) return;
+  const [it] = state.items.splice(from, 1);
+  state.items.splice(toIndex, 0, it);
+  afterPlanChange();
+}
+
 function renderItemsManager(){
   const box = document.getElementById('itemsManager');
-  box.innerHTML = state.items.map(it=>{
+  const n = state.items.length;
+  document.getElementById('planCount').textContent = n === 1 ? '1 regla' : n + ' reglas';
+  box.innerHTML = state.items.map((it, i)=>{
     if(editingItemId === it.id){
       return `
         <div class="editRow" data-id="${it.id}">
-          <input type="text" class="editLabel" value="${it.label.replace(/"/g,'&quot;')}">
-          <input type="text" class="editHint" value="${(it.hint||'').replace(/"/g,'&quot;')}">
+          <input type="text" class="editLabel" value="${escapeHtml(it.label)}" aria-label="Regla">
+          <input type="text" class="editHint" value="${escapeHtml(it.hint || '')}" placeholder="Aclaración (opcional)" aria-label="Aclaración">
           <div class="row">
-            <button class="primary editSaveBtn" data-id="${it.id}">Guardar</button>
-            <button class="ghost editCancelBtn">Cancelar</button>
+            <button class="primary small editSaveBtn" data-id="${it.id}">Guardar</button>
+            <button class="ghost small editCancelBtn">Cancelar</button>
           </div>
         </div>`;
     }
     return `
-      <div class="manageItem">
+      <div class="rule-row" draggable="true" data-id="${it.id}" data-i="${i}">
+        <span class="rule-grip" aria-hidden="true">${Icons.svg('grip-vertical', 16)}</span>
+        <span class="rule-num">${i + 1}</span>
         <div class="txt">
-          <div>${escapeHtml(it.label)}</div>
+          <div class="rule-label">${escapeHtml(it.label)}</div>
           ${it.hint ? `<div class="hint">${escapeHtml(it.hint)}</div>` : ''}
         </div>
         <div class="actions">
-          <button class="ghost editBtn" data-id="${it.id}">Editar</button>
-          <button class="danger-o delBtn" data-id="${it.id}">Eliminar</button>
+          <button type="button" class="icon-btn move-btn upBtn" data-id="${it.id}" aria-label="Subir" ${i === 0 ? 'disabled' : ''}>${Icons.svg('chevron-up', 15)}</button>
+          <button type="button" class="icon-btn move-btn downBtn" data-id="${it.id}" aria-label="Bajar" ${i === n - 1 ? 'disabled' : ''}>${Icons.svg('chevron-down', 15)}</button>
+          <button type="button" class="icon-btn editBtn" data-id="${it.id}" aria-label="Editar regla">${Icons.svg('pencil', 15)}</button>
+          <button type="button" class="icon-btn icon-danger delBtn" data-id="${it.id}" aria-label="Eliminar regla">${Icons.svg('trash', 15)}</button>
         </div>
       </div>`;
-  }).join('') || '<p style="font-size:13px; color:var(--text-2);">Tu Trading Plan está vacío. Agregá la primera regla abajo.</p>';
+  }).join('') || '<div class="rules-empty">Tu Trading Plan está vacío. Agregá la primera regla abajo.</div>';
 
-  box.querySelectorAll('.editBtn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      editingItemId = btn.dataset.id;
-      renderItemsManager();
-    });
+  const on = (sel, fn)=> box.querySelectorAll(sel).forEach(btn=> btn.addEventListener('click', ()=> fn(btn.dataset.id, btn)));
+  on('.editBtn', id=>{ editingItemId = id; renderItemsManager(); const inp = box.querySelector('.editLabel'); if(inp) inp.focus(); });
+  on('.delBtn', id=>{
+    state.items = state.items.filter(it=> it.id !== id);
+    delete state.checked[id];
+    afterPlanChange();
   });
-  box.querySelectorAll('.delBtn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      state.items = state.items.filter(it=>it.id !== btn.dataset.id);
-      delete state.checked[btn.dataset.id];
-      saveState();
-      renderItemsManager();
-      renderChecklist();
-      updateAddButton();
-    });
+  on('.upBtn', id=> moveItem(id, state.items.findIndex(it=> it.id === id) - 1));
+  on('.downBtn', id=> moveItem(id, state.items.findIndex(it=> it.id === id) + 1));
+  on('.editCancelBtn', ()=>{ editingItemId = null; renderItemsManager(); });
+  on('.editSaveBtn', id=>{
+    const row = box.querySelector(`.editRow[data-id="${id}"]`);
+    const label = row.querySelector('.editLabel').value.trim();
+    const hint = row.querySelector('.editHint').value.trim();
+    if(!label) return;
+    const it = state.items.find(it=> it.id === id);
+    if(it){ it.label = label; it.hint = hint; }
+    editingItemId = null;
+    afterPlanChange();
   });
-  box.querySelectorAll('.editCancelBtn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      editingItemId = null;
-      renderItemsManager();
-    });
-  });
-  box.querySelectorAll('.editSaveBtn').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const row = box.querySelector(`.editRow[data-id="${btn.dataset.id}"]`);
-      const label = row.querySelector('.editLabel').value.trim();
-      const hint = row.querySelector('.editHint').value.trim();
-      if(!label) return;
-      const it = state.items.find(it=>it.id === btn.dataset.id);
-      if(it){ it.label = label; it.hint = hint; }
-      saveState();
-      editingItemId = null;
-      renderItemsManager();
-      renderChecklist();
+  box.querySelectorAll('.editRow input').forEach(inp=> inp.addEventListener('keydown', e=>{
+    if(e.key === 'Enter') box.querySelector('.editSaveBtn').click();
+    if(e.key === 'Escape') box.querySelector('.editCancelBtn').click();
+  }));
+
+  // Reordenar arrastrando (escritorio). En pantallas táctiles se usan las flechas.
+  let dragId = null;
+  box.querySelectorAll('.rule-row').forEach(row=>{
+    row.addEventListener('dragstart', e=>{ dragId = row.dataset.id; row.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    row.addEventListener('dragend', ()=>{ row.classList.remove('dragging'); box.querySelectorAll('.drop-over').forEach(r=> r.classList.remove('drop-over')); });
+    row.addEventListener('dragover', e=>{ e.preventDefault(); row.classList.add('drop-over'); });
+    row.addEventListener('dragleave', ()=> row.classList.remove('drop-over'));
+    row.addEventListener('drop', e=>{
+      e.preventDefault();
+      if(dragId && dragId !== row.dataset.id) moveItem(dragId, Number(row.dataset.i));
     });
   });
 }
@@ -403,12 +425,21 @@ document.getElementById('addItemBtn').addEventListener('click', ()=>{
   const hint = hintInput.value.trim();
   if(!label) return;
   state.items.push({id: genItemId(), label, hint});
-  saveState();
   labelInput.value = '';
   hintInput.value = '';
-  renderItemsManager();
-  renderChecklist();
-  updateAddButton();
+  hintInput.style.display = 'none';
+  document.getElementById('toggleHintBtn').style.display = '';
+  afterPlanChange();
+  labelInput.focus();
+});
+['newItemLabel', 'newItemHint'].forEach(id=> document.getElementById(id).addEventListener('keydown', e=>{
+  if(e.key === 'Enter') document.getElementById('addItemBtn').click();
+}));
+document.getElementById('toggleHintBtn').addEventListener('click', e=>{
+  e.target.style.display = 'none';
+  const hint = document.getElementById('newItemHint');
+  hint.style.display = '';
+  hint.focus();
 });
 
 function renderChecklist(){
@@ -746,18 +777,22 @@ function computeRiskMgmtPct(list){
 function renderDailyRisk(){
   const box = document.getElementById('dailyRiskStatus');
   const max = getMaxDailyRisk();
-  if(max === null){ box.innerHTML = ''; return; }
+  if(max === null){ box.innerHTML = '<div class="risk-gauge empty">Elegí tu riesgo máximo diario para ver cuánto te queda cada día.</div>'; return; }
   const used = dayRiskMap()[dayKeyFromTs(Date.now())] || 0;
-  const broken = used > max;
-  const ratio = Math.min(used / max, 1);
-  const color = broken ? 'var(--danger)' : (ratio >= 0.8 ? 'var(--danger)' : (ratio >= 0.5 ? 'var(--amber)' : 'var(--brand)'));
-  const msg = broken
-    ? '<span style="color:var(--danger); font-weight:600;">Risk management roto hoy: arriesgaste ' + used.toFixed(1) + '% y tu máximo es ' + max + '%.</span>'
+  const ratio = used / max;
+  const cls = ratio > 1 ? 'bad' : ratio >= 1 ? 'bad' : ratio >= 0.5 ? 'warn' : 'good';
+  const label = ratio > 1 ? 'Límite superado' : ratio >= 1 ? 'Límite alcanzado' : ratio >= 0.5 ? 'Cerca del límite' : 'Dentro del límite';
+  const msg = ratio > 1
+    ? 'Arriesgaste ' + used.toFixed(1) + '% y tu máximo es ' + max + '%. Hoy rompiste tu risk management.'
+    : ratio >= 1 ? 'Ya usaste todo tu riesgo de hoy. Lo que sigue es fuera de plan.'
     : 'Te quedan ' + (max - used).toFixed(1) + '% de riesgo para hoy.';
-  box.innerHTML = `<div class="fp-row">
-    <div class="top"><span>Riesgo tomado hoy</span><span>${used.toFixed(1)}% / ${max}%</span></div>
-    <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:${color};"></div></div>
-    <div class="sub">${msg}</div>
+  box.innerHTML = `<div class="risk-gauge ${cls}">
+    <div class="rg-top">
+      <div><div class="rg-l">Riesgo tomado hoy</div><div class="rg-v">${used.toFixed(1)}% <span>/ ${max}%</span></div></div>
+      <span class="rg-pill">${label}</span>
+    </div>
+    <div class="rg-bar"><div style="width:${Math.min(ratio, 1) * 100}%"></div><i style="left:50%"></i></div>
+    <div class="rg-sub">${msg}</div>
   </div>`;
 }
 
@@ -1084,7 +1119,7 @@ function attachResetHandler(){
 function showResetConfirm(){
   const area = document.getElementById('resetArea');
   area.innerHTML = `
-    <p style="font-size:13px; color:var(--danger); margin:0 0 8px;">¿Borrar todo el historial y desbloquear? No se puede deshacer.</p>
+    <p style="font-size:13px; color:var(--danger); margin:0 0 8px;">¿Seguro? Se borran todos tus trades y no se puede deshacer.</p>
     <div class="row">
       <button class="danger-o" id="resetConfirmBtn">Sí, borrar todo</button>
       <button class="ghost" id="resetCancelBtn">Cancelar</button>
@@ -1102,7 +1137,7 @@ function showResetConfirm(){
 }
 
 function restoreResetButton(){
-  document.getElementById('resetArea').innerHTML = '<button class="ghost" id="resetBtn">Borrar todo el historial</button>';
+  document.getElementById('resetArea').innerHTML = '<button class="danger-o" id="resetBtn">Borrar todo el historial</button>';
   attachResetHandler();
 }
 
