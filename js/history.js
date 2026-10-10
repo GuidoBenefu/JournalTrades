@@ -23,9 +23,8 @@ function filtersActive(){
 
 function filteredTrades(){
   const q = hx.q.trim().toLowerCase();
-  const now = new Date();
   const weekStart = Analytics.weekStart(Date.now()).getTime();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const monthStart = dayStartTs(monthKeyOf(Date.now()) + '-01');
   let list = state.history.filter(h=>{
     if(hx.period === 'week' && h.ts < weekStart) return false;
     if(hx.period === 'month' && h.ts < monthStart) return false;
@@ -200,9 +199,8 @@ function closeTrade(){
 function renderTradePanel(){
   const h = state.history.find(x=> x.id === openTradeId);
   if(!h){ closeTrade(); return; }
-  const d = new Date(h.ts);
-  const date = d.toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
-  document.getElementById('tpKicker').textContent = date.charAt(0).toUpperCase() + date.slice(1) + ' · ' + fmtTime(h.ts);
+  const date = keyDate(dayKeyFromTs(h.ts)).toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
+  document.getElementById('tpKicker').textContent = date.charAt(0).toUpperCase() + date.slice(1) + ' · ' + fmtTimeBoth(h.ts);
   document.getElementById('tpTitle').innerHTML = `${h.asset ? escapeHtml(h.asset) : 'Trade'} ${h.direction ? `<span class="tp-dir ${h.direction}">${Icons.svg(h.direction === 'long' ? 'arrow-up' : 'arrow-down', 13)}${h.direction === 'long' ? 'Long' : 'Short'}</span>` : ''}`;
 
   const r = hxResult(h);
@@ -282,12 +280,12 @@ function exportCsv(list){
     const t = v === null || v === undefined ? '' : String(v);
     return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
   };
-  const head = ['Fecha', 'Hora', 'Activo', 'Dirección', 'Setup', 'Sesión', 'Resultado', 'Resultado %', 'Riesgo %', 'R:R planeado', 'R real', 'Duración (min)', 'Plan seguido', 'Reglas que faltaron', 'Emoción', 'Confianza', 'Errores', 'Nota'];
+  const head = ['Fecha', 'Hora (NY)', 'Activo', 'Dirección', 'Setup', 'Sesión', 'Resultado', 'Resultado %', 'Riesgo %', 'R:R planeado', 'R real', 'Duración (min)', 'Plan seguido', 'Reglas que faltaron', 'Emoción', 'Confianza', 'Errores', 'Nota'];
   const rows = list.map(h=>{
     const rr = realR(h);
     const emo = emotionById(h.emotion);
     return [
-      fmtDate(h.ts), fmtTime(h.ts), h.asset || '', h.direction === 'long' ? 'Long' : h.direction === 'short' ? 'Short' : '',
+      fmtDate(h.ts), fmtTime(h.ts, NY_TZ), h.asset || '', h.direction === 'long' ? 'Long' : h.direction === 'short' ? 'Short' : '',
       h.setup || '', sessionOf(h.ts), RESULT_LABELS[h.result] || '', num(h.resultPct), num(h.riskPct), num(h.rrPlanned),
       rr === null ? '' : num(rr.toFixed(2)), num(h.durationMin), h.followedPlan ? 'Sí' : 'No', (h.missing || []).join(' | '),
       emo ? emo.label : '', h.confidence || '', (h.errors || []).map(id=> (errorById(id) || {label: id}).label).join(' | '), h.note || '',

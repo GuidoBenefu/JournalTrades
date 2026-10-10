@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=31"></script>
+<script src="js/theme.js?v=32"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=31">
-<script src="js/auth.js?v=31"></script>
+<link rel="stylesheet" href="css/styles.css?v=32">
+<script src="js/auth.js?v=32"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -168,7 +168,7 @@
               <datalist id="assetList"></datalist>
             </div>
             <div class="field">
-              <label for="entryTimeInput">Fecha y hora de entrada</label>
+              <label for="entryTimeInput">Fecha y hora de entrada <span class="label-sub" id="entryTzLabel"></span></label>
               <input type="datetime-local" id="entryTimeInput">
               <div class="field-hint" id="sessionHint"></div>
             </div>
@@ -294,7 +294,7 @@
       <section class="card span-2">
         <div class="set-head">
           <span class="set-ic"><i data-icon="calendar" data-size="18"></i></span>
-          <div><h2>Mapa de calor: cuándo rompés el plan</h2><p>Cada celda es un día y una hora de entrada. Pasá el mouse para ver el detalle.</p></div>
+          <div><h2>Mapa de calor: cuándo rompés el plan</h2><p>Cada celda es un día y una hora de entrada, en hora de Nueva York. Pasá el mouse para ver el detalle.</p></div>
         </div>
         <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
         <div class="legend hm-legend"><span>Plan seguido</span><span class="hm-grad"></span><span>Plan roto</span><span class="hm-legend-n">El número es la cantidad de trades</span></div>
@@ -580,6 +580,29 @@
 
         <section class="card set-card">
           <div class="set-head">
+            <span class="set-ic"><i data-icon="clock" data-size="18"></i></span>
+            <div><h2>Horarios</h2><p>Las estadísticas, el calendario y las sesiones se calculan siempre en hora de Nueva York, la referencia del trading.</p></div>
+          </div>
+          <div class="field">
+            <label>Mostrar y cargar las horas en</label>
+            <div class="seg" id="tzDisplayPills">
+              <button type="button" data-v="ny">Hora de Nueva York</button>
+              <button type="button" data-v="local">Mi hora local</button>
+            </div>
+            <div class="field-hint" id="tzDisplayHint"></div>
+          </div>
+          <div class="field">
+            <label>El día de trading termina a las</label>
+            <div class="seg" id="dayEndPills">
+              <button type="button" data-v="0">Medianoche NY</button>
+              <button type="button" data-v="17">17:00 NY (forex y futuros)</button>
+            </div>
+            <div class="field-hint" id="dayEndHint"></div>
+          </div>
+        </section>
+
+        <section class="card set-card">
+          <div class="set-head">
             <span class="set-ic"><i data-icon="database" data-size="18"></i></span>
             <div><h2>Datos y backup</h2><p>Por ahora tus datos se guardan solo en este navegador. Exportá un backup para no perderlos o pasarlos a otro dispositivo.</p></div>
           </div>
@@ -762,21 +785,22 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=31"></script>
-<script src="js/storage.js?v=31"></script>
-<script src="js/images.js?v=31"></script>
-<script src="js/session.js?v=31"></script>
-<script src="js/app.js?v=31"></script>
-<script src="js/analytics.js?v=31"></script>
-<script src="js/charts.js?v=31"></script>
-<script src="js/achievements.js?v=31"></script>
-<script src="js/dashboard.js?v=31"></script>
-<script src="js/analysis.js?v=31"></script>
-<script src="js/review.js?v=31"></script>
-<script src="js/calendar.js?v=31"></script>
-<script src="js/onboarding.js?v=31"></script>
-<script src="js/settings.js?v=31"></script>
-<script src="js/history.js?v=31"></script>
+<script src="js/icons.js?v=32"></script>
+<script src="js/storage.js?v=32"></script>
+<script src="js/time.js?v=32"></script>
+<script src="js/images.js?v=32"></script>
+<script src="js/session.js?v=32"></script>
+<script src="js/app.js?v=32"></script>
+<script src="js/analytics.js?v=32"></script>
+<script src="js/charts.js?v=32"></script>
+<script src="js/achievements.js?v=32"></script>
+<script src="js/dashboard.js?v=32"></script>
+<script src="js/analysis.js?v=32"></script>
+<script src="js/review.js?v=32"></script>
+<script src="js/calendar.js?v=32"></script>
+<script src="js/onboarding.js?v=32"></script>
+<script src="js/settings.js?v=32"></script>
+<script src="js/history.js?v=32"></script>
 
 </body>
 </html>

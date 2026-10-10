@@ -97,6 +97,38 @@ document.querySelectorAll('#riskQuick button').forEach(b=> b.addEventListener('c
   inp.dispatchEvent(new Event('input'));
 }));
 
+// ---- Horarios ----
+function renderTimePrefs(){
+  const p = timePrefs();
+  document.querySelectorAll('#tzDisplayPills button').forEach(b=> b.classList.toggle('active', b.dataset.v === p.display));
+  document.querySelectorAll('#dayEndPills button').forEach(b=> b.classList.toggle('active', Number(b.dataset.v) === p.dayEnd));
+  const now = Date.now();
+  document.getElementById('tzDisplayHint').textContent = localIsNy(now)
+    ? 'Tu hora local coincide con la de Nueva York.'
+    : `Ahora son las ${fmtTime(now, NY_TZ)} en Nueva York y las ${fmtTime(now, LOCAL_TZ)} en tu zona (${LOCAL_TZ.replace(/_/g, ' ')}).`;
+  document.getElementById('dayEndHint').textContent = p.dayEnd
+    ? 'Lo que operes desde las 17:00 de NY cuenta para el día siguiente, como el cierre de forex y futuros.'
+    : 'Cada día va de 00:00 a 23:59 en hora de Nueva York.';
+}
+// Cambiar los horarios no toca los trades: solo cómo se agrupan y se muestran.
+function setTimePref(key, value){
+  state.timePrefs = {...timePrefs(), [key]: value};
+  saveState();
+  renderTimePrefs();
+  if(!editingTradeId && !entryTimeTouched) document.getElementById('entryTimeInput').value = toLocalInputValue(Date.now());
+  renderFormHints();
+  renderAll();
+}
+document.querySelectorAll('#tzDisplayPills button').forEach(b=> b.addEventListener('click', ()=>{
+  // El campo de hora se reinterpreta en la nueva zona: se conserva el instante elegido.
+  const input = document.getElementById('entryTimeInput');
+  const ts = input.value ? fromInputValue(input.value) : NaN;
+  setTimePref('display', b.dataset.v);
+  if(!isNaN(ts)) input.value = toLocalInputValue(ts);
+  renderFormHints();
+}));
+document.querySelectorAll('#dayEndPills button').forEach(b=> b.addEventListener('click', ()=> setTimePref('dayEnd', Number(b.dataset.v))));
+
 // ---- Aviso de guardado ----
 let savedTimer = null;
 function flashSaved(){
@@ -121,3 +153,4 @@ onDataChange.push(renderSettingsData);
 renderProfile();
 renderGoalPreview();
 renderRiskQuick();
+renderTimePrefs();

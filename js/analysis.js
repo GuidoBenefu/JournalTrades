@@ -17,14 +17,13 @@ const avgOf = arr=> arr.length ? arr.reduce((a, b)=> a + b, 0) / arr.length : nu
 // Revisión); "3 meses" son los últimos 90 días.
 function periodLists(){
   if(statsPeriod === 'all') return {cur: state.history, prev: null};
-  const now = new Date();
   let from, prevFrom;
   if(statsPeriod === 'week'){
     from = Analytics.weekStart(Date.now()).getTime();
     prevFrom = Analytics.weekStart(from - 3 * 86400000).getTime();
   } else if(statsPeriod === 'month'){
-    from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    prevFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+    from = dayStartTs(monthKeyOf(Date.now()) + '-01');
+    prevFrom = dayStartTs(monthKeyOf(from - 86400000) + '-01');
   } else {
     from = Date.now() - 90 * 86400000;
     prevFrom = from - 90 * 86400000;
@@ -198,7 +197,7 @@ function renderHeatmap(cur){
     const [di, h] = cell.dataset.k.split('-').map(Number);
     const c = cells[cell.dataset.k];
     const planPct = Math.round((c.n - c.broken) / c.n * 100);
-    const html = `<div class="tip-h">${WEEKDAYS_ONE[di].charAt(0).toUpperCase() + WEEKDAYS_ONE[di].slice(1)} · ${h}:00 a ${(h + 1) % 24}:00</div>
+    const html = `<div class="tip-h">${WEEKDAYS_ONE[di].charAt(0).toUpperCase() + WEEKDAYS_ONE[di].slice(1)} · ${h}:00 a ${(h + 1) % 24}:00 NY</div>
       <div class="tip-r"><span>Trades</span><b>${c.n}</b></div>
       <div class="tip-r"><span>Plan seguido</span><b class="${planPct >= 80 ? 'pos' : planPct < 50 ? 'neg' : ''}">${planPct}%</b></div>
       <div class="tip-r"><span>Resultado</span><b class="${signClass(c.sum)}">${fmtSignedPct(c.sum)}</b></div>`;

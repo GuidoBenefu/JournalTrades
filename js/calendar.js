@@ -1,9 +1,15 @@
 // Pestaña Calendario: vista mensual o anual, modo Resultado o Disciplina,
 // resumen del período y panel con el detalle de cada día.
 
+// Año y mes (0-11) del día de trading actual, en hora de Nueva York.
+function currentYM(){
+  const k = currentDayKey();
+  return [Number(k.slice(0, 4)), Number(k.slice(5, 7)) - 1];
+}
+
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const cal = {
-  date: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+  date: new Date(currentYM()[0], currentYM()[1], 1),
   scope: 'month',   // 'month' | 'year'
   mode: 'result',   // 'result' | 'plan'
   openDay: null,    // clave AAAA-MM-DD del panel abierto
@@ -204,19 +210,19 @@ function renderYear(days){
 
 function renderControls(){
   const y = cal.date.getFullYear();
-  const firstYear = Math.min(new Date().getFullYear(), ...state.history.map(h=> new Date(h.ts).getFullYear()));
+  const [nowY, nowM] = currentYM();
+  const firstYear = Math.min(nowY, ...state.history.map(h=> Number(dayKeyFromTs(h.ts).slice(0, 4))));
   const years = [];
-  for(let yy = new Date().getFullYear(); yy >= firstYear; yy--) years.push(yy);
+  for(let yy = nowY; yy >= firstYear; yy--) years.push(yy);
   if(!years.includes(y)) years.push(y);
   document.getElementById('calYear').innerHTML = years.sort((a, b)=> b - a).map(yy=> `<option value="${yy}" ${yy === y ? 'selected' : ''}>${yy}</option>`).join('');
   document.getElementById('calMonth').innerHTML = MONTHS.map((n, i)=> `<option value="${i}" ${i === cal.date.getMonth() ? 'selected' : ''}>${n}</option>`).join('');
   document.getElementById('calMonth').style.display = cal.scope === 'month' ? '' : 'none';
   document.querySelectorAll('#calScope button').forEach(b=> b.classList.toggle('active', b.dataset.v === cal.scope));
   document.querySelectorAll('#calMode button').forEach(b=> b.classList.toggle('active', b.dataset.v === cal.mode));
-  const now = new Date();
   const atCurrent = cal.scope === 'month'
-    ? (y === now.getFullYear() && cal.date.getMonth() === now.getMonth())
-    : y === now.getFullYear();
+    ? (y === nowY && cal.date.getMonth() === nowM)
+    : y === nowY;
   document.getElementById('calNext').disabled = atCurrent;
   document.getElementById('calToday').disabled = atCurrent;
 
@@ -242,7 +248,7 @@ function shift(dir){
 document.getElementById('calPrev').addEventListener('click', ()=> shift(-1));
 document.getElementById('calNext').addEventListener('click', ()=> shift(1));
 document.getElementById('calToday').addEventListener('click', ()=>{
-  cal.date = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  cal.date = new Date(currentYM()[0], currentYM()[1], 1);
   renderCalendarTab();
 });
 document.getElementById('calMonth').addEventListener('change', e=>{
@@ -337,11 +343,13 @@ document.getElementById('dayAddTrade').addEventListener('click', ()=>{
   const key = cal.openDay;
   closeDay();
   resetForm();
-  // Mismo horario de ahora, pero en el día elegido.
-  const now = new Date();
+  // Mismo horario de ahora, pero en el día elegido. Si con la zona o el cierre
+  // del día esa hora cae en otro día de trading, se usa el mediodía de NY.
+  const now = zoneParts(Date.now(), displayTz());
   const [y, m, d] = key.split('-').map(Number);
-  const when = new Date(y, m - 1, d, now.getHours(), now.getMinutes());
-  document.getElementById('entryTimeInput').value = toLocalInputValue(Math.min(when.getTime(), Date.now()));
+  let when = zonedToTs(y, m, d, now.h, now.min, displayTz());
+  if(dayKeyFromTs(when) !== key) when = zonedToTs(y, m, d, 12, 0, NY_TZ);
+  document.getElementById('entryTimeInput').value = toLocalInputValue(Math.min(when, Date.now()));
   // Si eligió otro día, esa fecha se respeta al guardar.
   entryTimeTouched = key !== dayKeyFromTs(Date.now());
   renderFormHints();

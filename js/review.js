@@ -13,10 +13,8 @@ function reviewFormValues(){
   return {good: document.getElementById('rvGood').value, error: document.getElementById('rvError').value,
     change: document.getElementById('rvChange').value, score: reviewScore};
 }
-const DAY_MS_RV = 86400000;
 
-function weekStartTs(key){ return new Date(key + 'T00:00:00').getTime(); }
-function shiftWeek(key, n){ return Analytics.weekKey(weekStartTs(key) + n * 7 * DAY_MS_RV + 12 * 3600000); }
+function shiftWeek(key, n){ return addDaysKey(key, n * 7); }
 
 function weekLabel(key){
   const start = new Date(key + 'T00:00:00');
@@ -44,9 +42,9 @@ function reviewStreak(){
 
 // Semana que conviene revisar hoy: el domingo la actual, el lunes la anterior.
 function weekToReviewToday(){
-  const day = new Date().getDay();
-  if(day === 0) return Analytics.weekKey(Date.now());
-  if(day === 1) return shiftWeek(Analytics.weekKey(Date.now()), -1);
+  const day = weekdayOf(Date.now());
+  if(day === 6) return Analytics.weekKey(Date.now());
+  if(day === 0) return shiftWeek(Analytics.weekKey(Date.now()), -1);
   return null;
 }
 
@@ -106,9 +104,8 @@ function renderReviewSummary(){
 
 // ---- Gráfico por día ----
 function renderReviewChart(){
-  const start = weekStartTs(reviewWeek);
   const days = WEEKDAYS.map((name, i)=>{
-    const key = dayKeyFromTs(start + i * DAY_MS_RV + 12 * 3600000);
+    const key = addDaysKey(reviewWeek, i);
     const list = state.history.filter(h=> dayKeyFromTs(h.ts) === key);
     return {name, n: list.length, sum: list.reduce((a, h)=> a + Analytics.pct(h), 0), broke: list.some(h=> !h.followedPlan)};
   });
@@ -167,7 +164,7 @@ function renderReviewTrades(){
   document.getElementById('reviewTradesTitle').textContent = `Ver los ${trades.length} ${trades.length === 1 ? 'trade' : 'trades'} de la semana`;
   const box = document.getElementById('reviewTrades');
   box.innerHTML = trades.map(h=>{
-    const d = new Date(h.ts);
+    const d = keyDate(dayKeyFromTs(h.ts));
     const day = d.toLocaleDateString('es-AR', {weekday: 'short', day: 'numeric'});
     const time = fmtTime(h.ts);
     const v = Analytics.pct(h);
