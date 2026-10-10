@@ -81,7 +81,8 @@ correspondiente en `MIGRATIONS`.
 El español es el texto original y queda escrito en el código y en el HTML.
 Para mostrar algo traducible desde JS se usa `t('Texto en español')` (con
 variables: `t('Te quedan {n} días.', {n})`; con plural:
-`tp(n, '{n} trade', '{n} trades')`). El HTML fijo se traduce solo al cargar.
+`tp(n, '{n} trade', '{n} trades')`; misma palabra con otro sentido:
+`tc('curva', 'Inicio')`). El HTML fijo se traduce solo al cargar.
 Cada frase nueva necesita su traducción en `js/lang-en.js`; si falta, se ve en
 español y queda anotada en `I18N_MISSING` (consola del navegador).
 
