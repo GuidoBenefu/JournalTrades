@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=41"></script>
-<script src="js/i18n.js?v=41"></script>
+<script src="js/lang-en.js?v=42"></script>
+<script src="js/i18n.js?v=42"></script>
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=41"></script>
+<script src="js/theme.js?v=42"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#161615">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Journal">
-<script src="js/pwa.js?v=41" defer></script>
+<script src="js/pwa.js?v=42" defer></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=41">
-<script src="js/auth.js?v=41"></script>
+<link rel="stylesheet" href="css/styles.css?v=42">
+<script src="js/auth.js?v=42"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -34,7 +34,7 @@
       <button class="tabbtn active" data-tab="home" data-title="Inicio"><span class="ic"><i data-icon="dashboard" data-size="20"></i></span><span>Inicio</span></button>
       <button class="tabbtn" data-tab="register" data-title="Registrar trade"><span class="ic"><i data-icon="circle-plus" data-size="20"></i></span><span>Trade</span></button>
       <button class="tabbtn" data-tab="stats" data-title="Estadísticas"><span class="ic"><i data-icon="chart-line" data-size="20"></i></span><span>Stats</span></button>
-      <button class="tabbtn" data-tab="playbook" data-title="Playbook"><span class="ic"><i data-icon="book" data-size="20"></i></span><span>Playbook</span></button>
+      <button class="tabbtn" data-tab="playbook" data-title="Trading Plan"><span class="ic"><i data-icon="shield-check" data-size="20"></i></span><span>Plan</span></button>
       <button class="tabbtn" data-tab="calendar" data-title="Calendario"><span class="ic"><i data-icon="calendar" data-size="20"></i></span><span>Calendario</span></button>
       <button class="tabbtn" data-tab="history" data-title="Historial"><span class="ic"><i data-icon="history" data-size="20"></i></span><span>Historial</span></button>
       <button class="tabbtn" data-tab="review" data-title="Revisión semanal"><span class="ic"><i data-icon="notebook-pen" data-size="20"></i></span><span>Revisión</span></button>
@@ -115,7 +115,6 @@
         <div class="week-strip" id="homeWeek"></div>
       </section>
 
-
       <section class="card home-data">
         <div class="card-head"><h2>Últimos trades</h2><button type="button" class="link-btn" data-goto="history">Historial →</button></div>
         <div id="homeLast"></div>
@@ -144,10 +143,17 @@
         <section class="fstep" data-step="plan">
           <div class="fstep-head">
                         <span class="fstep-ic"><i data-icon="list-checks" data-size="18"></i></span>
-            <div class="fstep-t"><span class="fstep-num">Paso 1 de 4</span><h3>Tu Trading Plan</h3><p>Tocá cada regla que cumpliste</p></div>
+            <div class="fstep-t"><span class="fstep-num">Paso 1 de 4</span><h3>Tu Trading Plan</h3><p>Elegí el setup y tocá cada regla y criterio que cumpliste</p></div>
             <span class="fstep-status" id="planStatus"></span>
           </div>
+          <div class="field">
+            <label for="setupInput">Setup <span class="label-sub">(opcional)</span></label>
+            <input type="text" id="setupInput" list="setupList" placeholder="Ej. Sweep + IFVG" autocomplete="off">
+            <datalist id="setupList"></datalist>
+          </div>
+          <div class="set-sub plan-sub" id="rulesSub">Reglas generales</div>
           <div id="checklist"></div>
+          <div class="setup-check" id="setupHint" style="display:none;"></div>
           <div class="plan-meter" id="planMeter"></div>
         </section>
 
@@ -187,12 +193,6 @@
               <label for="entryTimeInput">Fecha y hora de entrada <span class="label-sub" id="entryTzLabel"></span></label>
               <input type="datetime-local" id="entryTimeInput">
               <div class="field-hint" id="sessionHint"></div>
-            </div>
-            <div class="field">
-              <label for="setupInput">Setup</label>
-              <input type="text" id="setupInput" list="setupList" placeholder="Ej. Sweep + IFVG" autocomplete="off">
-              <datalist id="setupList"></datalist>
-              <div class="setup-hint" id="setupHint" style="display:none;"></div>
             </div>
             <div class="field">
               <label for="riskInput">Riesgo (%)</label>
@@ -439,8 +439,58 @@
     <div class="tabpage" data-tab="playbook">
       <section class="card span-2 pb-head">
         <div class="set-head">
+          <span class="set-ic"><i data-icon="shield-check" data-size="18"></i></span>
+          <div><h2>Tu Trading Plan</h2><p>Dos partes: las reglas generales, que cumplís en todos los trades, y tus setups, cada uno con sus criterios de entrada. Al registrar un trade tildás las reglas y los criterios del setup que operaste, y con eso se mide si respetaste el plan.</p></div>
+        </div>
+      </section>
+      <section class="card set-card plan-card" id="planRulesCard">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="list-checks" data-size="18"></i></span>
+          <div><h2>Reglas generales</h2><p>Valen para todos tus trades, sin importar el setup: riesgo, horario, cuántas pérdidas por día. Ordenalas como las revisás.</p></div>
+          <span class="set-count" id="planCount"></span>
+        </div>
+        <div id="itemsManager"></div>
+        <div class="rule-add">
+          <div class="rule-add-row">
+            <span class="rule-add-ic"><i data-icon="plus" data-size="16"></i></span>
+            <input type="text" id="newItemLabel" placeholder="Escribí una nueva regla" aria-label="Nueva regla">
+            <button class="primary small" id="addItemBtn">Agregar</button>
+          </div>
+          <button type="button" class="link-btn" id="toggleHintBtn">+ Agregar aclaración</button>
+          <input type="text" id="newItemHint" placeholder="Aclaración opcional (ej. 9:30 a 11:00 NY)" aria-label="Aclaración" style="display:none;">
+        </div>
+      </section>
+      <section class="card set-card">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="target" data-size="18"></i></span>
+          <div><h2>Metas y riesgo</h2><p>Los límites que te ponés para operar con disciplina.</p></div>
+        </div>
+        <div class="field">
+          <label for="goalPlanInput">Meta del mes: trades con el plan respetado</label>
+          <div class="quick-row">
+            <div class="quick" id="goalQuick">
+              <button type="button" data-v="70">70%</button><button type="button" data-v="80">80%</button><button type="button" data-v="90">90%</button>
+            </div>
+            <div class="input-suffix input-sm"><input type="text" inputmode="numeric" id="goalPlanInput" placeholder="Ej. 80" aria-label="Meta personalizada"><span>%</span></div>
+          </div>
+          <div class="goal-preview" id="goalPreview"></div>
+        </div>
+        <div class="field">
+          <label for="maxDailyRiskInput">Riesgo máximo por día</label>
+          <div class="quick-row">
+            <div class="quick" id="riskQuick">
+              <button type="button" data-v="0.5">0.5%</button><button type="button" data-v="1">1%</button><button type="button" data-v="2">2%</button>
+            </div>
+            <div class="input-suffix input-sm"><input type="text" inputmode="decimal" id="maxDailyRiskInput" placeholder="Ej. 1" aria-label="Riesgo personalizado"><span>%</span></div>
+          </div>
+          <div id="dailyRiskStatus"></div>
+        </div>
+      </section>
+
+      <section class="card span-2 pb-head">
+        <div class="set-head">
           <span class="set-ic"><i data-icon="book" data-size="18"></i></span>
-          <div><h2>Tu Playbook</h2><p>Tus setups con sus criterios, un ejemplo y sus números reales. Los trades se vinculan por el nombre del setup.</p></div>
+          <div><h2>Tus setups</h2><p>Lo que tiene que pasar para entrar en cada setup, con un ejemplo y sus números reales. Los trades se vinculan por el nombre del setup.</p></div>
           <button type="button" class="primary small" id="pbNewBtn">+ Nuevo setup</button>
         </div>
       </section>
@@ -557,33 +607,16 @@
           <button type="button" id="addAccountBtn">+ Agregar cuenta</button>
         </section>
 
-        <section class="card set-card">
+        <section class="card set-card" id="pwaCard">
           <div class="set-head">
-            <span class="set-ic"><i data-icon="target" data-size="18"></i></span>
-            <div><h2>Metas y riesgo</h2><p>Los límites que te ponés para operar con disciplina.</p></div>
+            <span class="set-ic"><i data-icon="download" data-size="18"></i></span>
+            <div><h2>App en tu dispositivo</h2><p>Instalá Journal Trading como una app: abre desde el inicio de tu celular o tu compu, en pantalla completa y sin conexión.</p></div>
           </div>
-          <div class="field">
-            <label for="goalPlanInput">Meta del mes: trades con el plan respetado</label>
-            <div class="quick-row">
-              <div class="quick" id="goalQuick">
-                <button type="button" data-v="70">70%</button><button type="button" data-v="80">80%</button><button type="button" data-v="90">90%</button>
-              </div>
-              <div class="input-suffix input-sm"><input type="text" inputmode="numeric" id="goalPlanInput" placeholder="Ej. 80" aria-label="Meta personalizada"><span>%</span></div>
-            </div>
-            <div class="goal-preview" id="goalPreview"></div>
-          </div>
-          <div class="field">
-            <label for="maxDailyRiskInput">Riesgo máximo por día según tu Trading Plan</label>
-            <div class="quick-row">
-              <div class="quick" id="riskQuick">
-                <button type="button" data-v="0.5">0.5%</button><button type="button" data-v="1">1%</button><button type="button" data-v="2">2%</button>
-              </div>
-              <div class="input-suffix input-sm"><input type="text" inputmode="decimal" id="maxDailyRiskInput" placeholder="Ej. 1" aria-label="Riesgo personalizado"><span>%</span></div>
-            </div>
-            <div id="dailyRiskStatus"></div>
-          </div>
+          <div id="pwaBox"></div>
         </section>
+      </div>
 
+      <div class="stack">
         <section class="card set-card">
           <div class="set-head">
             <span class="set-ic"><i data-icon="clock" data-size="18"></i></span>
@@ -618,14 +651,6 @@
           </div>
         </section>
 
-        <section class="card set-card" id="pwaCard">
-          <div class="set-head">
-            <span class="set-ic"><i data-icon="download" data-size="18"></i></span>
-            <div><h2>App en tu dispositivo</h2><p>Instalá Journal Trading como una app: abre desde el inicio de tu celular o tu compu, en pantalla completa y sin conexión.</p></div>
-          </div>
-          <div id="pwaBox"></div>
-        </section>
-
         <section class="card set-card">
           <div class="set-head">
             <span class="set-ic"><i data-icon="database" data-size="18"></i></span>
@@ -649,29 +674,12 @@
           <div id="backupMsg" style="display:none; color:var(--danger); font-size:13px; margin-top:8px;"></div>
           <div class="danger-zone">
             <div class="dz-head"><i data-icon="alert-triangle" data-size="16"></i><b>Zona peligrosa</b></div>
-            <p>Borra todos tus trades, rachas y meses cerrados. Tu Trading Plan y tus ajustes se mantienen.</p>
+            <p>Borra todos tus trades, rachas y meses cerrados. Tu plan, tus setups y tus ajustes se mantienen.</p>
             <div id="resetArea"><button class="danger-o" id="resetBtn">Borrar todo el historial</button></div>
           </div>
         </section>
       </div>
 
-      <section class="card set-card plan-card">
-        <div class="set-head">
-          <span class="set-ic"><i data-icon="list-checks" data-size="18"></i></span>
-          <div><h2>Tu Trading Plan</h2><p>Las reglas que tiene que cumplir cada trade, en el orden en que las revisás.</p></div>
-          <span class="set-count" id="planCount"></span>
-        </div>
-        <div id="itemsManager"></div>
-        <div class="rule-add">
-          <div class="rule-add-row">
-            <span class="rule-add-ic"><i data-icon="plus" data-size="16"></i></span>
-            <input type="text" id="newItemLabel" placeholder="Escribí una nueva regla" aria-label="Nueva regla">
-            <button class="primary small" id="addItemBtn">Agregar</button>
-          </div>
-          <button type="button" class="link-btn" id="toggleHintBtn">+ Agregar aclaración</button>
-          <input type="text" id="newItemHint" placeholder="Aclaración opcional (ej. 9:30 a 11:00 NY)" aria-label="Aclaración" style="display:none;">
-        </div>
-      </section>
     </div><!-- /tab settings -->
 
     </main>
@@ -977,27 +985,27 @@
 </div>
 
 <script>translateDom();</script>
-<script src="js/icons.js?v=41"></script>
-<script src="js/storage.js?v=41"></script>
-<script src="js/time.js?v=41"></script>
-<script src="js/images.js?v=41"></script>
-<script src="js/session.js?v=41"></script>
-<script src="js/app.js?v=41"></script>
-<script src="js/accounts.js?v=41"></script>
-<script src="js/analytics.js?v=41"></script>
-<script src="js/charts.js?v=41"></script>
-<script src="js/achievements.js?v=41"></script>
-<script src="js/dashboard.js?v=41"></script>
-<script src="js/analysis.js?v=41"></script>
-<script src="js/review.js?v=41"></script>
-<script src="js/calendar.js?v=41"></script>
-<script src="js/onboarding.js?v=41"></script>
-<script src="js/settings.js?v=41"></script>
-<script src="js/history.js?v=41"></script>
-<script src="js/playbook.js?v=41"></script>
-<script src="js/share.js?v=41"></script>
-<script src="js/report.js?v=41"></script>
-<script src="js/importer.js?v=41"></script>
+<script src="js/icons.js?v=42"></script>
+<script src="js/storage.js?v=42"></script>
+<script src="js/time.js?v=42"></script>
+<script src="js/images.js?v=42"></script>
+<script src="js/session.js?v=42"></script>
+<script src="js/app.js?v=42"></script>
+<script src="js/accounts.js?v=42"></script>
+<script src="js/analytics.js?v=42"></script>
+<script src="js/charts.js?v=42"></script>
+<script src="js/achievements.js?v=42"></script>
+<script src="js/dashboard.js?v=42"></script>
+<script src="js/analysis.js?v=42"></script>
+<script src="js/review.js?v=42"></script>
+<script src="js/calendar.js?v=42"></script>
+<script src="js/onboarding.js?v=42"></script>
+<script src="js/settings.js?v=42"></script>
+<script src="js/history.js?v=42"></script>
+<script src="js/playbook.js?v=42"></script>
+<script src="js/share.js?v=42"></script>
+<script src="js/report.js?v=42"></script>
+<script src="js/importer.js?v=42"></script>
 
 </body>
 </html>

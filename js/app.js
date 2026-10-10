@@ -51,15 +51,29 @@ function signClass(v){
 }
 
 // Lo que se eligió en el formulario y no vive en un input.
-const tradeForm = {result: null, direction: null, confidence: null, emotion: null, errors: [], planTouched: false};
+const tradeForm = {result: null, direction: null, confidence: null, emotion: null, errors: [], planTouched: false, critChecked: new Set()};
 // Al editar: el plan original del trade se conserva salvo que se toquen las reglas.
 let editOriginalPlan = null;
 let planEditedInForm = false;
+
+// Criterios de entrada del setup elegido en el formulario (playbook.js carga después).
+function formCriteria(){
+  const p = typeof setupByName === 'function' ? setupByName(document.getElementById('setupInput').value) : null;
+  return p ? p.criteria : [];
+}
+// Lo que se tilda en un trade: las reglas generales más los criterios del setup.
+function planProgress(){
+  const crit = formCriteria();
+  const rulesDone = state.items.filter(it=> state.checked[it.id]).length;
+  const critDone = crit.filter(c=> tradeForm.critChecked.has(c)).length;
+  return {crit, rulesDone, critDone, done: rulesDone + critDone, total: state.items.length + crit.length};
+}
 // Si el usuario no cambió la hora, el trade se guarda con la hora del momento de guardar.
 let entryTimeTouched = false;
 // Pestaña desde donde se abrió la edición, para volver ahí al guardar.
 let editOriginTab = null;
 let editingTradeId = null;
+let editOriginalSetup = null;
 
 let currentImageData = null;
 
@@ -272,6 +286,11 @@ function rulesTotalOf(h){
   return Math.max(state.items.filter(it=> ruleCreatedAt(it) <= h.ts).length, (h.missing || []).length, 1);
 }
 
+// Todo lo que faltó del plan en un trade: reglas generales y criterios del setup.
+function missedPlan(h){
+  return (h.missing || []).concat(h.criteriaMissing || []);
+}
+
 function genItemId(){
   return 'item_' + Date.now() + '_' + Math.floor(Math.random()*10000);
 }
@@ -400,7 +419,7 @@ function renderChecklist(){
       <button type="button" class="primary small" id="goToPlanBtn">${t('Armar mi Trading Plan')}</button>
     </div>`;
     document.getElementById('goToPlanBtn').addEventListener('click', ()=>{
-      document.querySelector('.tabbtn[data-tab="settings"]').click();
+      document.querySelector('.tabbtn[data-tab="playbook"]').click();
       document.getElementById('newItemLabel').focus();
     });
     renderTradeFormStatus();
@@ -414,7 +433,7 @@ function renderChecklist(){
   box.querySelectorAll('.rule-tile').forEach(t=> t.addEventListener('click', ()=>{
     state.checked[t.dataset.id] = !state.checked[t.dataset.id];
     // Si se desmarcan todas, el paso vuelve a quedar sin responder.
-    tradeForm.planTouched = state.items.some(it=> state.checked[it.id]);
+    tradeForm.planTouched = planProgress().done > 0;
     planEditedInForm = true;
     saveState();
     renderChecklist();
@@ -493,8 +512,8 @@ function disciplineScore(rulesDone, rulesTotal, errorCount, emotionId, planTouch
 function renderTradeFormStatus(){
   if(!state.items) return;
   const val = id=> document.getElementById(id).value.trim();
-  const total = state.items.length;
-  const done = state.items.filter(it=> state.checked[it.id]).length;
+  const {done, total, crit} = planProgress();
+  document.getElementById('rulesSub').style.display = state.items.length && crit.length ? '' : 'none';
   const steps = {
     plan: total > 0 && (done === total || tradeForm.planTouched),
     trade: !!(tradeForm.result && tradeForm.direction && val('assetInput')),
@@ -510,7 +529,7 @@ function renderTradeFormStatus(){
   const meter = document.getElementById('planMeter');
   meter.style.display = total ? '' : 'none';
   meter.className = 'plan-meter ' + (done === total ? 'good' : done === 0 ? '' : 'warn');
-  meter.innerHTML = `<div class="pm-top"><span>${t('Cumpliste <b>{done}/{total}</b> reglas', {done, total})}</span><span>${done === total ? t('Dentro del plan') : (done || tradeForm.planTouched) ? t('Fuera del plan') : t('Sin marcar')}</span></div>
+  meter.innerHTML = `<div class="pm-top"><span>${crit.length ? t('Cumpliste <b>{done}/{total}</b> reglas y criterios', {done, total}) : t('Cumpliste <b>{done}/{total}</b> reglas', {done, total})}</span><span>${done === total ? t('Dentro del plan') : (done || tradeForm.planTouched) ? t('Fuera del plan') : t('Sin marcar')}</span></div>
     <div class="pm-bar"><div style="width:${pct}%"></div></div>`;
   document.getElementById('planStatus').textContent = total ? `${done}/${total}` : '';
 
@@ -591,6 +610,7 @@ function resetForm(){
   editingTradeId = null;
   editOriginalPlan = null;
   planEditedInForm = false;
+  editOriginalSetup = null;
   entryTimeTouched = false;
   state.items.forEach(it=> state.checked[it.id] = false);
   saveState();
@@ -600,7 +620,7 @@ function resetForm(){
   if(!state.history.length) document.getElementById('assetInput').value = '';
   else document.getElementById('assetInput').value = state.history[0].asset || '';
   document.getElementById('entryTimeInput').value = toLocalInputValue(Date.now());
-  Object.assign(tradeForm, {result: null, direction: null, confidence: null, emotion: null, errors: [], planTouched: false});
+  Object.assign(tradeForm, {result: null, direction: null, confidence: null, emotion: null, errors: [], planTouched: false, critChecked: new Set()});
   currentImageData = null;
   document.getElementById('tradeImageInput').value = '';
   renderImagePreview();
@@ -620,21 +640,27 @@ function startEditTrade(id){
   const missing = new Set(h.missingIds || []);
   const missingLabels = new Set(h.missing || []);
   state.items.forEach(it=> state.checked[it.id] = !missing.has(it.id) && !(!h.missingIds && missingLabels.has(it.label)));
-  editOriginalPlan = {followedPlan: h.followedPlan, missing: h.missing || [], missingIds: h.missingIds || [], rulesTotal: rulesTotalOf(h)};
+  editOriginalPlan = {followedPlan: h.followedPlan, missing: h.missing || [], missingIds: h.missingIds || [], rulesTotal: rulesTotalOf(h),
+    criteria: h.criteria || [], criteriaMissing: h.criteriaMissing || []};
   planEditedInForm = false;
+  editOriginalSetup = h.setup || '';
   entryTimeTouched = true;
   renderChecklist();
   renderFormAccount(h.accountId);
   document.getElementById('entryTimeInput').value = toLocalInputValue(h.ts);
   document.getElementById('assetInput').value = h.asset || '';
   document.getElementById('setupInput').value = h.setup || '';
-  renderSetupHint();
   document.getElementById('riskInput').value = h.riskPct ?? '';
   document.getElementById('rrPlanInput').value = h.rrPlanned ?? '';
   document.getElementById('resultPctInput').value = h.resultPct ?? '';
   document.getElementById('durationInput').value = h.durationMin ?? '';
   document.getElementById('resultNote').value = h.note || '';
+  // Criterios: los que se tildaron al registrarlo. Trades de antes de los criterios: según si siguió el plan.
+  const critMiss = new Set(h.criteriaMissing || []);
+  const setupCrit = typeof setupByName === 'function' && setupByName(h.setup) ? setupByName(h.setup).criteria : [];
+  tradeForm.critChecked = new Set(setupCrit.filter(c=> h.criteria ? h.criteria.includes(c) && !critMiss.has(c) : h.followedPlan));
   Object.assign(tradeForm, {result: h.result || null, planTouched: true, direction: h.direction || null, confidence: h.confidence || null, emotion: h.emotion || null, errors: [...(h.errors || [])]});
+  renderSetupHint();
   currentImageData = tradeImage(h);
   renderImagePreview();
   renderChips();
@@ -698,21 +724,27 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     resetForm();
     return fail(t('Ese trade ya no existe (se eliminó). No se guardaron los cambios.'));
   }
-  // Sin reglas tildadas el trade queda como plan roto: se confirma para que no sea un olvido.
+  // Sin reglas ni criterios tildados el trade queda como plan roto: se confirma para que no sea un olvido.
   const keepPlan = editingTradeId && editOriginalPlan && !planEditedInForm;
-  if(!keepPlan && state.items.length && !state.items.some(it=> state.checked[it.id])
-    && !confirm(t('No marcaste ninguna regla de tu Trading Plan. Si guardás así, el trade queda como "Plan roto". ¿Guardar igual?'))) return;
+  const prog = planProgress();
+  if(!keepPlan && prog.total && !prog.done
+    && !confirm(t('No marcaste ninguna regla ni criterio de tu Trading Plan. Si guardás así, el trade queda como "Plan roto". ¿Guardar igual?'))) return;
 
+  // El plan del trade: reglas generales + criterios del setup. Faltar cualquiera lo deja fuera del plan.
   const missingItems = state.items.filter(it=>!state.checked[it.id]);
+  const critMissing = prog.crit.filter(c=> !tradeForm.critChecked.has(c));
   const plan = keepPlan ? editOriginalPlan : {
-    followedPlan: missingItems.length === 0,
+    followedPlan: missingItems.length === 0 && critMissing.length === 0,
     missing: missingItems.map(it=>it.label),
     missingIds: missingItems.map(it=>it.id),
     rulesTotal: state.items.length,
+    criteria: prog.crit.slice(),
+    criteriaMissing: critMissing,
   };
   // Puntaje de disciplina del trade (el mismo de la vista previa), guardado con el trade.
-  const rulesDone = Math.max(0, (plan.rulesTotal || 0) - plan.missing.length);
-  const score = disciplineScore(rulesDone, plan.rulesTotal || 0, tradeForm.errors.length, tradeForm.emotion, true);
+  const critTotal = (plan.criteria || []).length;
+  const rulesDone = Math.max(0, (plan.rulesTotal || 0) - plan.missing.length) + critTotal - (plan.criteriaMissing || []).length;
+  const score = disciplineScore(rulesDone, (plan.rulesTotal || 0) + critTotal, tradeForm.errors.length, tradeForm.emotion, true);
   const data = {
     ts,
     ...plan,

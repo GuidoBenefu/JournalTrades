@@ -225,6 +225,12 @@ function renderTradePanel(){
       return `<li class="${miss ? 'miss' : 'ok'}">${Icons.svg(miss ? 'x' : 'check', 14)}<span>${escapeHtml(it.label)}</span></li>`;
     }).join('')
     + deleted.map(l=> `<li class="miss">${Icons.svg('x', 14)}<span>${escapeHtml(l)} <small>${t('(regla que ya no está en tu plan)')}</small></span></li>`).join('');
+  // Criterios del setup tal como se tildaron al registrar el trade.
+  const critMiss = h.criteriaMissing || [];
+  const crit = (h.criteria || []).map(c=>{
+    const miss = critMiss.includes(c);
+    return `<li class="${miss ? 'miss' : 'ok'}">${Icons.svg(miss ? 'x' : 'check', 14)}<span>${escapeHtml(c)}</span></li>`;
+  }).join('');
   const emo = emotionById(h.emotion);
   const errs = (h.errors || []).map(id=> errorById(id)).filter(Boolean);
   const maxRisk = getMaxDailyRisk();
@@ -249,7 +255,8 @@ function renderTradePanel(){
     </div>
     ${hasImage(h) ? `<img class="tp-img" src="${tradeImage(h)}" alt="${t('Captura del trade')}">` : ''}
     ${sec(`Trading Plan <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? t('Seguido') : t('Roto')}</span>`,
-      rules ? `<ul class="tp-rules">${rules}</ul>` : `<p class="tp-muted">${t('No tenías reglas cargadas.')}</p>`)}
+      (rules ? `<ul class="tp-rules">${rules}</ul>` : `<p class="tp-muted">${t('No tenías reglas cargadas.')}</p>`)
+      + (crit ? `<div class="tp-sub-t">${t('Criterios de {name}', {name: escapeHtml(h.setup || '')})}</div><ul class="tp-rules">${crit}</ul>` : ''))}
     ${sec(t('Tu cabeza'), `<div class="tp-mind">
       <div><span class="tp-muted">${t('Emoción')}</span><b class="${emo ? (emo.tone === 'risk' ? 'warn' : 'pos') : ''}">${emo ? emo.label : '—'}</b></div>
       <div><span class="tp-muted">${t('Confianza')}</span>${h.confidence ? `<span class="tp-conf">${[1, 2, 3, 4, 5].map(i=> `<i class="${i <= h.confidence ? 'on' : ''}"></i>`).join('')}</span><b>${h.confidence}/5</b>` : '<b>—</b>'}</div>
@@ -293,14 +300,14 @@ function exportCsv(list){
     const txt = v === null || v === undefined ? '' : String(v);
     return /[";,\n]/.test(txt) ? '"' + txt.replace(/"/g, '""') + '"' : txt;
   };
-  const head = ['Fecha', 'Hora (NY)', 'Cuenta', 'Activo', 'Dirección', 'Setup', 'Sesión', 'Resultado', 'Resultado %', 'Riesgo %', 'R:R planeado', 'R real', 'Duración (min)', 'Plan seguido', 'Reglas que faltaron', 'Emoción', 'Confianza', 'Errores', 'Nota'].map(h=> t(h));
+  const head = ['Fecha', 'Hora (NY)', 'Cuenta', 'Activo', 'Dirección', 'Setup', 'Sesión', 'Resultado', 'Resultado %', 'Riesgo %', 'R:R planeado', 'R real', 'Duración (min)', 'Plan seguido', 'Reglas y criterios que faltaron', 'Emoción', 'Confianza', 'Errores', 'Nota'].map(h=> t(h));
   const rows = list.map(h=>{
     const rr = realR(h);
     const emo = emotionById(h.emotion);
     return [
       fmtDate(h.ts), fmtTime(h.ts, NY_TZ), (accountById(h.accountId) || {}).name || '', h.asset || '', h.direction === 'long' ? 'Long' : h.direction === 'short' ? 'Short' : '',
       h.setup || '', sessionOf(h.ts), RESULT_LABELS[h.result] || '', num(h.resultPct), num(h.riskPct), num(h.rrPlanned),
-      rr === null ? '' : num(rr.toFixed(2)), num(h.durationMin), h.followedPlan ? t('Sí') : t('No'), (h.missing || []).join(' | '),
+      rr === null ? '' : num(rr.toFixed(2)), num(h.durationMin), h.followedPlan ? t('Sí') : t('No'), missedPlan(h).join(' | '),
       emo ? emo.label : '', h.confidence || '', (h.errors || []).map(id=> (errorById(id) || {label: id}).label).join(' | '), h.note || '',
     ].map(cell).join(sep);
   });

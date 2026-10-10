@@ -130,6 +130,10 @@ function sanitizeImport(data){
       missing: Array.isArray(h.missing) ? h.missing.filter(x=> typeof x === 'string').map(x=> x.slice(0, 200)) : [],
       ...(Array.isArray(h.missingIds) ? {missingIds: h.missingIds.map(safeId).filter(Boolean)} : {}),
       ...(optNum(h.rulesTotal) ? {rulesTotal: h.rulesTotal} : {}),
+      ...(Array.isArray(h.criteria) ? {
+        criteria: h.criteria.filter(x=> typeof x === 'string').slice(0, 15).map(x=> x.slice(0, 200)),
+        criteriaMissing: (Array.isArray(h.criteriaMissing) ? h.criteriaMissing : []).filter(x=> typeof x === 'string').slice(0, 15).map(x=> x.slice(0, 200)),
+      } : {}),
       ...(optNum(h.score) !== null && h.score >= 0 && h.score <= 100 ? {score: Math.round(h.score)} : {}),
       result: VALID_RESULTS.includes(h.result) ? h.result : (optNum(h.resultPct) > 0 ? 'win' : optNum(h.resultPct) < 0 ? 'loss' : 'be'),
       resultPct: optNum(h.resultPct), riskPct: optNum(h.riskPct), rrPlanned: optNum(h.rrPlanned), durationMin: optNum(h.durationMin),
