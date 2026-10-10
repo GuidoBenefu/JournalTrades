@@ -52,12 +52,13 @@ const Analytics = {
     return {key, n, sum, avg: withPct ? sum / withPct : 0, winRate: n ? wins / n * 100 : 0, planPct: n ? followed / n * 100 : 0};
   },
 
+  // Día de la semana (lunes = 0) y hora de entrada, en hora de Nueva York.
   weekdayOf(ts){
-    return (new Date(ts).getDay() + 6) % 7; // lunes = 0
+    return weekdayOf(ts);
   },
 
   hourOf(ts){
-    return new Date(ts).getHours();
+    return nyHourOf(ts);
   },
 
   // Matriz día de la semana x hora de entrada.
@@ -74,17 +75,15 @@ const Analytics = {
     return {cells};
   },
 
-  // Lunes (00:00) de la semana de ts, como clave AAAA-MM-DD.
-  weekStart(ts){
-    const d = new Date(ts);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - this.weekdayOf(d.getTime()));
-    return d;
+  // Lunes de la semana de trading de ts, como clave AAAA-MM-DD.
+  weekKey(ts){
+    const k = dayKeyFromTs(ts);
+    return addDaysKey(k, -weekdayOfKey(k));
   },
 
-  weekKey(ts){
-    const d = this.weekStart(ts);
-    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  // Instante en que empieza esa semana (según el cierre del día elegido).
+  weekStart(ts){
+    return new Date(dayStartTs(this.weekKey(ts)));
   },
 
   tradesOfWeek(key){
@@ -152,13 +151,13 @@ const Analytics = {
     const hours = this.group(trades, h=> this.hourOf(h.ts)).filter(g=> g.n >= MIN_SAMPLE).sort((x, y)=> y.avg - x.avg);
     if(hours.length >= 2 && hours[0].avg > 0){
       const hr = Number(hours[0].key);
-      out.push({tone: 'good', icon: 'clock', weight: 58, text: `Tu mejor horario es de <b>${hr}:00 a ${(hr + 1) % 24}:00</b> (${fmt(hours[0].avg)} por trade).`});
+      out.push({tone: 'good', icon: 'clock', weight: 58, text: `Tu mejor horario es de <b>${hr}:00 a ${(hr + 1) % 24}:00</b> hora NY (${fmt(hours[0].avg)} por trade).`});
     }
     if(hours.length >= 2){
       // El horario donde menos respetás el plan (no el de peor resultado).
       const worstH = hours.slice().sort((x, y)=> x.planPct - y.planPct)[0];
       if(worstH.planPct < 60) out.push({tone: 'bad', icon: 'moon', weight: 65,
-        text: `Entre las ${worstH.key}:00 y las ${(Number(worstH.key) + 1) % 24}:00 seguís tu plan solo el ${pctTxt(worstH.planPct)} de las veces.`});
+        text: `Entre las ${worstH.key}:00 y las ${(Number(worstH.key) + 1) % 24}:00 (hora NY) seguís tu plan solo el ${pctTxt(worstH.planPct)} de las veces.`});
     }
 
     // 6. Día de la semana.

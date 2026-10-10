@@ -28,16 +28,6 @@ const emotionById = id => EMOTIONS.find(e=>e.id === id);
 const emotionWord = e => e.id === 'fomo' ? 'FOMO' : e.label.toLowerCase();
 const errorById = id => ERROR_TAGS.find(e=>e.id === id);
 
-// Sesión según la hora de Nueva York del momento de entrada.
-const NY_HOUR = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', hour:'numeric', hourCycle:'h23'});
-function sessionOf(ts){
-  const h = Number(NY_HOUR.format(new Date(ts)));
-  if(h >= 19 || h < 3) return 'Asia';
-  if(h < 8) return 'Londres';
-  if(h < 17) return 'Nueva York';
-  return 'Fuera de sesión';
-}
-
 // R real = resultado / riesgo (ej. +1% arriesgando 0.5% = +2R).
 function realR(h){
   if(h.resultPct === null || h.resultPct === undefined || !h.riskPct) return null;
@@ -58,17 +48,6 @@ function fmtSignedPct(v){
 // Clase de color por signo, la misma en toda la app. Lo que se ve como "+0.0%" queda neutro.
 function signClass(v){
   return v > 0.05 ? 'pos' : v < -0.05 ? 'neg' : '';
-}
-
-const TIME_FMT = new Intl.DateTimeFormat('es-AR', {hour: '2-digit', minute: '2-digit'});
-function fmtTime(ts){
-  return TIME_FMT.format(new Date(ts));
-}
-
-function toLocalInputValue(ts){
-  const d = new Date(ts);
-  const pad = n => String(n).padStart(2, '0');
-  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
 // Lo que se eligió en el formulario y no vive en un input.
@@ -175,6 +154,7 @@ const state = {
   goals: {planPct: 80},
   reviews: {},
   achievements: {},
+  timePrefs: {...DEFAULT_TIME_PREFS},
 };
 
 function loadState(){
@@ -185,6 +165,7 @@ function loadState(){
   if(!state.goals) state.goals = {planPct: 80};
   if(!state.reviews) state.reviews = {};
   if(!state.achievements) state.achievements = {};
+  state.timePrefs = timePrefs();
   // Antes los meses cerrados se guardaban como foto; ahora se calculan del historial.
   delete state.closedMonths;
   sortHistory();
@@ -638,7 +619,7 @@ function renderTradeFormStatus(){
   const okNum = v=> typeof v === 'number' && !isNaN(v);
   const rReal = okNum(risk) && risk > 0 && okNum(res) ? res / risk : null;
   const timeVal = val('entryTimeInput');
-  const ts = timeVal ? new Date(timeVal).getTime() : Date.now();
+  const ts = timeVal ? fromInputValue(timeVal) : Date.now();
   const emo = emotionById(tradeForm.emotion);
   const score = disciplineScore(done, total, tradeForm.errors.length, tradeForm.emotion, tradeForm.planTouched);
   const scoreCls = score === null ? 'none' : score >= 80 ? 'good' : score >= 50 ? 'warn' : 'bad';
@@ -678,8 +659,12 @@ function parseNum(raw){
 
 function renderFormHints(){
   const val = document.getElementById('entryTimeInput').value;
-  const ts = val ? new Date(val).getTime() : Date.now();
-  document.getElementById('sessionHint').textContent = isNaN(ts) ? '' : 'Sesión: ' + sessionOf(ts);
+  const ts = val ? fromInputValue(val) : Date.now();
+  document.getElementById('entryTzLabel').textContent = '(' + (timePrefs().display === 'ny' ? 'hora de Nueva York' : 'tu hora local') + ')';
+  // La sesión, la hora en las dos zonas y, si cambia, el día de trading en el que cuenta.
+  const otherDay = !isNaN(ts) && val && dayKeyFromTs(ts) !== val.slice(0, 10);
+  document.getElementById('sessionHint').textContent = isNaN(ts) ? '' :
+    ['Sesión: ' + sessionOf(ts), fmtTimeBoth(ts), otherDay && 'Cuenta para el día ' + fmtDate(ts)].filter(Boolean).join(' · ');
   const risk = parseNum(document.getElementById('riskInput').value);
   const res = parseNum(document.getElementById('resultPctInput').value);
   const r = (typeof risk === 'number' && !isNaN(risk) && risk > 0 && typeof res === 'number' && !isNaN(res)) ? res / risk : null;
@@ -792,7 +777,7 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
   if(result === 'win' && resultPct !== null && resultPct < 0) return fail('Marcaste Ganador pero el resultado es negativo. Revisá el resultado o elegí Perdedor.');
   if(result === 'loss' && resultPct !== null && resultPct > 0) return fail('Marcaste Perdedor pero el resultado es positivo. Revisá el resultado o elegí Ganador.');
   const timeVal = document.getElementById('entryTimeInput').value;
-  let ts = timeVal ? new Date(timeVal).getTime() : Date.now();
+  let ts = timeVal ? fromInputValue(timeVal) : Date.now();
   // Si no tocó la hora, se usa la del momento en que guarda (el formulario pudo quedar abierto).
   if(!editingTradeId && !entryTimeTouched) ts = Date.now();
   if(isNaN(ts)) return fail('Revisá la fecha y hora de entrada.');
@@ -879,10 +864,6 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
 });
 
 // Formateador reutilizable: crear uno por llamada es lento con miles de trades.
-const DATE_FMT = new Intl.DateTimeFormat('es-AR', {day:'2-digit', month:'2-digit', year:'2-digit'});
-function fmtDate(ts){
-  return DATE_FMT.format(new Date(ts));
-}
 
 function getMaxDailyRisk(){
   const v = parseFloat(String(state.maxDailyRisk || '').replace(',', '.'));
@@ -969,19 +950,9 @@ function updateBestStreak(){
   }
 }
 
-function dayKeyFromTs(ts){
-  const d = new Date(ts);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
-function monthKeyOf(ts){
-  const d = new Date(ts);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-}
 
 function monthLabelOf(ts){
-  const d = new Date(ts);
-  return d.toLocaleDateString('es-AR', {month:'long', year:'numeric'});
+  return keyDate(dayKeyFromTs(ts)).toLocaleDateString('es-AR', {month:'long', year:'numeric'});
 }
 
 function monthLabel(){

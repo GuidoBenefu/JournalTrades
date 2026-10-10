@@ -33,6 +33,8 @@ js/auth.js       Usuarios, sesión y planes (simulados en localStorage)
 js/session.js    Header del usuario, plan, paywall al vencer la prueba y logout
 js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
                  versión de esquema, migraciones, export/import
+js/time.js       Horarios: todo se calcula en hora de Nueva York (día de trading,
+                 sesiones, mapa de calor); las horas se muestran en NY o en la local
 js/app.js        Lógica y renderizado del journal
 js/onboarding.js Configuración guiada al entrar por primera vez (cuentas nuevas)
 js/analytics.js  Curvas, agrupaciones y patrones automáticos sobre el historial

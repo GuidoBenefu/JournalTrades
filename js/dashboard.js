@@ -144,7 +144,7 @@ function renderToday(){
   const broken = today.filter(h=> !h.followedPlan).length;
   const maxRisk = getMaxDailyRisk();
   const used = dayRiskMap()[todayKey] || 0;
-  const d = new Date().toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long'});
+  const d = keyDate(todayKey).toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long'});
   document.getElementById('todayDate').textContent = d.charAt(0).toUpperCase() + d.slice(1);
   let alert;
   if(maxRisk !== null && used >= maxRisk) alert = ['bad', 'alert-triangle', used > maxRisk ? `Superaste tu riesgo máximo (${fix1(used)}% de ${maxRisk}%). Hoy no operes más.` : 'Llegaste a tu límite de riesgo. Hoy no operes más.'];
@@ -175,8 +175,8 @@ function renderGoalRing(){
   const tone = !m.n ? '' : pct >= goal ? 'good' : pct >= goal - 15 ? 'warn' : 'bad';
   const R = 62, C = 2 * Math.PI * R;
   const ga = (goal / 100) * 2 * Math.PI - Math.PI / 2;
-  const now = new Date();
-  const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+  const [ny, nm, nd] = currentDayKey().split('-').map(Number);
+  const daysLeft = new Date(ny, nm, 0).getDate() - nd;
   const inPlan = Math.round(pct / 100 * m.n);
   const g = goal / 100;
   const need = m.n && pct < goal && g < 1 ? Math.ceil((g * m.n - inPlan) / (1 - g) - 1e-9) : 0;
@@ -199,18 +199,17 @@ function renderGoalRing(){
 }
 
 function renderWeekStrip(){
-  const start = Analytics.weekStart(Date.now()).getTime();
+  const start = Analytics.weekKey(Date.now());
   const todayKey = dayKeyFromTs(Date.now());
   const box = document.getElementById('homeWeek');
   box.innerHTML = WEEKDAYS.map((n, i)=>{
-    const ts = start + i * 86400000 + 12 * 3600000;
-    const key = dayKeyFromTs(ts);
+    const key = addDaysKey(start, i);
     const list = state.history.filter(h=> dayKeyFromTs(h.ts) === key);
     const sum = list.reduce((a, h)=> a + Analytics.pct(h), 0);
     const broke = list.some(h=> !h.followedPlan);
     const cls = !list.length ? 'none' : sum > 0 ? 'pos' : sum < 0 ? 'neg' : 'be';
     return `<button type="button" class="wd ${cls} ${key === todayKey ? 'today' : ''} ${key > todayKey ? 'future' : ''}" data-day="${key}" ${key > todayKey ? 'disabled' : ''}>
-      <span class="wd-n">${n}</span><span class="wd-d">${new Date(ts).getDate()}</span>
+      <span class="wd-n">${n}</span><span class="wd-d">${Number(key.slice(8))}</span>
       <span class="wd-v">${list.length ? fmtSignedPct(sum) : '—'}</span>
       <span class="wd-c">${list.length ? `${list.length} ${list.length === 1 ? 'trade' : 'trades'}` : ''}</span>
       ${broke ? '<i class="wd-dot" title="Rompiste el plan"></i>' : ''}

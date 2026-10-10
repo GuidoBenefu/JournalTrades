@@ -117,6 +117,8 @@ function sanitizeImport(data){
     fundedRules: {dailyDrawdown: String(fr.dailyDrawdown ?? '').slice(0, 10), totalDrawdown: String(fr.totalDrawdown ?? '').slice(0, 10),
       profitTarget: String(fr.profitTarget ?? '').slice(0, 10), ddType: fr.ddType === 'trailing' ? 'trailing' : 'static', ddLock: !!fr.ddLock},
     goals: {planPct: isObj(data.goals) && optNum(data.goals.planPct) ? data.goals.planPct : 80},
+    timePrefs: {display: isObj(data.timePrefs) && data.timePrefs.display === 'local' ? 'local' : 'ny',
+      dayEnd: isObj(data.timePrefs) && data.timePrefs.dayEnd === 17 ? 17 : 0},
     achievements: {},
     _dropped: dropped,
   };
