@@ -45,9 +45,11 @@ const Analytics = {
   summary(items, key){
     const n = items.length;
     const sum = items.reduce((a, h)=> a + this.pct(h), 0);
+    // El promedio solo cuenta los trades que tienen el % de resultado cargado.
+    const withPct = items.filter(h=> h.resultPct !== null && h.resultPct !== undefined).length;
     const wins = items.filter(h=> h.result === 'win').length;
     const followed = items.filter(h=> h.followedPlan).length;
-    return {key, n, sum, avg: n ? sum / n : 0, winRate: n ? wins / n * 100 : 0, planPct: n ? followed / n * 100 : 0};
+    return {key, n, sum, avg: withPct ? sum / withPct : 0, winRate: n ? wins / n * 100 : 0, planPct: n ? followed / n * 100 : 0};
   },
 
   weekdayOf(ts){
@@ -153,12 +155,13 @@ const Analytics = {
     const hours = this.group(trades, h=> this.hourOf(h.ts)).filter(g=> g.n >= MIN_SAMPLE).sort((x, y)=> y.avg - x.avg);
     if(hours.length >= 2 && hours[0].avg > 0){
       const hr = Number(hours[0].key);
-      out.push({tone: 'good', icon: 'clock', weight: 58, text: `Tu mejor horario es de <b>${hr}:00 a ${hr + 1}:00</b> (${fmt(hours[0].avg)} por trade).`});
+      out.push({tone: 'good', icon: 'clock', weight: 58, text: `Tu mejor horario es de <b>${hr}:00 a ${(hr + 1) % 24}:00</b> (${fmt(hours[0].avg)} por trade).`});
     }
     if(hours.length >= 2){
-      const worstH = hours[hours.length - 1];
+      // El horario donde menos respetás el plan (no el de peor resultado).
+      const worstH = hours.slice().sort((x, y)=> x.planPct - y.planPct)[0];
       if(worstH.planPct < 60) out.push({tone: 'bad', icon: 'moon', weight: 65,
-        text: `Entre las ${worstH.key}:00 y las ${Number(worstH.key) + 1}:00 seguís tu plan solo el ${pctTxt(worstH.planPct)} de las veces.`});
+        text: `Entre las ${worstH.key}:00 y las ${(Number(worstH.key) + 1) % 24}:00 seguís tu plan solo el ${pctTxt(worstH.planPct)} de las veces.`});
     }
 
     // 6. Día de la semana.

@@ -4,6 +4,15 @@
 
 let reviewWeek = Analytics.weekKey(Date.now());
 let reviewScore = null;
+// Borrador: si hay cambios sin guardar en la semana abierta, los re-render no los pisan.
+let reviewFormWeek = null;
+let reviewDirty = false;
+const reviewDrafts = {};
+
+function reviewFormValues(){
+  return {good: document.getElementById('rvGood').value, error: document.getElementById('rvError').value,
+    change: document.getElementById('rvChange').value, score: reviewScore};
+}
 const DAY_MS_RV = 86400000;
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -100,7 +109,8 @@ function renderReviewSummary(){
 function renderReviewChart(){
   const start = weekStartTs(reviewWeek);
   const days = DAY_NAMES.map((name, i)=>{
-    const list = state.history.filter(h=> h.ts >= start + i * DAY_MS_RV && h.ts < start + (i + 1) * DAY_MS_RV);
+    const key = dayKeyFromTs(start + i * DAY_MS_RV + 12 * 3600000);
+    const list = state.history.filter(h=> dayKeyFromTs(h.ts) === key);
     return {name, n: list.length, sum: list.reduce((a, h)=> a + Analytics.pct(h), 0), broke: list.some(h=> !h.followedPlan)};
   });
   const max = Math.max(...days.map(d=> Math.abs(d.sum)), 0.1);
@@ -187,7 +197,13 @@ function renderQuestionChecks(){
 }
 
 function renderReviewForm(){
-  const r = state.reviews[reviewWeek] || {};
+  if(reviewDirty && reviewFormWeek === reviewWeek) return;
+  // Al cambiar de semana, lo escrito y no guardado queda como borrador de esa semana.
+  if(reviewDirty && reviewFormWeek) reviewDrafts[reviewFormWeek] = reviewFormValues();
+  reviewFormWeek = reviewWeek;
+  const draft = reviewDrafts[reviewWeek];
+  reviewDirty = !!draft;
+  const r = draft || state.reviews[reviewWeek] || {};
   document.getElementById('rvGood').value = r.good || '';
   document.getElementById('rvError').value = r.error || '';
   document.getElementById('rvChange').value = r.change || '';
@@ -195,7 +211,7 @@ function renderReviewForm(){
   renderScore();
   renderQuestionChecks();
   document.getElementById('rvSave').textContent = state.reviews[reviewWeek] ? 'Actualizar revisión' : 'Guardar revisión';
-  document.getElementById('rvSaved').textContent = state.reviews[reviewWeek] ? 'Guardada el ' + fmtDate(state.reviews[reviewWeek].savedAt) : '';
+  document.getElementById('rvSaved').textContent = draft ? 'Tenés cambios sin guardar en esta semana.' : state.reviews[reviewWeek] ? 'Guardada el ' + fmtDate(state.reviews[reviewWeek].savedAt) : '';
 }
 
 function renderScore(){
@@ -205,6 +221,7 @@ function renderScore(){
   box.innerHTML = Array.from({length: 10}, (_, i)=> `<button type="button" data-v="${i + 1}" class="${reviewScore && i < reviewScore ? 'on' : ''}" aria-label="${i + 1} de 10"><span>${i + 1}</span></button>`).join('');
   box.querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{
     reviewScore = Number(b.dataset.v);
+    reviewDirty = true;
     renderScore();
   }));
   const w = document.getElementById('rvScoreWord');
@@ -212,7 +229,10 @@ function renderScore(){
   w.textContent = reviewScore ? `${reviewScore}/10 · ${scoreWord(reviewScore)}` : '';
 }
 
-['rvGood', 'rvError', 'rvChange'].forEach(id=> document.getElementById(id).addEventListener('input', renderQuestionChecks));
+['rvGood', 'rvError', 'rvChange'].forEach(id=> document.getElementById(id).addEventListener('input', ()=>{
+  reviewDirty = true;
+  renderQuestionChecks();
+}));
 
 // ---- Historial ----
 function renderReviewTrend(){
@@ -310,6 +330,8 @@ document.getElementById('rvSave').addEventListener('click', ()=>{
     return;
   }
   state.reviews[reviewWeek] = {...data, savedAt: Date.now()};
+  delete reviewDrafts[reviewWeek];
+  reviewDirty = false;
   saveState();
   renderAll();
   document.getElementById('rvSaved').textContent = '✓ Revisión guardada.';

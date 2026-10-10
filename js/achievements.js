@@ -20,6 +20,11 @@ function goalPct(){
   return v > 0 && v <= 100 ? v : 80;
 }
 
+// Para el logro "Meta cumplida" la meta cuenta como mínimo 70%: bajarla no lo regala.
+function goalTarget(){
+  return Math.max(goalPct(), 70);
+}
+
 const ACHIEVEMENTS = [
   {id: 'first_trade', icon: 'rocket', title: 'Primer paso', desc: 'Registraste tu primer trade.', test: ()=> state.history.length >= 1},
   {id: 'trades_10', icon: 'book', title: 'Constante', desc: 'Registraste 10 trades.', test: ()=> state.history.length >= 10},
@@ -39,9 +44,9 @@ const ACHIEVEMENTS = [
     state.history.forEach(h=>{ const k = Analytics.weekKey(h.ts); (weeks[k] = weeks[k] || []).push(h); });
     return Object.values(weeks).some(w=> w.length >= 3 && w.every(h=> h.followedPlan));
   }},
-  {id: 'goal_month', icon: 'trophy', title: 'Meta cumplida', desc: 'Cumpliste tu meta de disciplina en un mes (con 10 trades o más).', test: ()=>{
+  {id: 'goal_month', icon: 'trophy', title: 'Meta cumplida', desc: 'Cumpliste tu meta de disciplina en un mes (con 10 trades o más y una meta de 70% o más).', test: ()=>{
     const months = [...new Set(state.history.map(h=> monthKeyOf(h.ts)))];
-    return months.some(m=>{ const r = monthPlanPct(m); return r.n >= 10 && r.pct >= goalPct(); });
+    return months.some(m=>{ const r = monthPlanPct(m); return r.n >= 10 && r.pct >= goalTarget(); });
   }},
   {id: 'first_review', icon: 'lightbulb', title: 'Autoconocimiento', desc: 'Completaste tu primera revisión semanal.', test: ()=> Object.keys(state.reviews || {}).length >= 1},
   {id: 'reviews_4', icon: 'calendar-check', title: 'Un mes de revisiones', desc: 'Completaste 4 revisiones semanales.', test: ()=> Object.keys(state.reviews || {}).length >= 4},
@@ -58,12 +63,17 @@ function showToast(html){
 }
 
 // silent: al cargar la app no se muestran avisos de logros que ya se cumplían.
+// Los logros se recalculan con el historial: si borrás los trades que lo
+// desbloquearon, el logro vuelve a quedar bloqueado (sin aviso).
 function checkAchievements(silent){
   let changed = false;
   ACHIEVEMENTS.forEach(a=>{
-    if(state.achievements[a.id]) return;
     let ok = false;
     try{ ok = a.test(); }catch(e){ ok = false; }
+    if(state.achievements[a.id]){
+      if(!ok){ delete state.achievements[a.id]; changed = true; }
+      return;
+    }
     if(!ok) return;
     state.achievements[a.id] = Date.now();
     changed = true;

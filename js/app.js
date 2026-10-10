@@ -55,6 +55,11 @@ function toLocalInputValue(ts){
 
 // Lo que se eligió en el formulario y no vive en un input.
 const tradeForm = {result: null, direction: null, confidence: null, emotion: null, errors: [], planTouched: false};
+// Al editar: el plan original del trade se conserva salvo que se toquen las reglas.
+let editOriginalPlan = null;
+let planEditedInForm = false;
+// Si el usuario no cambió la hora, el trade se guarda con la hora del momento de guardar.
+let entryTimeTouched = false;
 let editingTradeId = null;
 
 let currentImageData = null;
@@ -141,7 +146,6 @@ const state = {
   checked: {},
   history: [],
   bestStreak: 0,
-  closedMonths: [],
   items: null,
   accountType: null,
   maxDailyRisk: '',
@@ -159,6 +163,8 @@ function loadState(){
   if(!state.goals) state.goals = {planPct: 80};
   if(!state.reviews) state.reviews = {};
   if(!state.achievements) state.achievements = {};
+  // Antes los meses cerrados se guardaban como foto; ahora se calculan del historial.
+  delete state.closedMonths;
   sortHistory();
 }
 function saveState(){
@@ -203,6 +209,19 @@ document.getElementById('importInput').addEventListener('change', async e=>{
 
 function todayKey(){
   return new Date().toISOString().slice(0,10);
+}
+
+// Momento en que se creó una regla (los ids llevan la fecha: item_<ms>_<rand>).
+function ruleCreatedAt(it){
+  if(it.createdAt) return it.createdAt;
+  const m = /^item_(\d{12,})_/.exec(it.id || '');
+  return m ? Number(m[1]) : 0;
+}
+
+// Reglas que tenía el plan cuando se registró el trade (para trades viejos, se estima).
+function rulesTotalOf(h){
+  if(h.rulesTotal) return h.rulesTotal;
+  return Math.max(state.items.filter(it=> ruleCreatedAt(it) <= h.ts).length, (h.missing || []).length, 1);
 }
 
 function genItemId(){
@@ -309,7 +328,7 @@ document.querySelectorAll('#ddTypePills button').forEach(btn=>{
 
 document.querySelectorAll('#accountTypePills .type-card').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    state.accountType = (state.accountType === btn.dataset.type) ? null : btn.dataset.type;
+    state.accountType = btn.dataset.type;
     saveState();
     renderAccountTypePills();
   });
@@ -382,6 +401,8 @@ function renderItemsManager(){
   const on = (sel, fn)=> box.querySelectorAll(sel).forEach(btn=> btn.addEventListener('click', ()=> fn(btn.dataset.id, btn)));
   on('.editBtn', id=>{ editingItemId = id; renderItemsManager(); const inp = box.querySelector('.editLabel'); if(inp) inp.focus(); });
   on('.delBtn', id=>{
+    const it = state.items.find(x=> x.id === id);
+    if(!confirm(`¿Eliminar la regla "${it ? it.label : ''}" de tu Trading Plan? Los trades que ya cargaste la siguen mostrando como estaba.`)) return;
     state.items = state.items.filter(it=> it.id !== id);
     delete state.checked[id];
     afterPlanChange();
@@ -424,7 +445,7 @@ document.getElementById('addItemBtn').addEventListener('click', ()=>{
   const label = labelInput.value.trim();
   const hint = hintInput.value.trim();
   if(!label) return;
-  state.items.push({id: genItemId(), label, hint});
+  state.items.push({id: genItemId(), label, hint, createdAt: Date.now()});
   labelInput.value = '';
   hintInput.value = '';
   hintInput.style.display = 'none';
@@ -466,6 +487,7 @@ function renderChecklist(){
     state.checked[t.dataset.id] = !state.checked[t.dataset.id];
     // Si se desmarcan todas, el paso vuelve a quedar sin responder.
     tradeForm.planTouched = state.items.some(it=> state.checked[it.id]);
+    planEditedInForm = true;
     saveState();
     renderChecklist();
   }));
@@ -621,6 +643,7 @@ function renderFormHints(){
   document.getElementById('rrRealHint').textContent = r === null ? '' : 'R real: ' + (r > 0 ? '+' : '') + r.toFixed(1) + 'R';
 }
 ['entryTimeInput', 'riskInput', 'resultPctInput'].forEach(id=> document.getElementById(id).addEventListener('input', renderFormHints));
+document.getElementById('entryTimeInput').addEventListener('input', ()=>{ entryTimeTouched = true; });
 
 // Sugerencias de activos y setups a partir de lo que ya cargó.
 function renderDatalists(){
@@ -631,6 +654,9 @@ function renderDatalists(){
 
 function resetForm(){
   editingTradeId = null;
+  editOriginalPlan = null;
+  planEditedInForm = false;
+  entryTimeTouched = false;
   state.items.forEach(it=> state.checked[it.id] = false);
   saveState();
   renderChecklist();
@@ -653,7 +679,11 @@ function startEditTrade(id){
   if(!h) return;
   editingTradeId = id;
   const missing = new Set(h.missingIds || []);
-  state.items.forEach(it=> state.checked[it.id] = !missing.has(it.id));
+  const missingLabels = new Set(h.missing || []);
+  state.items.forEach(it=> state.checked[it.id] = !missing.has(it.id) && !(!h.missingIds && missingLabels.has(it.label)));
+  editOriginalPlan = {followedPlan: h.followedPlan, missing: h.missing || [], missingIds: h.missingIds || [], rulesTotal: rulesTotalOf(h)};
+  planEditedInForm = false;
+  entryTimeTouched = true;
   renderChecklist();
   document.getElementById('entryTimeInput').value = toLocalInputValue(h.ts);
   document.getElementById('assetInput').value = h.asset || '';
@@ -678,7 +708,6 @@ document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
 // (inicio, análisis, revisión) se suman con onDataChange.push(fn).
 const onDataChange = [];
 function renderAll(){
-  autoCloseCompletedMonths();
   renderHistory();
   renderStreak();
   renderFundedProgress();
@@ -693,25 +722,46 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
 
   const riskPct = parseNum(document.getElementById('riskInput').value);
   if(Number.isNaN(riskPct)) return fail('El riesgo tiene que ser un número (ej. 0.5).');
+  if(riskPct !== null && (riskPct <= 0 || riskPct > 100)) return fail('El riesgo tiene que ser mayor a 0 y como máximo 100%.');
   const rrPlanned = parseNum(document.getElementById('rrPlanInput').value);
   if(Number.isNaN(rrPlanned)) return fail('El R:R planeado tiene que ser un número (ej. 2).');
+  if(rrPlanned !== null && rrPlanned <= 0) return fail('El R:R planeado tiene que ser mayor a 0 (ej. 2 para 1:2).');
   const durationMin = parseNum(document.getElementById('durationInput').value);
   if(Number.isNaN(durationMin)) return fail('La duración tiene que ser un número de minutos (ej. 12).');
+  if(durationMin !== null && durationMin < 0) return fail('La duración no puede ser negativa.');
   const result = tradeForm.result;
   if(!result) return fail('Elegí un resultado (Ganador, Perdedor o Break even) antes de registrar.');
   const resultPct = parseNum(document.getElementById('resultPctInput').value);
   if(Number.isNaN(resultPct)) return fail('El resultado tiene que ser un número (ej. 1.2 o -0.5).');
+  if(resultPct !== null && Math.abs(resultPct) > 100) return fail('Revisá el resultado: no puede ser mayor a 100% ni menor a -100%.');
+  if(result === 'win' && resultPct !== null && resultPct < 0) return fail('Marcaste Ganador pero el resultado es negativo. Revisá el resultado o elegí Perdedor.');
+  if(result === 'loss' && resultPct !== null && resultPct > 0) return fail('Marcaste Perdedor pero el resultado es positivo. Revisá el resultado o elegí Ganador.');
   const timeVal = document.getElementById('entryTimeInput').value;
-  const ts = timeVal ? new Date(timeVal).getTime() : Date.now();
+  let ts = timeVal ? new Date(timeVal).getTime() : Date.now();
+  // Si no tocó la hora, se usa la del momento en que guarda (el formulario pudo quedar abierto).
+  if(!editingTradeId && !entryTimeTouched) ts = Date.now();
   if(isNaN(ts)) return fail('Revisá la fecha y hora de entrada.');
   if(ts > Date.now() + 5 * 60 * 1000) return fail('La fecha de entrada no puede ser futura.');
 
+  if(editingTradeId && !state.history.some(x=> x.id === editingTradeId)){
+    resetForm();
+    return fail('Ese trade ya no existe (se eliminó). No se guardaron los cambios.');
+  }
+  // Sin reglas tildadas el trade queda como plan roto: se confirma para que no sea un olvido.
+  const keepPlan = editingTradeId && editOriginalPlan && !planEditedInForm;
+  if(!keepPlan && state.items.length && !state.items.some(it=> state.checked[it.id])
+    && !confirm('No marcaste ninguna regla de tu Trading Plan. Si guardás así, el trade queda como "Plan roto". ¿Guardar igual?')) return;
+
   const missingItems = state.items.filter(it=>!state.checked[it.id]);
-  const data = {
-    ts,
+  const plan = keepPlan ? editOriginalPlan : {
     followedPlan: missingItems.length === 0,
     missing: missingItems.map(it=>it.label),
     missingIds: missingItems.map(it=>it.id),
+    rulesTotal: state.items.length,
+  };
+  const data = {
+    ts,
+    ...plan,
     result,
     resultPct,
     riskPct,
@@ -782,7 +832,7 @@ function renderDailyRisk(){
   if(max === null){ box.innerHTML = '<div class="risk-gauge empty">Elegí tu riesgo máximo diario para ver cuánto te queda cada día.</div>'; return; }
   const used = dayRiskMap()[dayKeyFromTs(Date.now())] || 0;
   const ratio = used / max;
-  const cls = ratio > 1 ? 'bad' : ratio >= 1 ? 'bad' : ratio >= 0.5 ? 'warn' : 'good';
+  const cls = ratio >= 1 ? 'bad' : ratio >= 0.5 ? 'warn' : 'good';
   const label = ratio > 1 ? 'Límite superado' : ratio >= 1 ? 'Límite alcanzado' : ratio >= 0.5 ? 'Cerca del límite' : 'Dentro del límite';
   const msg = ratio > 1
     ? 'Arriesgaste ' + used.toFixed(1) + '% y tu máximo es ' + max + '%. Hoy rompiste tu risk management.'
@@ -809,15 +859,27 @@ function renderHistory(){
   renderDailyRisk();
 }
 
-function renderStreak(){
-  const box = document.getElementById('streakBox');
-  let streak = 0;
+// Racha actual (desde el trade más nuevo) y mejor racha histórica, siempre
+// calculadas sobre el historial: si se borran o editan trades, se ajustan.
+function computeStreaks(){
+  let current = 0;
   for(const h of state.history){
-    if(h.followedPlan) streak++;
+    if(h.followedPlan) current++;
     else break;
   }
-  if(streak > state.bestStreak){
-    state.bestStreak = streak;
+  let run = 0, best = 0;
+  for(let i = state.history.length - 1; i >= 0; i--){
+    run = state.history[i].followedPlan ? run + 1 : 0;
+    if(run > best) best = run;
+  }
+  return {current, best};
+}
+
+function renderStreak(){
+  const box = document.getElementById('streakBox');
+  const {current: streak, best} = computeStreaks();
+  if(best !== state.bestStreak){
+    state.bestStreak = best;
     saveState();
   }
   box.innerHTML = `
@@ -849,47 +911,27 @@ function monthLabel(){
 function summarizePeriod(list){
   const total = list.length;
   const followed = list.filter(h=>h.followedPlan).length;
-  const pct = total ? Math.round((followed/total)*100) : 0;
+  const pctRaw = total ? followed / total * 100 : 0;
   const withPct = list.filter(h=>h.resultPct !== null && h.resultPct !== undefined);
   const sum = withPct.reduce((a,h)=>a+h.resultPct, 0);
-  let avgPerDay = null;
-  if(total > 0){
-    const startTs = Math.min(...list.map(h=>h.ts));
-    const endTs = Math.max(...list.map(h=>h.ts));
-    const startDay = new Date(startTs); startDay.setHours(0,0,0,0);
-    const endDay = new Date(endTs); endDay.setHours(0,0,0,0);
-    const days = Math.round((endDay - startDay)/(1000*60*60*24)) + 1;
-    avgPerDay = total / days;
-  }
+  // Trades por día operado (no por día de calendario).
+  const daysTraded = new Set(list.map(h=> dayKeyFromTs(h.ts))).size;
+  const avgPerDay = total ? total / daysTraded : null;
   const riskMgmtPct = computeRiskMgmtPct(list);
-  return {total, pct, sum, avgPerDay, riskMgmtPct};
+  return {total, pct: Math.round(pctRaw), pctRaw, sum, avgPerDay, riskMgmtPct};
 }
 
-function autoCloseCompletedMonths(){
+// Meses anteriores al actual, del más nuevo al más viejo. Se calculan siempre
+// desde el historial, así reflejan trades cargados, editados o borrados después.
+function closedMonthsList(){
   const currentKey = monthKeyOf(Date.now());
-  const closedKeys = new Set(state.closedMonths.map(m=>m.monthKey));
-  const pastKeys = new Set(
-    state.history
-      .map(h=>monthKeyOf(h.ts))
-      .filter(k=>k !== currentKey && !closedKeys.has(k))
-  );
-  if(pastKeys.size === 0) return;
-  const sortedKeys = Array.from(pastKeys).sort();
-  sortedKeys.forEach(key=>{
-    const monthTrades = state.history.filter(h=>monthKeyOf(h.ts) === key);
+  const keys = [...new Set(state.history.map(h=> monthKeyOf(h.ts)))].filter(k=> k !== currentKey).sort().reverse();
+  return keys.map(key=>{
+    const monthTrades = state.history.filter(h=> monthKeyOf(h.ts) === key);
     const s = summarizePeriod(monthTrades);
-    state.closedMonths.push({
-      monthKey: key,
-      label: monthLabelOf(monthTrades[0].ts),
-      count: s.total,
-      sum: s.sum,
-      followedPct: s.pct,
-      avgPerDay: s.avgPerDay,
-      riskMgmtPct: s.riskMgmtPct,
-      closedAt: Date.now()
-    });
+    return {monthKey: key, label: monthLabelOf(monthTrades[0].ts), count: s.total, sum: s.sum,
+      followedPct: s.pct, followedPctRaw: s.pctRaw, avgPerDay: s.avgPerDay, riskMgmtPct: s.riskMgmtPct};
   });
-  saveState();
 }
 
 function attachResetHandler(){
@@ -908,7 +950,6 @@ function showResetConfirm(){
   document.getElementById('resetConfirmBtn').addEventListener('click', ()=>{
     state.history = [];
     state.bestStreak = 0;
-    state.closedMonths = [];
     saveState();
     renderAll();
     restoreResetButton();
@@ -929,6 +970,11 @@ function showTab(tab){
   document.querySelectorAll('.tabpage').forEach(p=> p.classList.toggle('active', p.dataset.tab === tab));
   document.querySelectorAll('.tabbtn').forEach(b=> b.classList.toggle('active', b === btn));
   document.getElementById('pageTitle').textContent = btn.dataset.title;
+  // La hora de entrada se mantiene al día mientras el usuario no la cambie.
+  if(tab === 'register' && !editingTradeId && !entryTimeTouched){
+    document.getElementById('entryTimeInput').value = toLocalInputValue(Date.now());
+    renderFormHints();
+  }
   window.scrollTo(0, 0);
   // Los gráficos se dibujan con el ancho real de su tarjeta.
   window.dispatchEvent(new Event('tabshown'));

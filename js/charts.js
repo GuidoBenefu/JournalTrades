@@ -127,8 +127,10 @@ const Charts = {
     if(!values || values.length < 2) return '';
     const W = 100, H = 28;
     const min = Math.min(...values), max = Math.max(...values);
-    const span = max - min || 1;
-    const p = values.map((v, i)=> (i * W / (values.length - 1)).toFixed(1) + ',' + (H - 2 - (v - min) / span * (H - 4)).toFixed(1)).join(' ');
+    const span = max - min;
+    // Si todos los valores son iguales, la línea va por el medio (no pegada abajo).
+    const y = v=> span ? H - 2 - (v - min) / span * (H - 4) : H / 2;
+    const p = values.map((v, i)=> (i * W / (values.length - 1)).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
     return `<svg class="spark ${cls}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${p}"/></svg>`;
   },
 };

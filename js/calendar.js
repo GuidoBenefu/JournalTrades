@@ -347,6 +347,8 @@ document.getElementById('dayAddTrade').addEventListener('click', ()=>{
   const [y, m, d] = key.split('-').map(Number);
   const when = new Date(y, m - 1, d, now.getHours(), now.getMinutes());
   document.getElementById('entryTimeInput').value = toLocalInputValue(Math.min(when.getTime(), Date.now()));
+  // Si eligió otro día, esa fecha se respeta al guardar.
+  entryTimeTouched = key !== dayKeyFromTs(Date.now());
   renderFormHints();
   showTab('register');
 });
