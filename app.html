@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=33"></script>
+<script src="js/theme.js?v=34"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=33">
-<script src="js/auth.js?v=33"></script>
+<link rel="stylesheet" href="css/styles.css?v=34">
+<script src="js/auth.js?v=34"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -566,6 +566,17 @@
             </div>
             <div class="field-hint" id="dayEndHint"></div>
           </div>
+          <div class="field">
+            <label>Sesiones y killzones <span class="label-sub">(hora de Nueva York)</span></label>
+            <div class="ses-list" id="sessionList"></div>
+            <div class="field-error" id="sessionError"></div>
+            <div class="row ses-actions">
+              <button type="button" class="small" id="addSessionBtn">+ Agregar sesión</button>
+              <button type="button" class="small ghost" id="addKillzonesBtn">+ Killzones ICT</button>
+              <button type="button" class="small ghost" id="resetSessionsBtn">Volver a las de siempre</button>
+            </div>
+            <div class="field-hint">Cada trade toma la sesión de su hora de entrada. Si dos se superponen, cuenta la más corta (la killzone gana sobre la sesión entera). Los cambios se aplican también a los trades que ya cargaste.</div>
+          </div>
         </section>
 
         <section class="card set-card">
@@ -752,23 +763,23 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=33"></script>
-<script src="js/storage.js?v=33"></script>
-<script src="js/time.js?v=33"></script>
-<script src="js/images.js?v=33"></script>
-<script src="js/session.js?v=33"></script>
-<script src="js/app.js?v=33"></script>
-<script src="js/accounts.js?v=33"></script>
-<script src="js/analytics.js?v=33"></script>
-<script src="js/charts.js?v=33"></script>
-<script src="js/achievements.js?v=33"></script>
-<script src="js/dashboard.js?v=33"></script>
-<script src="js/analysis.js?v=33"></script>
-<script src="js/review.js?v=33"></script>
-<script src="js/calendar.js?v=33"></script>
-<script src="js/onboarding.js?v=33"></script>
-<script src="js/settings.js?v=33"></script>
-<script src="js/history.js?v=33"></script>
+<script src="js/icons.js?v=34"></script>
+<script src="js/storage.js?v=34"></script>
+<script src="js/time.js?v=34"></script>
+<script src="js/images.js?v=34"></script>
+<script src="js/session.js?v=34"></script>
+<script src="js/app.js?v=34"></script>
+<script src="js/accounts.js?v=34"></script>
+<script src="js/analytics.js?v=34"></script>
+<script src="js/charts.js?v=34"></script>
+<script src="js/achievements.js?v=34"></script>
+<script src="js/dashboard.js?v=34"></script>
+<script src="js/analysis.js?v=34"></script>
+<script src="js/review.js?v=34"></script>
+<script src="js/calendar.js?v=34"></script>
+<script src="js/onboarding.js?v=34"></script>
+<script src="js/settings.js?v=34"></script>
+<script src="js/history.js?v=34"></script>
 
 </body>
 </html>

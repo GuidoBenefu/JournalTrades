@@ -92,13 +92,40 @@ const keyDate = key=> new Date(key + 'T12:00:00');
 const nyHourOf = ts=> nyParts(ts).h;
 const weekdayOf = ts=> weekdayOfKey(dayKeyFromTs(ts));
 
-// Sesión según la hora de Nueva York del momento de entrada.
+// ---- Sesiones (editables, en hora de Nueva York) ----
+// Cada una: {id, name, start: 'HH:MM', end: 'HH:MM'}. Si end < start cruza la medianoche.
+const DEFAULT_SESSIONS = [
+  {id: 'asia', name: 'Asia', start: '19:00', end: '03:00'},
+  {id: 'london', name: 'Londres', start: '03:00', end: '08:00'},
+  {id: 'ny', name: 'Nueva York', start: '08:00', end: '17:00'},
+];
+// Killzones de ICT, para sumar de un toque.
+const KILLZONE_SESSIONS = [
+  {name: 'London KZ', start: '02:00', end: '05:00'},
+  {name: 'NY AM KZ', start: '07:00', end: '10:00'},
+  {name: 'NY PM KZ', start: '13:30', end: '16:00'},
+];
+const NO_SESSION = 'Fuera de sesión';
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function sessionList(){
+  const s = typeof state !== 'undefined' && state.sessions;
+  return Array.isArray(s) ? s : DEFAULT_SESSIONS;
+}
+const hhmmToMin = v=> Number(v.slice(0, 2)) * 60 + Number(v.slice(3, 5));
+// Duración en minutos (las que cruzan la medianoche también).
+const sessionLength = s=> (hhmmToMin(s.end) - hhmmToMin(s.start) + 1440) % 1440;
+function inSession(min, s){
+  const a = hhmmToMin(s.start), b = hhmmToMin(s.end);
+  return a < b ? min >= a && min < b : min >= a || min < b;
+}
+// Sesión según la hora de Nueva York del momento de entrada. Si se superponen
+// (ej. una killzone dentro de Nueva York), gana la más corta: la más específica.
 function sessionOf(ts){
-  const h = nyHourOf(ts);
-  if(h >= 19 || h < 3) return 'Asia';
-  if(h < 8) return 'Londres';
-  if(h < 17) return 'Nueva York';
-  return 'Fuera de sesión';
+  const p = nyParts(ts), min = p.h * 60 + p.min;
+  const hits = sessionList().filter(s=> inSession(min, s));
+  if(!hits.length) return NO_SESSION;
+  return hits.reduce((a, b)=> sessionLength(b) < sessionLength(a) ? b : a).name;
 }
 
 // ---- Mostrar ----
