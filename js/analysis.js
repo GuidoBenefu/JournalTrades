@@ -16,7 +16,7 @@ const avgOf = arr=> arr.length ? arr.reduce((a, b)=> a + b, 0) / arr.length : nu
 // "Esta semana" y "Este mes" son calendario (igual que en Inicio, Historial y
 // Revisión); "3 meses" son los últimos 90 días.
 function periodLists(){
-  if(statsPeriod === 'all') return {cur: state.history, prev: null};
+  if(statsPeriod === 'all') return {cur: viewTrades(), prev: null};
   let from, prevFrom;
   if(statsPeriod === 'week'){
     from = Analytics.weekStart(Date.now()).getTime();
@@ -29,8 +29,8 @@ function periodLists(){
     prevFrom = from - 90 * 86400000;
   }
   return {
-    cur: state.history.filter(h=> h.ts >= from),
-    prev: state.history.filter(h=> h.ts >= prevFrom && h.ts < from),
+    cur: viewTrades().filter(h=> h.ts >= from),
+    prev: viewTrades().filter(h=> h.ts >= prevFrom && h.ts < from),
   };
 }
 
@@ -310,7 +310,7 @@ function renderItemStats(cur){
 function renderMonths(){
   const box = document.getElementById('closedMonths');
   const curKey = monthKeyOf(Date.now());
-  const cur = state.history.filter(h=> monthKeyOf(h.ts) === curKey);
+  const cur = viewTrades().filter(h=> monthKeyOf(h.ts) === curKey);
   const s = summarizePeriod(cur);
   const months = [{label: monthLabel(), count: s.total, sum: s.sum, followedPct: s.pct, followedPctRaw: s.pctRaw, avgPerDay: s.avgPerDay, riskMgmtPct: s.riskMgmtPct, current: true}]
     .concat(closedMonthsList());

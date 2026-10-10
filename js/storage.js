@@ -5,7 +5,7 @@
 // (por ejemplo uno que llame a una API REST) y asignarlo en `JournalStore.adapter`.
 
 const STORAGE_KEY = 'tradingChecklistState';
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 // Cada usuario tiene su propio journal bajo `tradingChecklistState:<userId>`.
 // Una cuenta nueva siempre arranca vacía: no se adoptan datos de otras claves.
@@ -40,7 +40,50 @@ const LocalStorageAdapter = {
 const MIGRATIONS = {
   // Datos del artifact original (sin schemaVersion): ya tienen la forma de la v1.
   1: data => data,
+  // v2: varias cuentas. El tipo de cuenta y las reglas de prop firm, que eran
+  // únicos, pasan a una primera cuenta y todos los trades quedan en ella.
+  2: data => {
+    const fr = isObj(data.fundedRules) ? data.fundedRules : {};
+    const prop = data.accountType === 'funded';
+    const acc = newAccount({
+      id: 'acc_main',
+      name: prop ? 'Cuenta de fondeo' : 'Mi cuenta',
+      type: prop ? (String(fr.profitTarget || '').trim() ? 'challenge' : 'funded') : 'personal',
+      createdAt: Math.min(Date.now(), ...(Array.isArray(data.history) ? data.history.map(h=> h && h.ts).filter(Number.isFinite) : [])),
+      rules: prop ? fr : {},
+    });
+    if(Array.isArray(data.history)) data.history.forEach(h=>{ if(isObj(h)) h.accountId = acc.id; });
+    data.accounts = [acc];
+    data.viewAccount = 'all';
+    delete data.accountType;
+    delete data.fundedRules;
+    return data;
+  },
 };
+
+// ---- Cuentas ----
+const ACCOUNT_TYPES = ['personal', 'challenge', 'funded'];
+const ACCOUNT_STATUS = ['active', 'passed', 'failed', 'archived'];
+const ruleStr = v=> (typeof v === 'string' || typeof v === 'number') ? String(v).slice(0, 10) : '';
+// Una cuenta con todos sus campos y tipos correctos. Las reglas se guardan como
+// texto (lo que escribió el usuario) y se interpretan al calcular.
+function newAccount(a = {}){
+  const r = isObj(a.rules) ? a.rules : {};
+  return {
+    id: safeId(a.id) || ('acc_' + Date.now() + '_' + Math.floor(Math.random() * 1e4)),
+    name: (typeof a.name === 'string' && a.name.trim()) ? a.name.trim().slice(0, 40) : 'Cuenta',
+    type: ACCOUNT_TYPES.includes(a.type) ? a.type : 'personal',
+    firm: typeof a.firm === 'string' ? a.firm.trim().slice(0, 40) : '',
+    size: (typeof a.size === 'number' && isFinite(a.size) && a.size > 0) ? a.size : null,
+    status: ACCOUNT_STATUS.includes(a.status) ? a.status : 'active',
+    createdAt: (typeof a.createdAt === 'number' && isFinite(a.createdAt)) ? a.createdAt : Date.now(),
+    rules: {
+      dailyDrawdown: ruleStr(r.dailyDrawdown), totalDrawdown: ruleStr(r.totalDrawdown), profitTarget: ruleStr(r.profitTarget),
+      ddType: r.ddType === 'trailing' ? 'trailing' : 'static', ddLock: !!r.ddLock,
+      minDays: ruleStr(r.minDays), consistency: ruleStr(r.consistency),
+    },
+  };
+}
 
 function migrate(data){
   let version = data.schemaVersion || 0;
@@ -98,6 +141,7 @@ function sanitizeImport(data){
       note: typeof h.note === 'string' ? h.note.slice(0, 5000) : '',
       image: img,
       ...(optNum(h.editedAt) ? {editedAt: h.editedAt} : {}),
+      accountId: safeId(h.accountId),
     };
   });
   const reviews = {};
@@ -106,16 +150,19 @@ function sanitizeImport(data){
     reviews[k] = {good: optStr(r.good, 5000) || '', error: optStr(r.error, 5000) || '', change: optStr(r.change, 5000) || '',
       score: [1,2,3,4,5,6,7,8,9,10].includes(r.score) ? r.score : null, savedAt: optNum(r.savedAt) || Date.now()};
   });
-  const fr = isObj(data.fundedRules) ? data.fundedRules : {};
+  const ids = new Set();
+  const accounts = (Array.isArray(data.accounts) ? data.accounts : []).filter(isObj).map(newAccount)
+    .filter(a=> !ids.has(a.id) && ids.add(a.id)).slice(0, 50);
+  if(!accounts.length) accounts.push(newAccount({id: 'acc_main', name: 'Mi cuenta'}));
+  history.forEach(h=>{ if(!ids.has(h.accountId)) h.accountId = accounts[0].id; });
   return {
     schemaVersion: data.schemaVersion,
     history, items, reviews,
     checked: {},
     bestStreak: 0,
-    accountType: ['retail', 'funded'].includes(data.accountType) ? data.accountType : null,
     maxDailyRisk: (typeof data.maxDailyRisk === 'string' || typeof data.maxDailyRisk === 'number') ? String(data.maxDailyRisk).slice(0, 10) : '',
-    fundedRules: {dailyDrawdown: String(fr.dailyDrawdown ?? '').slice(0, 10), totalDrawdown: String(fr.totalDrawdown ?? '').slice(0, 10),
-      profitTarget: String(fr.profitTarget ?? '').slice(0, 10), ddType: fr.ddType === 'trailing' ? 'trailing' : 'static', ddLock: !!fr.ddLock},
+    accounts,
+    viewAccount: data.viewAccount === 'all' || ids.has(data.viewAccount) ? data.viewAccount : 'all',
     goals: {planPct: isObj(data.goals) && optNum(data.goals.planPct) ? data.goals.planPct : 80},
     timePrefs: {display: isObj(data.timePrefs) && data.timePrefs.display === 'local' ? 'local' : 'ny',
       dayEnd: isObj(data.timePrefs) && data.timePrefs.dayEnd === 17 ? 17 : 0},

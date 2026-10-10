@@ -24,7 +24,7 @@ function weekLabel(key){
 }
 
 function earliestWeek(){
-  const keys = state.history.map(h=> Analytics.weekKey(h.ts)).concat(Object.keys(state.reviews));
+  const keys = viewTrades().map(h=> Analytics.weekKey(h.ts)).concat(Object.keys(state.reviews));
   return keys.length ? keys.sort()[0] : Analytics.weekKey(Date.now());
 }
 
@@ -106,7 +106,7 @@ function renderReviewSummary(){
 function renderReviewChart(){
   const days = WEEKDAYS.map((name, i)=>{
     const key = addDaysKey(reviewWeek, i);
-    const list = state.history.filter(h=> dayKeyFromTs(h.ts) === key);
+    const list = viewTrades().filter(h=> dayKeyFromTs(h.ts) === key);
     return {name, n: list.length, sum: list.reduce((a, h)=> a + Analytics.pct(h), 0), broke: list.some(h=> !h.followedPlan)};
   });
   const max = Math.max(...days.map(d=> Math.abs(d.sum)), 0.1);

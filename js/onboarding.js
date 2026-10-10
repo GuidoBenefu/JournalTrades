@@ -12,8 +12,8 @@
 
   let step = 1;
   const draft = {
-    accountType: state.accountType || 'retail',
-    ddType: (state.fundedRules && state.fundedRules.ddType) || 'static',
+    accountType: isPropAccount(state.accounts[0]) ? 'funded' : 'retail',
+    ddType: state.accounts[0].rules.ddType || 'static',
     // El Trading Plan se arma desde cero: cada usuario carga sus propias reglas.
     items: [],
   };
@@ -119,20 +119,20 @@
       }
     }
     state.items = draft.items.map(it=> ({id: it.id, label: it.label, hint: it.hint || '', createdAt: Date.now()}));
-    state.accountType = draft.accountType;
+    // La primera cuenta toma el tipo y las reglas elegidas acá; después se suman más en Ajustes.
+    const acc = state.accounts[0];
     if(draft.accountType === 'funded'){
-      Object.assign(state.fundedRules, {
-        dailyDrawdown: $('obDaily').value.trim(),
-        totalDrawdown: $('obTotal').value.trim(),
-        profitTarget: $('obTarget').value.trim(),
-        ddType: draft.ddType,
-      });
+      const target = $('obTarget').value.trim();
+      Object.assign(acc, {type: target ? 'challenge' : 'funded', name: acc.name === 'Mi cuenta' ? 'Cuenta de fondeo' : acc.name});
+      Object.assign(acc.rules, {dailyDrawdown: $('obDaily').value.trim(), totalDrawdown: $('obTotal').value.trim(), profitTarget: target, ddType: draft.ddType});
+    } else {
+      acc.type = 'personal';
     }
     state.maxDailyRisk = risk;
     saveState();
 
     $('maxDailyRiskInput').value = state.maxDailyRisk || '';
-    renderAccountTypePills();
+    renderAccounts();
     renderItemsManager();
     renderChecklist();
     updateAddButton();

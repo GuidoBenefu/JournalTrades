@@ -36,6 +36,8 @@ js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
 js/time.js       Horarios: todo se calcula en hora de Nueva York (día de trading,
                  sesiones, mapa de calor); las horas se muestran en NY o en la local
 js/app.js        Lógica y renderizado del journal
+js/accounts.js   Cuentas (personal, challenge, fondeada): reglas de prop firm por
+                 cuenta, selector de cuenta, progreso en Inicio y editor en Ajustes
 js/onboarding.js Configuración guiada al entrar por primera vez (cuentas nuevas)
 js/analytics.js  Curvas, agrupaciones y patrones automáticos sobre el historial
 js/charts.js     Gráfico de líneas en SVG (sin librerías)

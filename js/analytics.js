@@ -7,7 +7,7 @@ const WEEKDAYS_LONG = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 's�
 
 const Analytics = {
   // Trades del más viejo al más nuevo.
-  chronological(list = state.history){
+  chronological(list = viewTrades()){
     return list.slice().sort((a, b)=> a.ts - b.ts);
   },
 
@@ -16,7 +16,7 @@ const Analytics = {
   },
 
   // Curva real y curva "solo trades con el plan seguido", trade por trade.
-  equityCurves(list = state.history){
+  equityCurves(list = viewTrades()){
     const trades = this.chronological(list);
     let real = 0, plan = 0;
     const realPts = [0], planPts = [0];
@@ -62,7 +62,7 @@ const Analytics = {
   },
 
   // Matriz día de la semana x hora de entrada.
-  heatmap(list = state.history){
+  heatmap(list = viewTrades()){
     const cells = {};
     list.forEach(h=>{
       const d = this.weekdayOf(h.ts), hr = this.hourOf(h.ts);
@@ -87,11 +87,11 @@ const Analytics = {
   },
 
   tradesOfWeek(key){
-    return state.history.filter(h=> this.weekKey(h.ts) === key);
+    return viewTrades().filter(h=> this.weekKey(h.ts) === key);
   },
 
   // Patrones automáticos. Cada uno: {tone: 'good'|'bad'|'info', icon, text, weight}.
-  insights(list = state.history){
+  insights(list = viewTrades()){
     const out = [];
     const trades = this.chronological(list);
     if(trades.length < MIN_SAMPLE) return out;
