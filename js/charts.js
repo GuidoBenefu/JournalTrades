@@ -48,8 +48,12 @@ const Charts = {
   // area: sombrea debajo de la primera serie. band: pinta lo que la segunda
   // serie queda por encima de la primera (lo que costó romper el plan).
   line(el, {series, points = [], height = 220, format = v=> v.toFixed(1) + '%', area = false, band = false}){
-    if(!el) return;
+    // Un gráfico en una pestaña oculta se dibuja recién cuando se muestra.
+    if(!el || !el.offsetParent) return;
     const W = Math.max(260, Math.floor(el.clientWidth || 600));
+    // Al mostrar una pestaña solo se redibuja si cambió el ancho (los datos ya están al día).
+    if(Charts._onlyIfResized && el.dataset.w === String(W)) return;
+    el.dataset.w = W;
     const H = height;
     const pad = {l: 46, r: 14, t: 14, b: 26};
     const n = Math.max(...series.map(s=> s.values.length));
@@ -112,7 +116,8 @@ const Charts = {
       const i = Math.max(0, Math.min(n - 1, Math.round((sx - pad.l) / ((W - pad.l - pad.r) / (n - 1)))));
       guide.setAttribute('x1', x(i)); guide.setAttribute('x2', x(i)); guide.style.display = '';
       dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(base[i])); dot.style.display = '';
-      ChartTip.show(titles && titles[i] ? titles[i] : format(base[i]), pt.clientX, pt.clientY);
+      const tip = typeof titles === 'function' ? titles(i) : titles && titles[i];
+      ChartTip.show(tip || format(base[i]), pt.clientX, pt.clientY);
     };
     const leave = ()=>{ guide.style.display = 'none'; dot.style.display = 'none'; ChartTip.hide(); };
     svg.addEventListener('mousemove', move);
@@ -140,4 +145,8 @@ window.addEventListener('resize', ()=>{
   clearTimeout(chartResizeTimer);
   chartResizeTimer = setTimeout(()=> Charts.redrawAll(), 150);
 });
-window.addEventListener('tabshown', ()=>{ ChartTip.hide(); Charts.redrawAll(); });
+window.addEventListener('tabshown', ()=>{
+  ChartTip.hide();
+  Charts._onlyIfResized = true;
+  try{ Charts.redrawAll(); } finally { Charts._onlyIfResized = false; }
+});

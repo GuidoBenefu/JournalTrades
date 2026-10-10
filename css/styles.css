@@ -162,6 +162,8 @@ button.small{padding:6px 12px; font-size:13px;}
 .plan-empty p{font-size:14px; color:var(--text-2); line-height:1.5; margin:0 0 12px;}
 .ob-quick{margin-bottom:14px;}
 .ob-foot{display:flex; justify-content:space-between; margin-top:22px; padding-top:16px; border-top:1px solid var(--border);}
+.ob-logout{text-align:center; margin-top:12px;}
+.ob-logout .link-btn{color:var(--text-3);}
 
 
 h1{font-size:20px; font-weight:500; margin:4px 0 2px;}
@@ -1249,7 +1251,9 @@ body.no-scroll{overflow:hidden;}
   .badges-recent{grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px;}
   .badges-recent .badge-card{padding:10px;}
   .badges-recent .badge-d{display:none;}
-  .hx-top .seg{min-width:0; flex:1;}
+  .hx-top .seg{min-width:0; flex:1 1 100%;}
+  .hx-top .seg button{padding:7px 4px; font-size:12.5px;}
+  .hx-top .select-sm{flex:1 1 100%;}
   .hx-search{min-width:100%;}
   .hx-sep{display:none;}
   .hx-filters{flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; margin:0 -4px; padding-left:4px; scrollbar-width:none;}

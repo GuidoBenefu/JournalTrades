@@ -10,7 +10,9 @@ function renderInsightList(el, list, emptyText){
 
 function equityChart(el, height, list){
   const {trades, real, plan} = Analytics.equityCurves(list);
-  const titles = real.map((v, i)=>{
+  // El detalle de cada punto se arma recién cuando se pasa el mouse.
+  const titles = i=>{
+    const v = real[i];
     if(i === 0) return '<b>Inicio</b>';
     const h = trades[i - 1];
     const r = Analytics.pct(h);
@@ -19,7 +21,7 @@ function equityChart(el, height, list){
       <div class="tip-r"><span>Acumulado</span><b>${fmtSignedPct(v)}</b></div>
       <div class="tip-r"><span>Con tu plan</span><b>${fmtSignedPct(plan[i])}</b></div>
       ${h.followedPlan ? '' : '<div class="tip-bad">Plan roto</div>'}`;
-  });
+  };
   Charts.line(el, {
     height,
     area: true,
@@ -308,7 +310,8 @@ function renderHome(){
   renderBadges();
 }
 
+renderHome.tab = 'home';
 onDataChange.push(renderHome);
 Charts.register(()=>{ if(state.history.length) drawHomeCurve(); });
 // Se dibuja cuando terminan de cargar todos los módulos (usa el Historial y el Calendario).
-document.addEventListener('DOMContentLoaded', renderHome);
+document.addEventListener('DOMContentLoaded', ()=> renderOrDefer(renderHome));

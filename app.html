@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=27"></script>
+<script src="js/theme.js?v=28"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=27">
-<script src="js/auth.js?v=27"></script>
+<link rel="stylesheet" href="css/styles.css?v=28">
+<script src="js/auth.js?v=28"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -636,7 +636,7 @@
   </div>
 </div>
 
-<div id="paywall" class="paywall" style="display:none;">
+<div id="paywall" class="paywall" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="paywallTitle">
   <div class="paywall-box">
     <div class="paywall-ic" id="paywallIcon"><i data-icon="hourglass" data-size="26"></i></div>
     <h2 id="paywallTitle">Tu prueba gratis terminó</h2>
@@ -656,6 +656,7 @@
     <p class="paywall-note">20% de descuento pagando anual.</p>
     <div class="row" style="justify-content:center;">
       <button class="ghost" id="paywallCloseBtn">Ahora no</button>
+      <button class="ghost" id="paywallExportBtn" style="display:none;">Descargar mis datos</button>
       <button class="ghost" id="paywallLogoutBtn">Cerrar sesión</button>
     </div>
   </div>
@@ -727,6 +728,7 @@
       <button type="button" class="ghost" id="obBack">Atrás</button>
       <button type="button" class="primary" id="obNext">Siguiente</button>
     </div>
+    <div class="ob-logout"><button type="button" class="link-btn" id="obLogout">No soy yo · Cerrar sesión</button></div>
   </div>
 </div>
 
@@ -770,20 +772,21 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=27"></script>
-<script src="js/storage.js?v=27"></script>
-<script src="js/session.js?v=27"></script>
-<script src="js/app.js?v=27"></script>
-<script src="js/analytics.js?v=27"></script>
-<script src="js/charts.js?v=27"></script>
-<script src="js/achievements.js?v=27"></script>
-<script src="js/dashboard.js?v=27"></script>
-<script src="js/analysis.js?v=27"></script>
-<script src="js/review.js?v=27"></script>
-<script src="js/calendar.js?v=27"></script>
-<script src="js/onboarding.js?v=27"></script>
-<script src="js/settings.js?v=27"></script>
-<script src="js/history.js?v=27"></script>
+<script src="js/icons.js?v=28"></script>
+<script src="js/storage.js?v=28"></script>
+<script src="js/images.js?v=28"></script>
+<script src="js/session.js?v=28"></script>
+<script src="js/app.js?v=28"></script>
+<script src="js/analytics.js?v=28"></script>
+<script src="js/charts.js?v=28"></script>
+<script src="js/achievements.js?v=28"></script>
+<script src="js/dashboard.js?v=28"></script>
+<script src="js/analysis.js?v=28"></script>
+<script src="js/review.js?v=28"></script>
+<script src="js/calendar.js?v=28"></script>
+<script src="js/onboarding.js?v=28"></script>
+<script src="js/settings.js?v=28"></script>
+<script src="js/history.js?v=28"></script>
 
 </body>
 </html>

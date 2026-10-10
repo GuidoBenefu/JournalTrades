@@ -312,7 +312,6 @@ function renderReview(){
   renderReviewForm();
   renderReviewTrend();
   renderReviewList();
-  renderReviewNudge();
 }
 
 document.getElementById('rvPrev').addEventListener('click', ()=>{ reviewWeek = shiftWeek(reviewWeek, -1); renderReview(); });
@@ -344,5 +343,8 @@ document.getElementById('rvSave').addEventListener('click', ()=>{
   if(key && Analytics.tradesOfWeek(key).length && !state.reviews[key]) reviewWeek = key;
 })();
 
+renderReview.tab = 'review';
 onDataChange.push(renderReview);
-renderReview();
+onDataChange.push(renderReviewNudge);
+renderOrDefer(renderReview);
+renderReviewNudge();
