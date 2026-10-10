@@ -2,7 +2,7 @@
 // panel de detalle de cada trade y exportación a CSV.
 
 const PAGE_SIZE = 20;
-const hx = {q: '', period: 'all', sort: 'date', result: null, plan: null, dir: null, errors: false, image: false, limit: PAGE_SIZE};
+const hx = {q: '', period: 'all', sort: 'date', result: null, plan: null, dir: null, errors: false, image: false, pending: false, limit: PAGE_SIZE};
 let openTradeId = null;
 let hxObserver = null;
 
@@ -18,7 +18,7 @@ function hxTone(h){
 }
 
 function filtersActive(){
-  return !!(hx.q || hx.period !== 'all' || hx.result || hx.plan || hx.dir || hx.errors || hx.image);
+  return !!(hx.q || hx.period !== 'all' || hx.result || hx.plan || hx.dir || hx.errors || hx.image || hx.pending);
 }
 
 function filteredTrades(){
@@ -34,6 +34,7 @@ function filteredTrades(){
     if(hx.dir && h.direction !== hx.dir) return false;
     if(hx.errors && !(h.errors && h.errors.length)) return false;
     if(hx.image && !hasImage(h)) return false;
+    if(hx.pending && !h.pending) return false;
     if(q && ![h.asset, h.setup, h.note].some(t=> t && t.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -52,14 +53,14 @@ function renderHxControls(){
   document.querySelectorAll('#hxPeriod button').forEach(b=> b.classList.toggle('active', b.dataset.v === hx.period));
   document.querySelectorAll('#hxFilters .chip').forEach(c=>{
     const f = c.dataset.f;
-    const on = f === 'errors' || f === 'image' ? hx[f] : hx[f] === c.dataset.v;
+    const on = f === 'errors' || f === 'image' || f === 'pending' ? hx[f] : hx[f] === c.dataset.v;
     c.classList.toggle('active', !!on);
   });
   document.getElementById('hxSort').value = hx.sort;
 }
 
 function resetHxFilters(){
-  Object.assign(hx, {q: '', period: 'all', result: null, plan: null, dir: null, errors: false, image: false, limit: PAGE_SIZE});
+  Object.assign(hx, {q: '', period: 'all', result: null, plan: null, dir: null, errors: false, image: false, pending: false, limit: PAGE_SIZE});
   document.getElementById('hxSearch').value = '';
   renderHistoryTab();
 }
@@ -77,8 +78,12 @@ function renderHxSummary(list){
     </div>
     <div class="hxs-actions">
       ${filtersActive() ? `<button type="button" class="ghost small" id="hxClear">${Icons.svg('x', 14)} Limpiar filtros</button>` : ''}
+      ${!hx.pending && viewTrades().some(h=> h.pending) ? `<button type="button" class="small" id="hxPending">${viewTrades().filter(h=> h.pending).length} por completar</button>` : ''}
+      <button type="button" class="small ghost" data-open-importer>${Icons.svg('file-up', 15)} Importar CSV</button>
       <button type="button" class="small" id="hxExport" ${s.n ? '' : 'disabled'}>${Icons.svg('file-down', 15)} Exportar CSV</button>
     </div>`;
+  const pend = document.getElementById('hxPending');
+  if(pend) pend.addEventListener('click', showPendingTrades);
   const clear = document.getElementById('hxClear');
   if(clear) clear.addEventListener('click', resetHxFilters);
   document.getElementById('hxExport').addEventListener('click', ()=> exportCsv(list));
@@ -91,6 +96,7 @@ function tradeRow(h, showDate){
   const emo = emotionById(h.emotion);
   const errs = (h.errors || []).map(id=> errorById(id)).filter(Boolean);
   const tags = [];
+  if(h.pending) tags.push('<span class="tag warn">Por completar</span>');
   tags.push(`<span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? 'Plan seguido' : 'Plan roto'}</span>`);
   if(emo) tags.push(`<span class="tag ${emo.tone === 'risk' ? 'warn' : ''}">${emo.label}</span>`);
   errs.slice(0, 2).forEach(e=> tags.push(`<span class="tag bad">${e.label}</span>`));
@@ -233,6 +239,7 @@ function renderTradePanel(){
       ${cell('Riesgo', h.riskPct !== null && h.riskPct !== undefined ? h.riskPct + '%' : '—')}
     </div>
     <div class="tp-chips">
+      ${h.pending ? '<span class="tag warn">Importado · por completar</span>' : ''}
       ${typeof h.score === 'number' ? `<span class="tag ${h.score >= 80 ? 'good' : h.score >= 50 ? 'warn' : 'bad'}">Disciplina ${h.score}/100</span>` : ''}
       ${state.accounts.length > 1 && accountById(h.accountId) ? `<span class="tag strong">${escapeHtml(accountById(h.accountId).name)}</span>` : ''}
       <span class="tag">${sessionOf(h.ts)}</span>
@@ -314,11 +321,19 @@ document.querySelectorAll('#hxPeriod button').forEach(b=> b.addEventListener('cl
 document.getElementById('hxSort').addEventListener('change', e=>{ hx.sort = e.target.value; hx.limit = PAGE_SIZE; renderHistoryTab(); });
 document.querySelectorAll('#hxFilters .chip').forEach(c=> c.addEventListener('click', ()=>{
   const f = c.dataset.f;
-  if(f === 'errors' || f === 'image') hx[f] = !hx[f];
+  if(f === 'errors' || f === 'image' || f === 'pending') hx[f] = !hx[f];
   else hx[f] = hx[f] === c.dataset.v ? null : c.dataset.v;
   hx.limit = PAGE_SIZE;
   renderHistoryTab();
 }));
+
+// Historial filtrado en los trades importados que falta completar.
+function showPendingTrades(){
+  Object.assign(hx, {q: '', period: 'all', result: null, plan: null, dir: null, errors: false, image: false, pending: true, limit: PAGE_SIZE});
+  document.getElementById('hxSearch').value = '';
+  showTab('history');
+  renderHistoryTab();
+}
 
 renderHistoryTab.tab = 'history';
 onDataChange.push(renderHistoryTab);

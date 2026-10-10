@@ -743,6 +743,8 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     const h = state.history.find(x=> x.id === editingTradeId);
     const before = {...h};
     Object.assign(h, data, {editedAt: Date.now()});
+    // Un trade importado queda completo cuando se guarda desde el formulario.
+    delete h.pending;
     undo = ()=>{ Object.keys(h).forEach(k=> delete h[k]); Object.assign(h, before); };
   } else {
     const nuevo = {id: genItemId(), loggedAt: Date.now(), ...data};

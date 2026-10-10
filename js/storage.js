@@ -142,6 +142,8 @@ function sanitizeImport(data){
       image: img,
       ...(optNum(h.editedAt) ? {editedAt: h.editedAt} : {}),
       accountId: safeId(h.accountId),
+      ...(h.imported === true ? {imported: true} : {}),
+      ...(h.pending === true ? {pending: true} : {}),
     };
   });
   const reviews = {};
