@@ -96,7 +96,7 @@ const Analytics = {
     const out = [];
     const trades = this.chronological(list);
     if(trades.length < MIN_SAMPLE) return out;
-    const fmt = v=> (v > 0 ? '+' : '') + v.toFixed(1) + '%';
+    const fmt = fmtSignedPct;
     const pctTxt = v=> Math.round(v) + '%';
 
     // 1. Plan después de una pérdida.
