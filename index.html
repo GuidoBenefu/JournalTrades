@@ -19,11 +19,11 @@
 <meta name="twitter:description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade.">
 <meta name="twitter:image" content="https://guidobenefu.github.io/JournalTrades/img/og-image.png">
 <meta name="theme-color" content="#161615">
-<script src="js/theme.js?v=30"></script>
+<script src="js/theme.js?v=31"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=30">
-<link rel="stylesheet" href="css/site.css?v=30">
+<link rel="stylesheet" href="css/styles.css?v=31">
+<link rel="stylesheet" href="css/site.css?v=31">
 </head>
 <body>
 <div class="site">
@@ -61,24 +61,52 @@
       <div class="note">Sin tarjeta para la prueba gratis.</div>
     </div>
 
-    <div class="preview demo" id="demo">
+    <div class="preview demo" id="demo" aria-label="Demo: registrá un trade">
       <div class="pv-top">
         <div class="pv-title">Probalo: registrá un trade</div>
         <span class="badge ok" id="demoStreak"></span>
       </div>
-      <p class="demo-help">Tildá solo lo que realmente se cumplió en tu último trade.</p>
-      <div class="demo-list">
-        <label class="demo-item"><input type="checkbox" data-label="Entré en mi horario operativo"><span>Entré en mi horario operativo</span></label>
-        <label class="demo-item"><input type="checkbox" data-label="Tenía el bias definido antes de operar"><span>Tenía el bias definido antes de operar</span></label>
-        <label class="demo-item"><input type="checkbox" data-label="Respeté mi riesgo máximo"><span>Respeté mi riesgo máximo</span></label>
-        <label class="demo-item"><input type="checkbox" data-label="No fue FOMO"><span>Lo hubiera tomado igual sin ver los últimos 2 minutos (no fue FOMO)</span></label>
+
+      <div class="dm-step">
+        <div class="dm-step-t"><span>1</span> ¿Cumpliste tu Trading Plan?</div>
+        <div class="rule-grid dm-rules" id="demoRules">
+          <button type="button" class="rule-tile" data-rule="Entré en mi horario"><span class="rule-check"><i data-icon="circle-check" data-size="18"></i></span><span class="rule-txt"><span class="label">Entré en mi horario</span></span></button>
+          <button type="button" class="rule-tile" data-rule="Bias definido antes de operar"><span class="rule-check"><i data-icon="circle-check" data-size="18"></i></span><span class="rule-txt"><span class="label">Bias definido antes de operar</span></span></button>
+          <button type="button" class="rule-tile" data-rule="Respeté mi riesgo máximo"><span class="rule-check"><i data-icon="circle-check" data-size="18"></i></span><span class="rule-txt"><span class="label">Respeté mi riesgo máximo</span></span></button>
+          <button type="button" class="rule-tile" data-rule="No fue FOMO"><span class="rule-check"><i data-icon="circle-check" data-size="18"></i></span><span class="rule-txt"><span class="label">No fue FOMO</span></span></button>
+        </div>
       </div>
+
+      <div class="dm-step">
+        <div class="dm-step-t"><span>2</span> ¿Cómo te sentías al entrar?</div>
+        <div class="chips" id="demoEmo">
+          <button type="button" class="chip chip-good" data-emo="calm" data-tone="good">Tranquilo</button>
+          <button type="button" class="chip chip-good" data-emo="confident" data-tone="good">Confiado</button>
+          <button type="button" class="chip chip-risk" data-emo="fomo" data-tone="risk">FOMO</button>
+          <button type="button" class="chip chip-risk" data-emo="revenge" data-tone="risk">Revancha</button>
+        </div>
+      </div>
+
+      <div class="dm-step">
+        <div class="dm-step-t"><span>3</span> Resultado</div>
+        <div class="bigseg bigseg-2" id="demoResultSeg">
+          <button type="button" class="bs-win" data-res="win"><i data-icon="trending-up" data-size="16"></i><span>Ganador</span></button>
+          <button type="button" class="bs-loss" data-res="loss"><i data-icon="trending-down" data-size="16"></i><span>Perdedor</span></button>
+        </div>
+      </div>
+
       <button type="button" class="btn-link primary demo-btn" id="demoBtn">Registrar trade</button>
-      <div class="demo-result" id="demoResult" aria-live="polite"></div>
-      <div class="demo-hist">
-        <span class="demo-hist-label">Últimos trades</span>
-        <div class="demo-dots" id="demoDots"></div>
+      <div class="dm-error" id="demoError" aria-live="polite"></div>
+
+      <div class="dm-feedback" id="demoResult" aria-live="polite" hidden></div>
+
+      <div class="dm-curve">
+        <div class="dm-curve-top"><span>Tus últimos trades</span><span class="dm-legend"><i class="lg-real"></i>Real <i class="lg-plan"></i>Con tu plan</span></div>
+        <div id="demoCurve"></div>
+        <div class="dm-cost" id="demoCost"></div>
       </div>
+
+      <a class="btn-link dm-cta" id="demoCta" href="auth.html?mode=register&plan=trial" hidden>Esto, pero con tus trades reales → Probar gratis 7 días</a>
     </div>
   </section>
 
@@ -238,8 +266,8 @@
   <footer class="site-footer">Journal Trading</footer>
 </div>
 
-<script src="js/icons.js?v=30"></script>
-<script src="js/auth.js?v=30"></script>
+<script src="js/icons.js?v=31"></script>
+<script src="js/auth.js?v=31"></script>
 <script>
   const pricing = JournalAuth.PRO_PRICING;
   function renderBilling(billing){
@@ -277,33 +305,128 @@
   menuToggle.addEventListener('click', ()=> setMenu(menu.hidden));
   menu.querySelectorAll('a').forEach(a=> a.addEventListener('click', ()=> setMenu(false)));
 
-  // Demo: registrar un trade contra el Trading Plan
-  const demo = {streak: 3, hist: ['ok','ok','bad','ok','ok','ok']};
-  function renderDemo(){
-    document.getElementById('demoStreak').textContent = 'Racha: ' + demo.streak + (demo.streak === 1 ? ' trade' : ' trades');
-    document.getElementById('demoStreak').className = 'badge ' + (demo.streak > 0 ? 'ok' : 'muted');
-    document.getElementById('demoDots').innerHTML = demo.hist.slice(-12)
-      .map(h=> '<span class="demo-dot ' + h + '" title="' + (h === 'ok' ? 'Plan seguido' : 'Plan roto') + '"></span>').join('');
+  // Demo: una versión mini del formulario real. Plan, emoción y resultado dan un
+  // puntaje de disciplina, y la curva muestra lo que cuesta romper el plan.
+  const $ = id=> document.getElementById(id);
+  const demo = {
+    streak: 3,
+    // trades previos: resultado en % y si siguió el plan
+    hist: [[0.8, true], [-0.5, true], [-0.9, false], [0.9, true], [-1.1, false], [1.4, true], [-0.6, true], [1.0, true]],
+    rules: new Set(), emo: null, res: null, done: false,
+  };
+  const rulesTiles = [...document.querySelectorAll('#demoRules .rule-tile')];
+  const emoBtns = [...document.querySelectorAll('#demoEmo .chip')];
+  const resBtns = [...document.querySelectorAll('#demoResultSeg button')];
+  const fmtPct = v=> (v > 0 ? '+' : '') + (Math.round(v * 1e6) / 1e6).toFixed(1) + '%';
+
+  function renderForm(){
+    rulesTiles.forEach(t=> t.classList.toggle('on', demo.rules.has(t.dataset.rule)));
+    emoBtns.forEach(b=> b.classList.toggle('active', demo.emo === b.dataset.emo));
+    resBtns.forEach(b=> b.classList.toggle('active', demo.res === b.dataset.res));
+    $('demoStreak').textContent = 'Racha: ' + demo.streak + (demo.streak === 1 ? ' trade' : ' trades');
+    $('demoStreak').className = 'badge ' + (demo.streak > 0 ? 'ok' : 'muted');
   }
-  document.getElementById('demoBtn').addEventListener('click', ()=>{
-    const boxes = [...document.querySelectorAll('#demo input[type=checkbox]')];
-    const missing = boxes.filter(b=> !b.checked).map(b=> b.dataset.label);
-    const result = document.getElementById('demoResult');
-    if(missing.length === 0){
-      demo.streak++;
-      demo.hist.push('ok');
-      result.className = 'demo-result ok';
-      result.innerHTML = '<strong>Plan seguido.</strong> Tu racha sube a ' + demo.streak + '. Así se construye la disciplina.';
-    } else {
-      demo.streak = 0;
-      demo.hist.push('bad');
-      result.className = 'demo-result bad';
-      result.innerHTML = '<strong>Plan roto.</strong> Faltó: ' + missing.join(', ') + '. La racha vuelve a 0, aunque el trade haya salido bien.';
+
+  // Curva "real" contra "si hubieras seguido tu plan" con el historial de la demo.
+  function renderCurve(){
+    let real = 0, plan = 0;
+    const R = [0], P = [0];
+    demo.hist.forEach(([v, ok])=>{ real += v; if(ok) plan += v; R.push(real); P.push(plan); });
+    const W = 300, H = 74, pad = 6;
+    const all = R.concat(P);
+    const min = Math.min(...all, 0), max = Math.max(...all, 0.5);
+    const x = i=> pad + i * (W - 2 * pad) / (R.length - 1);
+    const y = v=> pad + (max - v) * (H - 2 * pad) / (max - min || 1);
+    const pts = arr=> arr.map((v, i)=> x(i).toFixed(1) + ',' + y(v).toFixed(1));
+    const upper = P.map((v, i)=> Math.max(v, R[i]));
+    $('demoCurve').innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="dm-svg" preserveAspectRatio="none" role="img" aria-label="Curva real contra curva con el plan">
+      <line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" class="ch-zero"/>
+      <polygon points="${pts(upper).join(' ')} ${pts(R).reverse().join(' ')}" class="dm-band"/>
+      <polyline points="${pts(P).join(' ')}" class="dm-plan"/>
+      <polyline points="${pts(R).join(' ')}" class="dm-real"/>
+      <circle cx="${x(R.length - 1)}" cy="${y(real)}" r="3.5" class="dm-dot"/>
+    </svg>`;
+    const diff = plan - real;
+    $('demoCost').innerHTML = diff > 0.05
+      ? `Romper el plan te costó <b>${fmtPct(diff).replace('+', '')}</b> · real ${fmtPct(real)}, con tu plan ${fmtPct(plan)}`
+      : diff < -0.05
+        ? `Los trades fuera de plan sumaron <b>${fmtPct(-diff)}</b>, pero no son repetibles: un sistema que se rompe no se puede medir.`
+        : `Romper el plan no cambió el resultado: real ${fmtPct(real)}, con tu plan ${fmtPct(plan)}`;
+  }
+
+  function register(){
+    $('demoError').textContent = '';
+    if(!demo.emo || !demo.res){
+      $('demoError').textContent = !demo.emo ? 'Elegí cómo te sentías al entrar.' : 'Elegí el resultado del trade.';
+      return;
     }
-    boxes.forEach(b=> b.checked = false);
-    renderDemo();
-  });
-  renderDemo();
+    const all = rulesTiles.map(t=> t.dataset.rule);
+    const missing = all.filter(r=> !demo.rules.has(r));
+    const planOk = missing.length === 0;
+    const risky = emoBtns.find(b=> b.dataset.emo === demo.emo).dataset.tone === 'risk';
+    const emoLabel = emoBtns.find(b=> b.dataset.emo === demo.emo).textContent;
+    const win = demo.res === 'win';
+    // Mismo puntaje que la app: reglas 60%, sin errores 25%, emoción 15%.
+    const score = Math.round((all.length - missing.length) / all.length * 60 + 25 + (risky ? 0 : 15));
+    const pct = win ? 1.2 : -0.8;
+    demo.hist.push([pct, planOk]);
+    demo.streak = planOk ? demo.streak + 1 : 0;
+    let tone, title, text;
+    if(planOk && !risky){ tone = 'good'; title = win ? 'Trade de manual' : 'Perdiste, pero bien'; text = win ? `Plan cumplido y cabeza tranquila. Tu racha sube a ${demo.streak}.` : `Ejecutaste tu plan con la cabeza fría: las pérdidas dentro del plan son parte del sistema. Racha: ${demo.streak}.`; }
+    else if(planOk){ tone = 'warn'; title = 'Plan cumplido, cabeza en riesgo'; text = `Respetaste las reglas, pero entraste con ${emoLabel}. Ese estado suele terminar rompiendo el plan en el próximo trade.`; }
+    else if(win){ tone = 'bad'; title = 'Ganaste, pero rompiste el plan'; text = `Faltó: ${missing.join(', ')}${risky ? ` y entraste con ${emoLabel}` : ''}. Ese trade no es repetible: la racha vuelve a 0.`; }
+    else { tone = 'bad'; title = 'Este es el trade que vacía cuentas'; text = `Rompiste el plan (${missing.join(', ')})${risky ? ` con ${emoLabel}` : ''} y perdiste. La racha vuelve a 0.`; }
+    const fb = $('demoResult');
+    fb.hidden = false;
+    fb.className = 'dm-feedback tp-score ' + tone;
+    fb.innerHTML = `<div class="tp-ring" style="--p:0"><span>0</span></div>
+      <div><div class="tp-score-t">${title}</div><div class="tp-score-s">${text}</div></div>`;
+    animateScore(fb.querySelector('.tp-ring'), score);
+    demo.rules.clear(); demo.emo = null; demo.res = null;
+    renderForm(); renderCurve();
+    $('demoCta').hidden = false;
+  }
+
+  function animateScore(ring, target){
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const t0 = performance.now(), dur = reduce ? 0 : 700;
+    const step = now=>{
+      const k = dur ? Math.min((now - t0) / dur, 1) : 1;
+      const v = Math.round(target * (1 - Math.pow(1 - k, 3)));
+      ring.style.setProperty('--p', v);
+      ring.querySelector('span').textContent = v;
+      if(k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // Cualquier toque del usuario corta la reproducción automática.
+  let autoplay = null;
+  const stopAuto = ()=>{ if(autoplay){ autoplay.forEach(clearTimeout); autoplay = null; $('demo').classList.remove('dm-playing'); } };
+  rulesTiles.forEach(t=> t.addEventListener('click', e=>{ if(e.isTrusted) stopAuto(); const r = t.dataset.rule; demo.rules.has(r) ? demo.rules.delete(r) : demo.rules.add(r); renderForm(); }));
+  emoBtns.forEach(b=> b.addEventListener('click', e=>{ if(e.isTrusted) stopAuto(); demo.emo = demo.emo === b.dataset.emo ? null : b.dataset.emo; renderForm(); }));
+  resBtns.forEach(b=> b.addEventListener('click', e=>{ if(e.isTrusted) stopAuto(); demo.res = demo.res === b.dataset.res ? null : b.dataset.res; renderForm(); }));
+  $('demoBtn').addEventListener('click', e=>{ if(e.isTrusted) stopAuto(); register(); });
+
+  // Al aparecer en pantalla, la demo se completa sola una vez: 3 reglas, FOMO, Ganador.
+  function playOnce(){
+    if(autoplay !== null || demo.done) return;
+    demo.done = true;
+    if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    $('demo').classList.add('dm-playing');
+    const seq = [
+      ()=> rulesTiles[0].click(), ()=> rulesTiles[1].click(), ()=> rulesTiles[2].click(),
+      ()=> emoBtns[2].click(), ()=> resBtns[0].click(), ()=> $('demoBtn').click(),
+      ()=> $('demo').classList.remove('dm-playing'),
+    ];
+    autoplay = seq.map((fn, i)=> setTimeout(fn, 900 + i * 650));
+  }
+  if('IntersectionObserver' in window){
+    const io = new IntersectionObserver(es=>{ if(es[0].isIntersecting){ io.disconnect(); playOnce(); } }, {threshold: 0.4});
+    io.observe($('demo'));
+  }
+  renderForm();
+  renderCurve();
 </script>
 </body>
 </html>
