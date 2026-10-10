@@ -3,13 +3,61 @@
 
 // Nombre de cada día (lunes = 0) en el idioma activo. El 1/1/2024 fue lunes.
 const WEEKDAYS_ONE = [0, 1, 2, 3, 4, 5, 6].map(i=> new Date(2024, 0, 1 + i).toLocaleDateString(LOCALE, {weekday: 'long'}));
-const PERIOD_LABELS = {week: t('Esta semana'), month: t('Este mes'), 90: t('Últimos 3 meses'), all: t('Todo tu historial')};
-const PREV_LABELS = {week: t('semana pasada'), month: t('mes pasado'), 90: t('3 meses anteriores')};
+const PERIOD_LABELS = {week: t('Esta semana'), month: t('Este mes'), 90: t('Últimos 3 meses'), all: t('Todo tu historial'), custom: t('Rango de fechas')};
+const PREV_LABELS = {week: t('semana pasada'), month: t('mes pasado'), 90: t('3 meses anteriores'), custom: t('período anterior')};
 let breakdownBy = 'emotion';
 let breakdownSort = {key: 'n', dir: -1};
 let statsPeriod = 'all';
 try{ statsPeriod = localStorage.getItem('jt_stats_period') || 'all'; }catch(e){}
 if(!PERIOD_LABELS[statsPeriod]) statsPeriod = 'all';
+// Rango propio (días de trading AAAA-MM-DD, inclusive).
+let statsRange = {from: '', to: ''};
+try{ statsRange = {...statsRange, ...JSON.parse(localStorage.getItem('jt_stats_range') || '{}')}; }catch(e){}
+const KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const rangeOk = ()=> KEY_RE.test(statsRange.from) && KEY_RE.test(statsRange.to) && statsRange.from <= statsRange.to;
+if(statsPeriod === 'custom' && !rangeOk()) statsPeriod = 'all';
+
+// ---- Filtros combinables ----
+// Dentro de un filtro, cualquiera de los valores elegidos; entre filtros, todos.
+const normSetup = s=> String(s || '').trim().toLowerCase();
+const capFirst = s=> s.charAt(0).toUpperCase() + s.slice(1);
+const STATS_FILTERS = [
+  {k: 'setup', label: t('Setup'), key: h=> normSetup(h.setup) || null},
+  {k: 'session', label: t('Sesión'), key: h=> sessionOf(h.ts)},
+  {k: 'emotion', label: t('Emoción'), key: h=> h.emotion, name: v=>{ const e = emotionById(v); return e ? e.label : v; }},
+  {k: 'error', label: t('Error'), key: h=> h.errors || [], name: v=>{ const e = errorById(v); return e ? e.label : v; }},
+  {k: 'asset', label: t('Activo'), key: h=> h.asset},
+  {k: 'direction', label: t('Dirección'), key: h=> h.direction, name: v=> v === 'long' ? t('Long') : t('Short')},
+  {k: 'plan', label: t('Plan'), key: h=> h.followedPlan ? 'ok' : 'bad', name: v=> v === 'ok' ? t('Plan seguido') : t('Plan roto')},
+  {k: 'result', label: t('Resultado'), key: h=> h.result, name: v=> RESULT_LABELS[v] || v},
+  {k: 'weekday', label: t('Día'), key: h=> String(weekdayOf(h.ts)), name: v=> capFirst(WEEKDAYS_ONE[v]), order: (a, b)=> a - b},
+];
+let statsFilters = {};
+try{ statsFilters = JSON.parse(localStorage.getItem('jt_stats_filters') || '{}') || {}; }catch(e){}
+const activeFilters = ()=> STATS_FILTERS.filter(f=> (statsFilters[f.k] || []).length);
+function matchesFilters(h){
+  return activeFilters().every(f=>{
+    const sel = statsFilters[f.k];
+    return [].concat(f.key(h)).some(v=> v !== null && v !== undefined && sel.includes(String(v)));
+  });
+}
+function saveFilters(){
+  try{ localStorage.setItem('jt_stats_filters', JSON.stringify(statsFilters)); }catch(e){}
+}
+// Nombre visible de un valor (para el setup, el primero escrito tal cual).
+function filterValueName(f, v){
+  if(f.k === 'setup'){ const h = state.history.find(x=> normSetup(x.setup) === v); return escapeHtml(h ? h.setup.trim() : v); }
+  return f.name ? f.name(v) : escapeHtml(v);
+}
+function toggleFilter(k, v, on){
+  const sel = new Set(statsFilters[k] || []);
+  if(on === undefined) on = !sel.has(v);
+  on ? sel.add(v) : sel.delete(v);
+  statsFilters[k] = [...sel];
+  if(!statsFilters[k].length) delete statsFilters[k];
+  saveFilters();
+  renderAnalysis();
+}
 
 const avgOf = arr=> arr.length ? arr.reduce((a, b)=> a + b, 0) / arr.length : null;
 
@@ -17,7 +65,15 @@ const avgOf = arr=> arr.length ? arr.reduce((a, b)=> a + b, 0) / arr.length : nu
 // "Esta semana" y "Este mes" son calendario (igual que en Inicio, Historial y
 // Revisión); "3 meses" son los últimos 90 días.
 function periodLists(){
-  if(statsPeriod === 'all') return {cur: viewTrades(), prev: null};
+  const all = viewTrades().filter(matchesFilters);
+  if(statsPeriod === 'all') return {cur: all, prev: null};
+  if(statsPeriod === 'custom'){
+    // El período anterior es un rango de la misma cantidad de días, justo antes.
+    const days = Math.round((Date.parse(statsRange.to) - Date.parse(statsRange.from)) / 86400000) + 1;
+    const prevTo = addDaysKey(statsRange.from, -1), prevFrom = addDaysKey(statsRange.from, -days);
+    const inRange = (h, a, b)=>{ const k = dayKeyFromTs(h.ts); return k >= a && k <= b; };
+    return {cur: all.filter(h=> inRange(h, statsRange.from, statsRange.to)), prev: all.filter(h=> inRange(h, prevFrom, prevTo))};
+  }
   let from, prevFrom;
   if(statsPeriod === 'week'){
     from = Analytics.weekStart(Date.now()).getTime();
@@ -30,8 +86,8 @@ function periodLists(){
     prevFrom = from - 90 * 86400000;
   }
   return {
-    cur: viewTrades().filter(h=> h.ts >= from),
-    prev: viewTrades().filter(h=> h.ts >= prevFrom && h.ts < from),
+    cur: all.filter(h=> h.ts >= from),
+    prev: all.filter(h=> h.ts >= prevFrom && h.ts < from),
   };
 }
 
@@ -44,16 +100,99 @@ function periodSummary(list){
 }
 
 // ---- 1. Filtro ----
+function rangeLabel(){
+  const f = k=> keyDate(k).toLocaleDateString(LOCALE, {day: 'numeric', month: 'short', year: statsRange.from.slice(0, 4) !== statsRange.to.slice(0, 4) ? 'numeric' : undefined});
+  return `${f(statsRange.from)} – ${f(statsRange.to)}`;
+}
 function renderPeriodBar(cur){
   document.querySelectorAll('#statsPeriod button').forEach(b=> b.classList.toggle('active', b.dataset.p === statsPeriod));
-  document.getElementById('statsRange').textContent = `${PERIOD_LABELS[statsPeriod]} · ${tp(cur.length, '{n} trade', '{n} trades')}`;
+  const label = statsPeriod === 'custom' ? rangeLabel() : PERIOD_LABELS[statsPeriod];
+  const nf = activeFilters().length;
+  document.getElementById('statsRange').textContent = `${label} · ${tp(cur.length, '{n} trade', '{n} trades')}` + (nf ? ' · ' + tp(nf, '1 filtro', '{n} filtros') : '');
+  const box = document.getElementById('statsRangeBox');
+  box.style.display = statsPeriod === 'custom' || rangeOpen ? '' : 'none';
+  const today = currentDayKey();
+  ['statsFrom', 'statsTo'].forEach(id=> document.getElementById(id).max = today);
+  if(document.activeElement.id !== 'statsFrom') document.getElementById('statsFrom').value = statsRange.from;
+  if(document.activeElement.id !== 'statsTo') document.getElementById('statsTo').value = statsRange.to;
 }
 
+let rangeOpen = false;
 document.querySelectorAll('#statsPeriod button').forEach(b=> b.addEventListener('click', ()=>{
+  if(b.dataset.p === 'custom'){
+    // Sin un rango válido, primero se eligen las fechas (arranca en los últimos 30 días).
+    if(!rangeOk()){
+      const today = currentDayKey();
+      statsRange = {from: addDaysKey(today, -29), to: today};
+      try{ localStorage.setItem('jt_stats_range', JSON.stringify(statsRange)); }catch(e){}
+    }
+    rangeOpen = true;
+  } else rangeOpen = false;
   statsPeriod = b.dataset.p;
   try{ localStorage.setItem('jt_stats_period', statsPeriod); }catch(e){}
   renderAnalysis();
 }));
+['statsFrom', 'statsTo'].forEach(id=> document.getElementById(id).addEventListener('change', ()=>{
+  const from = document.getElementById('statsFrom').value, to = document.getElementById('statsTo').value;
+  const err = document.getElementById('statsRangeError');
+  if(!KEY_RE.test(from) || !KEY_RE.test(to)){ err.textContent = t('Elegí las dos fechas.'); return; }
+  if(from > to){ err.textContent = t('La fecha de inicio tiene que ser anterior a la de fin.'); return; }
+  err.textContent = '';
+  statsRange = {from, to};
+  try{ localStorage.setItem('jt_stats_range', JSON.stringify(statsRange)); }catch(e){}
+  renderAnalysis();
+}));
+
+// Barra de filtros: un menú por tipo con las opciones que aparecen en tus trades.
+let openFilter = null;
+function renderFilterBar(){
+  const base = viewTrades();
+  const bar = document.getElementById('statsFilters');
+  const menus = STATS_FILTERS.map(f=>{
+    const counts = new Map();
+    base.forEach(h=> [].concat(f.key(h)).forEach(v=>{ if(v !== null && v !== undefined && v !== '') counts.set(String(v), (counts.get(String(v)) || 0) + 1); }));
+    const sel = statsFilters[f.k] || [];
+    sel.forEach(v=>{ if(!counts.has(v)) counts.set(v, 0); });
+    if(!counts.size) return '';
+    const opts = [...counts.entries()].sort(f.order ? (a, b)=> f.order(a[0], b[0]) : (a, b)=> b[1] - a[1]);
+    return `<details class="flt ${sel.length ? 'on' : ''}" data-f="${f.k}" ${openFilter === f.k ? 'open' : ''}>
+      <summary>${f.label}${sel.length ? ` <b>${sel.length}</b>` : ''} ${Icons.svg('chevron-down', 14)}</summary>
+      <div class="flt-menu">${opts.map(([v, n])=> `<label class="flt-opt"><input type="checkbox" value="${escapeHtml(v)}" ${sel.includes(v) ? 'checked' : ''}><span>${filterValueName(f, v)}</span><small>${n}</small></label>`).join('')}</div>
+    </details>`;
+  }).join('');
+  const chips = activeFilters().flatMap(f=> statsFilters[f.k].map(v=>
+    `<button type="button" class="flt-chip" data-f="${f.k}" data-v="${escapeHtml(v)}" title="${t('Quitar filtro')}"><span>${f.label}:</span> ${filterValueName(f, v)} ${Icons.svg('x', 12)}</button>`)).join('');
+  bar.innerHTML = `<div class="flt-row"><span class="flt-l">${Icons.svg('list-checks', 15)} ${t('Filtrar')}</span>${menus}</div>`
+    + (chips ? `<div class="flt-active">${chips}<button type="button" class="link-btn" id="fltClear">${t('Limpiar filtros')}</button></div>` : '');
+  bar.querySelectorAll('details.flt').forEach(d=> d.addEventListener('toggle', ()=>{
+    if(d.open){
+      openFilter = d.dataset.f;
+      bar.querySelectorAll('details.flt[open]').forEach(o=>{ if(o !== d) o.open = false; });
+      placeMenu(d);
+    }
+    else if(openFilter === d.dataset.f) openFilter = null;
+  }));
+  const openD = bar.querySelector('details.flt[open]');
+  if(openD) placeMenu(openD);
+  bar.querySelectorAll('.flt-opt input').forEach(inp=> inp.addEventListener('change', ()=> toggleFilter(inp.closest('details').dataset.f, inp.value, inp.checked)));
+  bar.querySelectorAll('.flt-chip').forEach(c=> c.addEventListener('click', ()=> toggleFilter(c.dataset.f, c.dataset.v, false)));
+  const clr = document.getElementById('fltClear');
+  if(clr) clr.addEventListener('click', ()=>{ statsFilters = {}; openFilter = null; saveFilters(); renderAnalysis(); });
+}
+// Si el menú no entra a la derecha (celular), se alinea con el borde derecho del botón.
+function placeMenu(d){
+  const m = d.querySelector('.flt-menu');
+  m.style.left = '0'; m.style.right = 'auto';
+  if(m.getBoundingClientRect().right > document.documentElement.clientWidth - 8){ m.style.left = 'auto'; m.style.right = '0'; }
+}
+// Un clic afuera cierra el menú abierto.
+document.addEventListener('click', e=>{
+  if(openFilter && !e.target.closest('#statsFilters details.flt')){
+    const d = document.querySelector(`#statsFilters details.flt[data-f="${openFilter}"]`);
+    if(d) d.open = false;
+    openFilter = null;
+  }
+});
 
 // ---- 2. Números ----
 function renderKpis(cur, prev){
@@ -241,7 +380,7 @@ function renderBreakdown(cur){
   const th = ([k, label])=> `<th class="sortable ${key === k ? 'sorted' : ''}" data-k="${k}">${label || cfg.label}${key === k ? (dir < 0 ? ' ↓' : ' ↑') : ''}</th>`;
   table.innerHTML = `
     <thead><tr>${BD_COLS.map(th).join('')}</tr></thead>
-    <tbody>${rows.map(r=> `<tr class="${r.key === best ? 'row-best' : r.key === worst ? 'row-worst' : ''}">
+    <tbody>${rows.map(r=> `<tr class="bd-row ${r.key === best ? 'row-best' : r.key === worst ? 'row-worst' : ''}" data-v="${escapeHtml(breakdownBy === 'setup' ? normSetup(r.key) : r.key)}" title="${t('Tocá para filtrar por esto')}">
       <td><span class="bd-name">${cfg.name(r.key)}</span>${r.key === best ? `<span class="bd-tag good">${t('Mejor')}</span>` : r.key === worst ? `<span class="bd-tag bad">${t('Peor')}</span>` : ''}</td>
       <td>${r.n}</td>
       <td><div class="mini-bar ${r.planPct >= goalPct() ? '' : r.planPct >= 50 ? 'warn' : 'bad'}"><div style="width:${Math.round(r.planPct)}%"></div></div>${Math.round(r.planPct)}%</td>
@@ -249,6 +388,10 @@ function renderBreakdown(cur){
       <td class="${signClass(r.avg)}">${fmtSignedPct(r.avg)}</td>
       <td><div class="div-bar"><div class="div-track"><div class="${r.sum >= 0 ? 'pos' : 'neg'}" style="width:${Math.abs(r.sum) / maxAbs * 50}%"></div></div><span class="${signClass(r.sum)}">${fmtSignedPct(r.sum)}</span></div></td>
     </tr>`).join('')}</tbody>`;
+  table.querySelectorAll('tr.bd-row').forEach(tr=> tr.addEventListener('click', ()=>{
+    toggleFilter(breakdownBy, tr.dataset.v, true);
+    document.getElementById('statsFilters').scrollIntoView({behavior: 'smooth', block: 'start'});
+  }));
   table.querySelectorAll('th.sortable').forEach(t=> t.addEventListener('click', ()=>{
     const k = t.dataset.k;
     breakdownSort = {key: k, dir: breakdownSort.key === k ? -breakdownSort.dir : (k === 'name' ? 1 : -1)};
@@ -336,6 +479,7 @@ function renderMonths(){
 function renderAnalysis(){
   const {cur, prev} = periodLists();
   renderPeriodBar(cur);
+  renderFilterBar();
   renderKpis(cur, prev);
   renderRing(cur);
   renderCurveCard(cur);

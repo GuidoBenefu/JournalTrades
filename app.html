@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=39"></script>
-<script src="js/i18n.js?v=39"></script>
+<script src="js/lang-en.js?v=40"></script>
+<script src="js/i18n.js?v=40"></script>
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=39"></script>
+<script src="js/theme.js?v=40"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=39">
-<script src="js/auth.js?v=39"></script>
+<link rel="stylesheet" href="css/styles.css?v=40">
+<script src="js/auth.js?v=40"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -272,8 +272,15 @@
           <button type="button" data-p="month">Este mes</button>
           <button type="button" data-p="90">3 meses</button>
           <button type="button" data-p="all">Todo</button>
+          <button type="button" data-p="custom">Rango</button>
         </div>
       </div>
+      <div class="span-2 st-range" id="statsRangeBox" style="display:none;">
+        <label>Desde <input type="date" id="statsFrom"></label>
+        <label>Hasta <input type="date" id="statsTo"></label>
+        <span class="field-error" id="statsRangeError"></span>
+      </div>
+      <div class="span-2 st-filters" id="statsFilters"></div>
 
       <div class="span-2 st-kpis" id="statsKpis"></div>
       <div class="span-2 st-kpis-sec" id="statsSecondary"></div>
@@ -929,25 +936,25 @@
 </div>
 
 <script>translateDom();</script>
-<script src="js/icons.js?v=39"></script>
-<script src="js/storage.js?v=39"></script>
-<script src="js/time.js?v=39"></script>
-<script src="js/images.js?v=39"></script>
-<script src="js/session.js?v=39"></script>
-<script src="js/app.js?v=39"></script>
-<script src="js/accounts.js?v=39"></script>
-<script src="js/analytics.js?v=39"></script>
-<script src="js/charts.js?v=39"></script>
-<script src="js/achievements.js?v=39"></script>
-<script src="js/dashboard.js?v=39"></script>
-<script src="js/analysis.js?v=39"></script>
-<script src="js/review.js?v=39"></script>
-<script src="js/calendar.js?v=39"></script>
-<script src="js/onboarding.js?v=39"></script>
-<script src="js/settings.js?v=39"></script>
-<script src="js/history.js?v=39"></script>
-<script src="js/playbook.js?v=39"></script>
-<script src="js/importer.js?v=39"></script>
+<script src="js/icons.js?v=40"></script>
+<script src="js/storage.js?v=40"></script>
+<script src="js/time.js?v=40"></script>
+<script src="js/images.js?v=40"></script>
+<script src="js/session.js?v=40"></script>
+<script src="js/app.js?v=40"></script>
+<script src="js/accounts.js?v=40"></script>
+<script src="js/analytics.js?v=40"></script>
+<script src="js/charts.js?v=40"></script>
+<script src="js/achievements.js?v=40"></script>
+<script src="js/dashboard.js?v=40"></script>
+<script src="js/analysis.js?v=40"></script>
+<script src="js/review.js?v=40"></script>
+<script src="js/calendar.js?v=40"></script>
+<script src="js/onboarding.js?v=40"></script>
+<script src="js/settings.js?v=40"></script>
+<script src="js/history.js?v=40"></script>
+<script src="js/playbook.js?v=40"></script>
+<script src="js/importer.js?v=40"></script>
 
 </body>
 </html>

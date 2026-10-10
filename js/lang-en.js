@@ -1095,4 +1095,18 @@ const I18N_EN = {
   '¿Eliminar la ficha de "{name}"? Los {n} trades que lo usan conservan el nombre del setup.': 'Delete the "{name}" card? The {n} trades that use it keep the setup name.',
   'Ver ejemplo': 'See example',
   'Este setup no tiene criterios cargados.': "This setup doesn't have criteria yet.",
+
+  // ---- Filtros de Estadísticas ----
+  'Rango': 'Range',
+  'Rango de fechas': 'Date range',
+  'Desde': 'From',
+  'Hasta': 'To',
+  'Elegí las dos fechas.': 'Pick both dates.',
+  'La fecha de inicio tiene que ser anterior a la de fin.': 'The start date must be before the end date.',
+  'Filtrar': 'Filter',
+  'Quitar filtro': 'Remove filter',
+  '1 filtro': '1 filter',
+  '{n} filtros': '{n} filters',
+  'Día': 'Day',
+  'Tocá para filtrar por esto': 'Tap to filter by this',
 };
