@@ -5,14 +5,17 @@
 const WEEKDAYS_ONE = [0, 1, 2, 3, 4, 5, 6].map(i=> new Date(2024, 0, 1 + i).toLocaleDateString(LOCALE, {weekday: 'long'}));
 const PERIOD_LABELS = {week: t('Esta semana'), month: t('Este mes'), 90: t('Últimos 3 meses'), all: t('Todo tu historial'), custom: t('Rango de fechas')};
 const PREV_LABELS = {week: t('semana pasada'), month: t('mes pasado'), 90: t('3 meses anteriores'), custom: t('período anterior')};
+// Período, rango y filtros se recuerdan por usuario: en un navegador compartido,
+// otra cuenta no hereda filtros con setups que no son suyos.
+const statsPrefKey = k=> k + ':' + JournalStore.adapter.userId;
 let breakdownBy = 'emotion';
 let breakdownSort = {key: 'n', dir: -1};
 let statsPeriod = 'all';
-try{ statsPeriod = localStorage.getItem('jt_stats_period') || 'all'; }catch(e){}
+try{ statsPeriod = localStorage.getItem(statsPrefKey('jt_stats_period')) || 'all'; }catch(e){}
 if(!PERIOD_LABELS[statsPeriod]) statsPeriod = 'all';
 // Rango propio (días de trading AAAA-MM-DD, inclusive).
 let statsRange = {from: '', to: ''};
-try{ statsRange = {...statsRange, ...JSON.parse(localStorage.getItem('jt_stats_range') || '{}')}; }catch(e){}
+try{ statsRange = {...statsRange, ...JSON.parse(localStorage.getItem(statsPrefKey('jt_stats_range')) || '{}')}; }catch(e){}
 const KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const rangeOk = ()=> KEY_RE.test(statsRange.from) && KEY_RE.test(statsRange.to) && statsRange.from <= statsRange.to;
 if(statsPeriod === 'custom' && !rangeOk()) statsPeriod = 'all';
@@ -33,7 +36,7 @@ const STATS_FILTERS = [
   {k: 'weekday', label: t('Día'), key: h=> String(weekdayOf(h.ts)), name: v=> capFirst(WEEKDAYS_ONE[v]), order: (a, b)=> a - b},
 ];
 let statsFilters = {};
-try{ statsFilters = JSON.parse(localStorage.getItem('jt_stats_filters') || '{}') || {}; }catch(e){}
+try{ statsFilters = JSON.parse(localStorage.getItem(statsPrefKey('jt_stats_filters')) || '{}') || {}; }catch(e){}
 const activeFilters = ()=> STATS_FILTERS.filter(f=> (statsFilters[f.k] || []).length);
 function matchesFilters(h){
   return activeFilters().every(f=>{
@@ -42,7 +45,7 @@ function matchesFilters(h){
   });
 }
 function saveFilters(){
-  try{ localStorage.setItem('jt_stats_filters', JSON.stringify(statsFilters)); }catch(e){}
+  try{ localStorage.setItem(statsPrefKey('jt_stats_filters'), JSON.stringify(statsFilters)); }catch(e){}
 }
 // Nombre visible de un valor (para el setup, el primero escrito tal cual).
 function filterValueName(f, v){
@@ -124,12 +127,12 @@ document.querySelectorAll('#statsPeriod button').forEach(b=> b.addEventListener(
     if(!rangeOk()){
       const today = currentDayKey();
       statsRange = {from: addDaysKey(today, -29), to: today};
-      try{ localStorage.setItem('jt_stats_range', JSON.stringify(statsRange)); }catch(e){}
+      try{ localStorage.setItem(statsPrefKey('jt_stats_range'), JSON.stringify(statsRange)); }catch(e){}
     }
     rangeOpen = true;
   } else rangeOpen = false;
   statsPeriod = b.dataset.p;
-  try{ localStorage.setItem('jt_stats_period', statsPeriod); }catch(e){}
+  try{ localStorage.setItem(statsPrefKey('jt_stats_period'), statsPeriod); }catch(e){}
   renderAnalysis();
 }));
 ['statsFrom', 'statsTo'].forEach(id=> document.getElementById(id).addEventListener('change', ()=>{
@@ -139,7 +142,7 @@ document.querySelectorAll('#statsPeriod button').forEach(b=> b.addEventListener(
   if(from > to){ err.textContent = t('La fecha de inicio tiene que ser anterior a la de fin.'); return; }
   err.textContent = '';
   statsRange = {from, to};
-  try{ localStorage.setItem('jt_stats_range', JSON.stringify(statsRange)); }catch(e){}
+  try{ localStorage.setItem(statsPrefKey('jt_stats_range'), JSON.stringify(statsRange)); }catch(e){}
   renderAnalysis();
 }));
 
