@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=34"></script>
+<script src="js/theme.js?v=35"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=34">
-<script src="js/auth.js?v=34"></script>
+<link rel="stylesheet" href="css/styles.css?v=35">
+<script src="js/auth.js?v=35"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -406,6 +406,7 @@
           <span class="hx-sep"></span>
           <button type="button" class="chip" data-f="errors" data-v="1">Con errores</button>
           <button type="button" class="chip" data-f="image" data-v="1">Con captura</button>
+          <button type="button" class="chip" data-f="pending" data-v="1">Por completar</button>
         </div>
       </section>
 
@@ -593,6 +594,10 @@
               <span class="data-ic"><i data-icon="upload" data-size="20"></i></span>
               <span><span class="t">Importar backup</span><span class="s">Reemplazá tus datos por los de un archivo.</span></span>
             </button>
+            <button type="button" class="data-card" data-open-importer>
+              <span class="data-ic"><i data-icon="file-up" data-size="20"></i></span>
+              <span><span class="t">Importar trades (CSV)</span><span class="s">Traé tu historial desde cualquier broker o plataforma. Se suman a los que ya tenés.</span></span>
+            </button>
           </div>
           <input type="file" id="importInput" accept="application/json,.json" style="display:none;">
           <div id="backupMsg" style="display:none; color:var(--danger); font-size:13px; margin-top:8px;"></div>
@@ -755,6 +760,87 @@
   </aside>
 </div>
 
+<div id="importer" class="onboarding" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="impTitle">
+  <div class="ob-box imp-box">
+    <div class="ob-head">
+      <div class="ob-steps"><span></span><span></span><span></span></div>
+      <button type="button" class="icon-btn" id="impCancel" aria-label="Cerrar"><i data-icon="x" data-size="18"></i></button>
+    </div>
+
+    <section class="imp-step" data-step="1">
+      <div class="ob-kicker">Paso 1 de 3</div>
+      <h2 id="impTitle">Importar trades</h2>
+      <p class="ob-sub">Exportá el historial de operaciones de tu plataforma como CSV y subilo acá. Todo se procesa en tu navegador.</p>
+      <label class="imp-drop">
+        <input type="file" id="impFile" accept=".csv,.txt,.tsv,text/csv,text/plain">
+        <span class="data-ic"><i data-icon="file-up" data-size="22"></i></span>
+        <span><b>Elegir archivo</b><span>CSV separado por comas, punto y coma o tabulaciones.</span></span>
+      </label>
+      <div class="imp-file-info" id="impFileInfo"></div>
+      <label class="check-row" id="impHeaderRow" style="display:none;"><input type="checkbox" id="impHeader"><span>La primera fila tiene los nombres de las columnas</span></label>
+      <div id="impSample"></div>
+    </section>
+
+    <section class="imp-step" data-step="2">
+      <div class="ob-kicker">Paso 2 de 3</div>
+      <h2>¿Qué es cada columna?</h2>
+      <p class="ob-sub">Elegí la columna de cada dato. Solo la fecha y el resultado son obligatorios.</p>
+      <div class="form-grid" id="impMapFields"></div>
+      <div class="set-sub">Cómo leer los datos</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>El resultado está en</label>
+          <div class="seg" id="impUnit"><button type="button" data-v="money">Dinero (USD)</button><button type="button" data-v="pct">% de la cuenta</button></div>
+          <div class="field-hint" id="impUnitHint"></div>
+        </div>
+        <div class="field">
+          <label for="impAccount">Cuenta</label>
+          <select id="impAccount"></select>
+        </div>
+        <div class="field" id="impSizeField">
+          <label for="impSize">Tamaño de la cuenta (USD)</label>
+          <input type="text" inputmode="decimal" id="impSize" placeholder="Ej. 50000">
+          <div class="field-hint">Queda guardado en la cuenta.</div>
+        </div>
+        <div class="field">
+          <label for="impDateFmt">Formato de fecha</label>
+          <select id="impDateFmt">
+            <option value="auto">Detectar solo</option>
+            <option value="dmy">Día/mes/año</option>
+            <option value="mdy">Mes/día/año</option>
+            <option value="ymd">Año-mes-día</option>
+          </select>
+          <div class="field-hint" id="impDateHint"></div>
+        </div>
+        <div class="field">
+          <label>Las horas del archivo están en</label>
+          <div class="seg" id="impTz"><button type="button" data-v="ny">Hora NY</button><button type="button" data-v="local">Mi hora</button><button type="button" data-v="utc">UTC</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="imp-step" data-step="3">
+      <div class="ob-kicker">Paso 3 de 3</div>
+      <h2>Revisá antes de importar</h2>
+      <div id="impSummary"></div>
+      <div id="impPlanBox">
+        <div class="set-sub">¿Estos trades respetaron tu Trading Plan?</div>
+        <div class="type-cards" id="impPlan">
+          <button type="button" class="type-card" data-v="yes"><span class="t">Sí, todos</span><span class="s">Cuentan como plan seguido.</span><span class="type-check"><i data-icon="circle-check" data-size="18"></i></span></button>
+          <button type="button" class="type-card" data-v="no"><span class="t">No, o no sé</span><span class="s">Cuentan como plan roto hasta que los revises.</span><span class="type-check"><i data-icon="circle-check" data-size="18"></i></span></button>
+        </div>
+        <p class="imp-note">Quedan marcados <b>por completar</b>: editalos para sumar las reglas, la emoción, los errores y notas.</p>
+      </div>
+    </section>
+
+    <div class="field-error" id="impError"></div>
+    <div class="ob-foot">
+      <button type="button" class="ghost" id="impBack">Atrás</button>
+      <button type="button" class="primary" id="impNext">Siguiente</button>
+    </div>
+  </div>
+</div>
+
 <div class="chart-tip" id="chartTip" role="tooltip"></div>
 <div class="saved-pill" id="savedPill" aria-live="polite"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -763,23 +849,24 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=34"></script>
-<script src="js/storage.js?v=34"></script>
-<script src="js/time.js?v=34"></script>
-<script src="js/images.js?v=34"></script>
-<script src="js/session.js?v=34"></script>
-<script src="js/app.js?v=34"></script>
-<script src="js/accounts.js?v=34"></script>
-<script src="js/analytics.js?v=34"></script>
-<script src="js/charts.js?v=34"></script>
-<script src="js/achievements.js?v=34"></script>
-<script src="js/dashboard.js?v=34"></script>
-<script src="js/analysis.js?v=34"></script>
-<script src="js/review.js?v=34"></script>
-<script src="js/calendar.js?v=34"></script>
-<script src="js/onboarding.js?v=34"></script>
-<script src="js/settings.js?v=34"></script>
-<script src="js/history.js?v=34"></script>
+<script src="js/icons.js?v=35"></script>
+<script src="js/storage.js?v=35"></script>
+<script src="js/time.js?v=35"></script>
+<script src="js/images.js?v=35"></script>
+<script src="js/session.js?v=35"></script>
+<script src="js/app.js?v=35"></script>
+<script src="js/accounts.js?v=35"></script>
+<script src="js/analytics.js?v=35"></script>
+<script src="js/charts.js?v=35"></script>
+<script src="js/achievements.js?v=35"></script>
+<script src="js/dashboard.js?v=35"></script>
+<script src="js/analysis.js?v=35"></script>
+<script src="js/review.js?v=35"></script>
+<script src="js/calendar.js?v=35"></script>
+<script src="js/onboarding.js?v=35"></script>
+<script src="js/settings.js?v=35"></script>
+<script src="js/history.js?v=35"></script>
+<script src="js/importer.js?v=35"></script>
 
 </body>
 </html>
