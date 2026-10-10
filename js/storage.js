@@ -47,7 +47,7 @@ const MIGRATIONS = {
     const prop = data.accountType === 'funded';
     const acc = newAccount({
       id: 'acc_main',
-      name: prop ? 'Cuenta de fondeo' : 'Mi cuenta',
+      name: prop ? t('Cuenta de fondeo') : t('Mi cuenta'),
       type: prop ? (String(fr.profitTarget || '').trim() ? 'challenge' : 'funded') : 'personal',
       createdAt: Math.min(Date.now(), ...(Array.isArray(data.history) ? data.history.map(h=> h && h.ts).filter(Number.isFinite) : [])),
       rules: prop ? fr : {},
@@ -71,7 +71,7 @@ function newAccount(a = {}){
   const r = isObj(a.rules) ? a.rules : {};
   return {
     id: safeId(a.id) || ('acc_' + Date.now() + '_' + Math.floor(Math.random() * 1e4)),
-    name: (typeof a.name === 'string' && a.name.trim()) ? a.name.trim().slice(0, 40) : 'Cuenta',
+    name: (typeof a.name === 'string' && a.name.trim()) ? a.name.trim().slice(0, 40) : t('Cuenta'),
     type: ACCOUNT_TYPES.includes(a.type) ? a.type : 'personal',
     firm: typeof a.firm === 'string' ? a.firm.trim().slice(0, 40) : '',
     size: (typeof a.size === 'number' && isFinite(a.size) && a.size > 0) ? a.size : null,
@@ -155,7 +155,7 @@ function sanitizeImport(data){
   const ids = new Set();
   const accounts = (Array.isArray(data.accounts) ? data.accounts : []).filter(isObj).map(newAccount)
     .filter(a=> !ids.has(a.id) && ids.add(a.id)).slice(0, 50);
-  if(!accounts.length) accounts.push(newAccount({id: 'acc_main', name: 'Mi cuenta'}));
+  if(!accounts.length) accounts.push(newAccount({id: 'acc_main', name: t('Mi cuenta')}));
   history.forEach(h=>{ if(!ids.has(h.accountId)) h.accountId = accounts[0].id; });
   return {
     schemaVersion: data.schemaVersion,
@@ -223,12 +223,12 @@ const JournalStore = {
   parseImport(text){
     let data;
     try{ data = JSON.parse(text); }
-    catch(e){ throw new Error('El archivo no es un backup válido (no se pudo leer).'); }
+    catch(e){ throw new Error(t('El archivo no es un backup válido (no se pudo leer).')); }
     if(!data || typeof data !== 'object' || !Array.isArray(data.history)){
-      throw new Error('El archivo no parece un backup del journal.');
+      throw new Error(t('El archivo no parece un backup del journal.'));
     }
     if((data.schemaVersion || 0) > SCHEMA_VERSION){
-      throw new Error('El backup es de una versión más nueva de la app.');
+      throw new Error(t('El backup es de una versión más nueva de la app.'));
     }
     delete data.exportedAt;
     return sanitizeImport(migrate(data));

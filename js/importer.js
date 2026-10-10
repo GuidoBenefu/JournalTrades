@@ -4,16 +4,16 @@
 // el archivo no trae plan, emoción ni errores.
 
 const IMP_FIELDS = [
-  {k: 'date', label: 'Fecha y hora de entrada', req: true, guess: /(open|entry|entrada|apertura).*(time|date|fecha|hora)|^(fecha|date|time|datetime|open|opened)$/i},
-  {k: 'time', label: 'Hora de entrada (si viene en otra columna)', guess: /^(hora|time)$/i},
-  {k: 'exit', label: 'Fecha y hora de salida (para la duración)', guess: /(close|exit|salida|cierre).*(time|date|fecha|hora)|^(closed?|exit)$/i},
-  {k: 'asset', label: 'Activo', guess: /^(symbol|instrument|asset|activo|s[íi]mbolo|ticker|contract|market|product)/i},
-  {k: 'dir', label: 'Dirección (compra / venta)', guess: /^(side|direction|direcci[oó]n|type|tipo|action|b\/s|buy\/sell)/i},
-  {k: 'result', label: 'Resultado', req: true, guess: /(p&l|p\/l|pnl|profit|result|resultado|ganancia|beneficio|net|realized)/i},
-  {k: 'fees', label: 'Comisiones (se restan del resultado)', guess: /(commission|comisi|fees?$|swap)/i},
-  {k: 'risk', label: 'Riesgo (%)', guess: /(risk|riesgo)/i},
-  {k: 'setup', label: 'Setup', guess: /(setup|strategy|estrategia)/i},
-  {k: 'note', label: 'Nota', guess: /(note|nota|comment|comentario)/i},
+  {k: 'date', label: t('Fecha y hora de entrada'), req: true, guess: /(open|entry|entrada|apertura).*(time|date|fecha|hora)|^(fecha|date|time|datetime|open|opened)$/i},
+  {k: 'time', label: t('Hora de entrada (si viene en otra columna)'), guess: /^(hora|time)$/i},
+  {k: 'exit', label: t('Fecha y hora de salida (para la duración)'), guess: /(close|exit|salida|cierre).*(time|date|fecha|hora)|^(closed?|exit)$/i},
+  {k: 'asset', label: t('Activo'), guess: /^(symbol|instrument|asset|activo|s[íi]mbolo|ticker|contract|market|product)/i},
+  {k: 'dir', label: t('Dirección (compra / venta)'), guess: /^(side|direction|direcci[oó]n|type|tipo|action|b\/s|buy\/sell)/i},
+  {k: 'result', label: t('Resultado'), req: true, guess: /(p&l|p\/l|pnl|profit|result|resultado|ganancia|beneficio|net|realized)/i},
+  {k: 'fees', label: t('Comisiones (se restan del resultado)'), guess: /(commission|comisi|fees?$|swap)/i},
+  {k: 'risk', label: t('Riesgo (%)'), guess: /(risk|riesgo)/i},
+  {k: 'setup', label: t('Setup'), guess: /(setup|strategy|estrategia)/i},
+  {k: 'note', label: t('Nota'), guess: /(note|nota|comment|comentario)/i},
 ];
 const IMP_MAX_BYTES = 5 * 1024 * 1024;
 const IMP_MAP_KEY = 'jt_import_map';
@@ -126,16 +126,16 @@ function cellToTs(dateRaw, timeRaw, fmt, tz){
   const s = String(dateRaw || '').trim();
   // ISO con zona (Z o +hh:mm): el archivo ya dice la zona.
   if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}.*(Z|[+-]\d{2}:?\d{2})$/.test(s)){
-    const t = Date.parse(s);
-    return isNaN(t) ? NaN : t;
+    const iso = Date.parse(s);
+    return isNaN(iso) ? NaN : iso;
   }
   const p = dateParts(s, fmt);
   if(!p || p.mo < 1 || p.mo > 12 || p.d < 1 || p.d > 31) return NaN;
   let h = p.h, min = p.min;
   if(!p.hasTime && timeRaw){
-    const t = TIME_RE.exec(String(timeRaw).trim());
-    if(!t) return NaN;
-    h = to24(+t[1], t[4]); min = +t[2];
+    const tm = TIME_RE.exec(String(timeRaw).trim());
+    if(!tm) return NaN;
+    h = to24(+tm[1], tm[4]); min = +tm[2];
   }
   if(h === null){ h = 0; min = 0; }
   if(h > 23 || min > 59) return NaN;
@@ -147,7 +147,7 @@ function cellToTs(dateRaw, timeRaw, fmt, tz){
 
 function headers(){
   const n = Math.max(...imp.rows.slice(0, 20).map(r=> r.length));
-  return Array.from({length: n}, (_, i)=> imp.header && imp.rows[0][i] ? imp.rows[0][i] : 'Columna ' + (i + 1));
+  return Array.from({length: n}, (_, i)=> imp.header && imp.rows[0][i] ? imp.rows[0][i] : t('Columna {n}', {n: i + 1}));
 }
 const dataRows = ()=> imp.header ? imp.rows.slice(1) : imp.rows;
 const colValues = i=> dataRows().map(r=> r[i]);
@@ -198,19 +198,19 @@ function buildTrades(){
     const line = i + offset;
     const fail = msg=> errors.push({line, msg});
     const ts = cellToTs(get(r, 'date'), get(r, 'time'), fmt, imp.tz);
-    if(isNaN(ts)) return fail(`no se entiende la fecha "${get(r, 'date')}"`);
-    if(ts > now + 5 * 60000) return fail('la fecha es futura');
+    if(isNaN(ts)) return fail(t('no se entiende la fecha "{v}"', {v: get(r, 'date')}));
+    if(ts > now + 5 * 60000) return fail(t('la fecha es futura'));
     const val = parseLooseNum(get(r, 'result'));
-    if(val === null || isNaN(val)) return fail(`el resultado "${get(r, 'result')}" no es un número`);
+    if(val === null || isNaN(val)) return fail(t('el resultado "{v}" no es un número', {v: get(r, 'result')}));
     const fees = imp.map.fees !== undefined ? Math.abs(parseLooseNum(get(r, 'fees')) || 0) : 0;
     let pct;
     if(imp.unit === 'pct') pct = val - fees;
     else {
-      if(!(size > 0)) return fail('falta el tamaño de la cuenta');
+      if(!(size > 0)) return fail(t('falta el tamaño de la cuenta'));
       pct = (val - fees) / size * 100;
     }
     pct = Math.round(pct * 1e4) / 1e4;
-    if(Math.abs(pct) > 100) return fail(`el resultado da ${fix1(pct)}%: revisá el tamaño de la cuenta o la columna`);
+    if(Math.abs(pct) > 100) return fail(t('el resultado da {n}%: revisá el tamaño de la cuenta o la columna', {n: fix1(pct)}));
     const asset = get(r, 'asset').toUpperCase().slice(0, 40) || null;
     let durationMin = null;
     if(imp.map.exit !== undefined){
@@ -218,15 +218,15 @@ function buildTrades(){
       if(!isNaN(out) && out >= ts) durationMin = Math.round((out - ts) / 60000);
     }
     const risk = parseLooseNum(get(r, 'risk'));
-    const t = {
+    const trade = {
       ts, resultPct: pct, result: pct > 0 ? 'win' : pct < 0 ? 'loss' : 'be',
       riskPct: risk !== null && !isNaN(risk) && risk > 0 && risk <= 100 ? risk : null,
       asset, direction: parseDirection(get(r, 'dir')), durationMin,
       setup: get(r, 'setup').slice(0, 200) || null, note: get(r, 'note').slice(0, 5000), line,
     };
     // Ya cargado: misma cuenta, mismo activo, mismo resultado y menos de un minuto de diferencia.
-    const same = h=> Math.abs(h.ts - t.ts) < 60000 && (h.asset || null) === t.asset && Math.abs((h.resultPct ?? NaN) - t.resultPct) < 0.001;
-    if(existing.some(same) || ok.some(same)) dups.push(t); else ok.push(t);
+    const same = h=> Math.abs(h.ts - trade.ts) < 60000 && (h.asset || null) === trade.asset && Math.abs((h.resultPct ?? NaN) - trade.resultPct) < 0.001;
+    if(existing.some(same) || ok.some(same)) dups.push(trade); else ok.push(trade);
   });
   return {ok, errors, dups, fmt};
 }
@@ -278,10 +278,10 @@ function renderImporter(){
 
 function renderImpFile(){
   $i('impFileInfo').innerHTML = imp.rows.length
-    ? `<b>${escapeHtml(imp.file)}</b> · ${dataRows().length} ${dataRows().length === 1 ? 'fila' : 'filas'}` : '';
+    ? `<b>${escapeHtml(imp.file)}</b> · ${tp(dataRows().length, '1 fila', '{n} filas')}` : '';
   $i('impHeader').checked = imp.header;
   $i('impHeaderRow').style.display = imp.rows.length ? '' : 'none';
-  $i('impNext').textContent = 'Siguiente';
+  $i('impNext').textContent = t('Siguiente');
   $i('impNext').disabled = !imp.rows.length;
   const hs = imp.rows.length ? headers() : [];
   $i('impSample').innerHTML = imp.rows.length ? `<div class="imp-table-wrap"><table class="imp-table">
@@ -303,7 +303,7 @@ function renderImpMap(){
     renderImpOptions();
   }));
   renderImpOptions();
-  $i('impNext').textContent = 'Revisar';
+  $i('impNext').textContent = t('Revisar');
   $i('impNext').disabled = false;
 }
 
@@ -319,8 +319,8 @@ function renderImpOptions(){
   const g = imp.map.date !== undefined ? guessDateFormat(colValues(imp.map.date)) : {fmt: 'dmy', sure: true};
   $i('impDateFmt').value = imp.dateFmt;
   $i('impDateHint').textContent = imp.dateFmt !== 'auto' ? '' : g.sure
-    ? `Detectado: ${{ymd: 'año-mes-día', dmy: 'día/mes/año', mdy: 'mes/día/año'}[g.fmt]}.`
-    : 'No se puede saber si es día/mes o mes/día (ningún día pasa de 12). Se usa día/mes/año: elegilo a mano si tu archivo es mes/día.';
+    ? t('Detectado: {fmt}.', {fmt: {ymd: t('año-mes-día'), dmy: t('día/mes/año'), mdy: t('mes/día/año')}[g.fmt]})
+    : t('No se puede saber si es día/mes o mes/día (ningún día pasa de 12). Se usa día/mes/año: elegilo a mano si tu archivo es mes/día.');
   $i('impDateHint').className = 'field-hint' + (imp.dateFmt === 'auto' && !g.sure ? ' hint-bad' : '');
   const accSel = $i('impAccount');
   const list = openAccounts().length ? openAccounts() : state.accounts;
@@ -331,30 +331,30 @@ function renderImpOptions(){
   const needSize = imp.unit === 'money' && !(acc && acc.size);
   $i('impSizeField').style.display = needSize ? '' : 'none';
   $i('impSize').value = imp.size;
-  $i('impUnitHint').textContent = imp.unit === 'pct' ? 'El resultado ya está en % de la cuenta.'
-    : acc && acc.size ? `Se pasa a % con el tamaño de "${acc.name}": ${USD_FMT.format(acc.size)}.` : 'Para pasarlo a % hace falta el tamaño de la cuenta.';
+  $i('impUnitHint').textContent = imp.unit === 'pct' ? t('El resultado ya está en % de la cuenta.')
+    : acc && acc.size ? t('Se pasa a % con el tamaño de "{acc}": {size}.', {acc: acc.name, size: USD_FMT.format(acc.size)}) : t('Para pasarlo a % hace falta el tamaño de la cuenta.');
 }
 
 function renderImpPreview(){
   const {ok, errors, dups} = buildTrades();
   imp._ok = ok;
   const acc = accountById(imp.accountId);
-  const fmtDir = d=> d === 'long' ? 'Long' : d === 'short' ? 'Short' : '—';
+  const fmtDir = d=> d === 'long' ? t('Long') : d === 'short' ? t('Short') : '—';
   $i('impSummary').innerHTML = `
     <div class="imp-counts">
-      <div><b class="pos">${ok.length}</b><span>${ok.length === 1 ? 'trade nuevo' : 'trades nuevos'}</span></div>
+      <div><b class="pos">${ok.length}</b><span>${ok.length === 1 ? t('trade nuevo') : t('trades nuevos')}</span></div>
       <div><b>${dups.length}</b><span>${dups.length === 1 ? 'ya cargado' : 'ya cargados'} (se saltean)</span></div>
-      <div><b class="${errors.length ? 'neg' : ''}">${errors.length}</b><span>${errors.length === 1 ? 'fila con error' : 'filas con error'}</span></div>
+      <div><b class="${errors.length ? 'neg' : ''}">${errors.length}</b><span>${errors.length === 1 ? t('fila con error') : t('filas con error')}</span></div>
     </div>
     <p class="imp-note">Van a la cuenta <b>${escapeHtml(acc.name)}</b>. Resultado total: <b class="${signClass(ok.reduce((a, t)=> a + t.resultPct, 0))}">${fmtSignedPct(ok.reduce((a, t)=> a + t.resultPct, 0))}</b>.</p>
-    ${errors.length ? `<div class="imp-errors">${errors.slice(0, 6).map(e=> `<div>Fila ${e.line}: ${escapeHtml(e.msg)}</div>`).join('')}${errors.length > 6 ? `<div>…y ${errors.length - 6} más.</div>` : ''}</div>` : ''}
+    ${errors.length ? `<div class="imp-errors">${errors.slice(0, 6).map(e=> `<div>${t('Fila {n}: {msg}', {n: e.line, msg: escapeHtml(e.msg)})}</div>`).join('')}${errors.length > 6 ? `<div>${t('…y {n} más.', {n: errors.length - 6})}</div>` : ''}</div>` : ''}
     ${ok.length ? `<div class="imp-table-wrap"><table class="imp-table">
-      <thead><tr><th>Fecha</th><th>Hora</th><th>Activo</th><th>Dirección</th><th>Resultado</th></tr></thead>
+      <thead><tr><th>${t('Fecha')}</th><th>${t('Hora')}</th><th>${t('Activo')}</th><th>${t('Dirección')}</th><th>${t('Resultado')}</th></tr></thead>
       <tbody>${ok.slice(0, 8).map(t=> `<tr><td>${fmtDate(t.ts)}</td><td>${fmtTime(t.ts)}</td><td>${escapeHtml(t.asset || '—')}</td><td>${fmtDir(t.direction)}</td><td class="${signClass(t.resultPct)}">${fmtSignedPct(t.resultPct)}</td></tr>`).join('')}</tbody>
-    </table></div>${ok.length > 8 ? `<div class="imp-more">y ${ok.length - 8} más</div>` : ''}` : ''}`;
+    </table></div>${ok.length > 8 ? `<div class="imp-more">${t('y {n} más', {n: ok.length - 8})}</div>` : ''}` : ''}`;
   document.querySelectorAll('#impPlan .type-card').forEach(b=> b.classList.toggle('active', b.dataset.v === imp.plan));
   $i('impPlanBox').style.display = ok.length ? '' : 'none';
-  $i('impNext').textContent = ok.length ? `Importar ${ok.length} ${ok.length === 1 ? 'trade' : 'trades'}` : 'Importar';
+  $i('impNext').textContent = ok.length ? tp(ok.length, 'Importar 1 trade', 'Importar {n} trades') : t('Importar');
   $i('impNext').disabled = !ok.length;
 }
 
@@ -362,11 +362,11 @@ $i('impFile').addEventListener('change', async e=>{
   const f = e.target.files[0];
   if(!f) return;
   $i('impError').textContent = '';
-  if(f.size > IMP_MAX_BYTES){ $i('impError').textContent = 'El archivo es muy grande (máximo 5 MB).'; return; }
+  if(f.size > IMP_MAX_BYTES){ $i('impError').textContent = t('El archivo es muy grande (máximo 5 MB).'); return; }
   const rows = parseCsv(await f.text());
   if(rows.length < 1 || Math.max(...rows.map(r=> r.length)) < 2){
     imp.rows = [];
-    $i('impError').textContent = 'No se encontraron columnas. Exportá el historial como CSV (separado por comas o punto y coma).';
+    $i('impError').textContent = t('No se encontraron columnas. Exportá el historial como CSV (separado por comas o punto y coma).');
     renderImpFile();
     return;
   }
@@ -392,12 +392,12 @@ $i('impNext').addEventListener('click', ()=>{
     guessMapping();
     imp.step = 2;
   } else if(imp.step === 2){
-    if(imp.map.date === undefined) return err.textContent = 'Elegí la columna de la fecha de entrada.';
-    if(imp.map.result === undefined) return err.textContent = 'Elegí la columna del resultado.';
+    if(imp.map.date === undefined) return err.textContent = t('Elegí la columna de la fecha de entrada.');
+    if(imp.map.result === undefined) return err.textContent = t('Elegí la columna del resultado.');
     const acc = accountById(imp.accountId);
     if(imp.unit === 'money' && !(acc && acc.size)){
       const size = parseLooseNum(imp.size);
-      if(!(size > 0)) return err.textContent = 'Ingresá el tamaño de la cuenta en USD (ej. 50000) para pasar el resultado a %.';
+      if(!(size > 0)) return err.textContent = t('Ingresá el tamaño de la cuenta en USD (ej. 50000) para pasar el resultado a %.');
       // El tamaño queda guardado en la cuenta para la próxima.
       acc.size = size;
       saveState();
@@ -405,12 +405,12 @@ $i('impNext').addEventListener('click', ()=>{
     rememberMapping();
     imp.step = 3;
   } else {
-    if(!imp.plan) return err.textContent = 'Elegí si estos trades respetaron tu Trading Plan.';
+    if(!imp.plan) return err.textContent = t('Elegí si estos trades respetaron tu Trading Plan.');
     const n = commitImport(imp._ok);
-    if(!n) return err.textContent = 'No se pudo guardar: el almacenamiento del navegador está lleno.';
+    if(!n) return err.textContent = t('No se pudo guardar: el almacenamiento del navegador está lleno.');
     closeImporter();
     renderAll();
-    showToast(`<span class="toast-ic">${Icons.svg('file-up', 22)}</span><div><b>${n} ${n === 1 ? 'trade importado' : 'trades importados'}</b><br>Quedan "por completar": sumales emoción, errores y notas.</div>`);
+    showToast(`<span class="toast-ic">${Icons.svg('file-up', 22)}</span><div><b>${tp(n, '1 trade importado', '{n} trades importados')}</b><br>${t('Quedan "por completar": sumales emoción, errores y notas.')}</div>`);
     showPendingTrades();
     return;
   }

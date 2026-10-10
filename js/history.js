@@ -8,9 +8,9 @@ let hxObserver = null;
 
 function hxResult(h){
   if(h.resultPct !== null && h.resultPct !== undefined) return {txt: fmtSignedPct(h.resultPct), cls: signClass(h.resultPct)};
-  if(h.result === 'win') return {txt: 'Ganador', cls: 'pos'};
-  if(h.result === 'loss') return {txt: 'Perdedor', cls: 'neg'};
-  return {txt: 'BE', cls: ''};
+  if(h.result === 'win') return {txt: t('Ganador'), cls: 'pos'};
+  if(h.result === 'loss') return {txt: t('Perdedor'), cls: 'neg'};
+  return {txt: t('BE'), cls: ''};
 }
 // Ganador / perdedor / BE según lo que se marcó en el trade (el mismo criterio que el win rate).
 function hxTone(h){
@@ -71,16 +71,16 @@ function renderHxSummary(list){
   const box = document.getElementById('hxSummary');
   const item = (label, value, cls = '')=> `<div class="hxs"><span>${label}</span><b class="${cls}">${value}</b></div>`;
   box.innerHTML = `<div class="hxs-items">
-      ${item(filtersActive() ? 'Trades filtrados' : 'Trades', `${s.n}${filtersActive() ? `<small>/${viewTrades().length}</small>` : ''}`)}
-      ${item('Resultado', s.n ? fmtSignedPct(s.sum) : '—', signClass(s.sum))}
-      ${item('Plan seguido', s.n ? Math.round(s.planPct) + '%' : '—', !s.n ? '' : s.planPct >= goalPct() ? 'pos' : 'warn')}
-      ${item('Win rate', s.n ? Math.round(s.winRate) + '%' : '—')}
+      ${item(filtersActive() ? t('Trades filtrados') : t('Trades'), `${s.n}${filtersActive() ? `<small>/${viewTrades().length}</small>` : ''}`)}
+      ${item(t('Resultado'), s.n ? fmtSignedPct(s.sum) : '—', signClass(s.sum))}
+      ${item(t('Plan seguido'), s.n ? Math.round(s.planPct) + '%' : '—', !s.n ? '' : s.planPct >= goalPct() ? 'pos' : 'warn')}
+      ${item(t('Win rate'), s.n ? Math.round(s.winRate) + '%' : '—')}
     </div>
     <div class="hxs-actions">
-      ${filtersActive() ? `<button type="button" class="ghost small" id="hxClear">${Icons.svg('x', 14)} Limpiar filtros</button>` : ''}
-      ${!hx.pending && viewTrades().some(h=> h.pending) ? `<button type="button" class="small" id="hxPending">${viewTrades().filter(h=> h.pending).length} por completar</button>` : ''}
-      <button type="button" class="small ghost" data-open-importer>${Icons.svg('file-up', 15)} Importar CSV</button>
-      <button type="button" class="small" id="hxExport" ${s.n ? '' : 'disabled'}>${Icons.svg('file-down', 15)} Exportar CSV</button>
+      ${filtersActive() ? `<button type="button" class="ghost small" id="hxClear">${Icons.svg('x', 14)} ${t('Limpiar filtros')}</button>` : ''}
+      ${!hx.pending && viewTrades().some(h=> h.pending) ? `<button type="button" class="small" id="hxPending">${t('{n} por completar', {n: viewTrades().filter(h=> h.pending).length})}</button>` : ''}
+      <button type="button" class="small ghost" data-open-importer>${Icons.svg('file-up', 15)} ${t('Importar CSV')}</button>
+      <button type="button" class="small" id="hxExport" ${s.n ? '' : 'disabled'}>${Icons.svg('file-down', 15)} ${t('Exportar CSV')}</button>
     </div>`;
   const pend = document.getElementById('hxPending');
   if(pend) pend.addEventListener('click', showPendingTrades);
@@ -96,8 +96,8 @@ function tradeRow(h, showDate){
   const emo = emotionById(h.emotion);
   const errs = (h.errors || []).map(id=> errorById(id)).filter(Boolean);
   const tags = [];
-  if(h.pending) tags.push('<span class="tag warn">Por completar</span>');
-  tags.push(`<span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? 'Plan seguido' : 'Plan roto'}</span>`);
+  if(h.pending) tags.push(`<span class="tag warn">${t('Por completar')}</span>`);
+  tags.push(`<span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? t('Plan seguido') : t('Plan roto')}</span>`);
   if(emo) tags.push(`<span class="tag ${emo.tone === 'risk' ? 'warn' : ''}">${emo.label}</span>`);
   errs.slice(0, 2).forEach(e=> tags.push(`<span class="tag bad">${e.label}</span>`));
   if(errs.length > 2) tags.push(`<span class="tag bad">+${errs.length - 2}</span>`);
@@ -107,14 +107,14 @@ function tradeRow(h, showDate){
   return `<button type="button" class="hx-row ${hxTone(h)}" data-id="${h.id}">
     <span class="hx-stripe"></span>
     <span class="hx-main">
-      <span class="hx-title"><b>${h.asset ? escapeHtml(h.asset) : 'Trade'}</b>${h.direction ? `<span class="tp-dir ${h.direction}">${Icons.svg(h.direction === 'long' ? 'arrow-up' : 'arrow-down', 13)}${h.direction === 'long' ? 'Long' : 'Short'}</span>` : ''}</span>
+      <span class="hx-title"><b>${h.asset ? escapeHtml(h.asset) : t('Trade')}</b>${h.direction ? `<span class="tp-dir ${h.direction}">${Icons.svg(h.direction === 'long' ? 'arrow-up' : 'arrow-down', 13)}${h.direction === 'long' ? 'Long' : 'Short'}</span>` : ''}</span>
       <span class="hx-meta">${meta}</span>
       <span class="hx-tags">${tags.join('')}</span>
     </span>
     ${hasImage(h) ? `<img class="hx-thumb" src="${tradeImage(h)}" alt="">` : ''}
     <span class="hx-res">
       <b class="${r.cls}">${r.txt}</b>
-      <small>${rr !== null ? (rr > 0 ? '+' : '') + rr.toFixed(1) + 'R' : h.riskPct ? 'Riesgo ' + h.riskPct + '%' : ''}</small>
+      <small>${rr !== null ? (rr > 0 ? '+' : '') + rr.toFixed(1) + 'R' : h.riskPct ? t('Riesgo {n}%', {n: h.riskPct}) : ''}</small>
     </span>
     <span class="hx-chev">${Icons.svg('chevron-right', 16)}</span>
   </button>`;
@@ -127,7 +127,7 @@ function dayHeader(key, trades){
   const broken = trades.filter(h=> !h.followedPlan).length;
   return `<div class="hx-day">
     <span class="hx-day-t">${txt.charAt(0).toUpperCase() + txt.slice(1)}</span>
-    <span class="hx-day-m">${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}${broken ? ` · <span class="neg">${broken} fuera de plan</span>` : ''}</span>
+    <span class="hx-day-m">${tp(trades.length, '{n} trade', '{n} trades')}${broken ? ` · <span class="neg">${t('{n} fuera de plan', {n: broken})}</span>` : ''}</span>
     <b class="${signClass(sum)}">${fmtSignedPct(sum)}</b>
   </div>`;
 }
@@ -140,8 +140,8 @@ function renderHistoryTab(){
   const more = document.getElementById('hxMore');
   if(!all.length){
     box.innerHTML = viewTrades().length
-      ? `<div class="hx-empty"><span class="hx-empty-ic">${Icons.svg('search', 26)}</span><b>Ningún trade coincide con los filtros</b><p>Probá con otra búsqueda o sacá algún filtro.</p><button type="button" class="primary small" id="hxEmptyClear">Limpiar filtros</button></div>`
-      : `<div class="hx-empty"><span class="hx-empty-ic">${Icons.svg('history', 26)}</span><b>Todavía no registraste ningún trade</b><p>Cada trade que cargues aparece acá con su resultado, tu plan, tu emoción y tus notas.</p><button type="button" class="primary small" data-goto="register">Registrar trade</button></div>`;
+      ? `<div class="hx-empty"><span class="hx-empty-ic">${Icons.svg('search', 26)}</span><b>${t('Ningún trade coincide con los filtros')}</b><p>${t('Probá con otra búsqueda o sacá algún filtro.')}</p><button type="button" class="primary small" id="hxEmptyClear">${t('Limpiar filtros')}</button></div>`
+      : `<div class="hx-empty"><span class="hx-empty-ic">${Icons.svg('history', 26)}</span><b>${t('Todavía no registraste ningún trade')}</b><p>${t('Cada trade que cargues aparece acá con su resultado, tu plan, tu emoción y tus notas.')}</p><button type="button" class="primary small" data-goto="register">${t('Registrar trade')}</button></div>`;
     const c = document.getElementById('hxEmptyClear');
     if(c) c.addEventListener('click', resetHxFilters);
     more.innerHTML = '';
@@ -166,8 +166,8 @@ function renderHistoryTab(){
   box.innerHTML = html;
   box.querySelectorAll('.hx-row').forEach(b=> b.addEventListener('click', ()=> openTrade(b.dataset.id)));
   more.innerHTML = all.length > hx.limit
-    ? `<span>Mostrando ${page.length} de ${all.length}</span><button type="button" class="small" id="hxMoreBtn">Cargar más</button>`
-    : all.length > PAGE_SIZE ? `<span>Mostrando los ${all.length} trades</span>` : '';
+    ? `<span>${t('Mostrando {n} de {total}', {n: page.length, total: all.length})}</span><button type="button" class="small" id="hxMoreBtn">${t('Cargar más')}</button>`
+    : all.length > PAGE_SIZE ? `<span>${t('Mostrando los {n} trades', {n: all.length})}</span>` : '';
   const btn = document.getElementById('hxMoreBtn');
   if(btn){
     btn.addEventListener('click', ()=>{ hx.limit += PAGE_SIZE; renderHistoryTab(); });
@@ -209,7 +209,7 @@ function renderTradePanel(){
   if(!h){ closeTrade(); return; }
   const date = keyDate(dayKeyFromTs(h.ts)).toLocaleDateString(LOCALE, {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
   document.getElementById('tpKicker').textContent = date.charAt(0).toUpperCase() + date.slice(1) + ' · ' + fmtTimeBoth(h.ts);
-  document.getElementById('tpTitle').innerHTML = `${h.asset ? escapeHtml(h.asset) : 'Trade'} ${h.direction ? `<span class="tp-dir ${h.direction}">${Icons.svg(h.direction === 'long' ? 'arrow-up' : 'arrow-down', 13)}${h.direction === 'long' ? 'Long' : 'Short'}</span>` : ''}`;
+  document.getElementById('tpTitle').innerHTML = `${h.asset ? escapeHtml(h.asset) : t('Trade')} ${h.direction ? `<span class="tp-dir ${h.direction}">${Icons.svg(h.direction === 'long' ? 'arrow-up' : 'arrow-down', 13)}${h.direction === 'long' ? 'Long' : 'Short'}</span>` : ''}`;
 
   const r = hxResult(h);
   const rr = realR(h);
@@ -224,7 +224,7 @@ function renderTradePanel(){
       const miss = isMiss(it);
       return `<li class="${miss ? 'miss' : 'ok'}">${Icons.svg(miss ? 'x' : 'check', 14)}<span>${escapeHtml(it.label)}</span></li>`;
     }).join('')
-    + deleted.map(l=> `<li class="miss">${Icons.svg('x', 14)}<span>${escapeHtml(l)} <small>(regla que ya no está en tu plan)</small></span></li>`).join('');
+    + deleted.map(l=> `<li class="miss">${Icons.svg('x', 14)}<span>${escapeHtml(l)} <small>${t('(regla que ya no está en tu plan)')}</small></span></li>`).join('');
   const emo = emotionById(h.emotion);
   const errs = (h.errors || []).map(id=> errorById(id)).filter(Boolean);
   const maxRisk = getMaxDailyRisk();
@@ -233,43 +233,43 @@ function renderTradePanel(){
 
   document.getElementById('tpBody').innerHTML = `
     <div class="day-summary">
-      ${cell('Resultado', r.txt, r.cls)}
-      ${cell('R real', rr === null ? '—' : (rr > 0 ? '+' : '') + rr.toFixed(1) + 'R', signClass(rr || 0))}
-      ${cell('R:R planeado', h.rrPlanned ? '1:' + h.rrPlanned : '—')}
-      ${cell('Riesgo', h.riskPct !== null && h.riskPct !== undefined ? h.riskPct + '%' : '—')}
+      ${cell(t('Resultado'), r.txt, r.cls)}
+      ${cell(t('R real'), rr === null ? '—' : (rr > 0 ? '+' : '') + rr.toFixed(1) + 'R', signClass(rr || 0))}
+      ${cell(t('R:R planeado'), h.rrPlanned ? '1:' + h.rrPlanned : '—')}
+      ${cell(t('Riesgo'), h.riskPct !== null && h.riskPct !== undefined ? h.riskPct + '%' : '—')}
     </div>
     <div class="tp-chips">
-      ${h.pending ? '<span class="tag warn">Importado · por completar</span>' : ''}
-      ${typeof h.score === 'number' ? `<span class="tag ${h.score >= 80 ? 'good' : h.score >= 50 ? 'warn' : 'bad'}">Disciplina ${h.score}/100</span>` : ''}
+      ${h.pending ? `<span class="tag warn">${t('Importado · por completar')}</span>` : ''}
+      ${typeof h.score === 'number' ? `<span class="tag ${h.score >= 80 ? 'good' : h.score >= 50 ? 'warn' : 'bad'}">${t('Disciplina {n}/100', {n: h.score})}</span>` : ''}
       ${state.accounts.length > 1 && accountById(h.accountId) ? `<span class="tag strong">${escapeHtml(accountById(h.accountId).name)}</span>` : ''}
       <span class="tag">${sessionOf(h.ts)}</span>
       ${h.setup ? `<span class="tag">${escapeHtml(h.setup)}</span>` : ''}
       ${h.durationMin !== null && h.durationMin !== undefined ? `<span class="tag">${h.durationMin} min</span>` : ''}
-      ${riskBroken ? '<span class="tag bad">Risk management roto ese día</span>' : ''}
+      ${riskBroken ? `<span class="tag bad">${t('Risk management roto ese día')}</span>` : ''}
     </div>
-    ${hasImage(h) ? `<img class="tp-img" src="${tradeImage(h)}" alt="Captura del trade">` : ''}
-    ${sec(`Trading Plan <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? 'Seguido' : 'Roto'}</span>`,
-      rules ? `<ul class="tp-rules">${rules}</ul>` : '<p class="tp-muted">No tenías reglas cargadas.</p>')}
-    ${sec('Tu cabeza', `<div class="tp-mind">
-      <div><span class="tp-muted">Emoción</span><b class="${emo ? (emo.tone === 'risk' ? 'warn' : 'pos') : ''}">${emo ? emo.label : '—'}</b></div>
-      <div><span class="tp-muted">Confianza</span>${h.confidence ? `<span class="tp-conf">${[1, 2, 3, 4, 5].map(i=> `<i class="${i <= h.confidence ? 'on' : ''}"></i>`).join('')}</span><b>${h.confidence}/5</b>` : '<b>—</b>'}</div>
+    ${hasImage(h) ? `<img class="tp-img" src="${tradeImage(h)}" alt="${t('Captura del trade')}">` : ''}
+    ${sec(`Trading Plan <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? t('Seguido') : t('Roto')}</span>`,
+      rules ? `<ul class="tp-rules">${rules}</ul>` : `<p class="tp-muted">${t('No tenías reglas cargadas.')}</p>`)}
+    ${sec(t('Tu cabeza'), `<div class="tp-mind">
+      <div><span class="tp-muted">${t('Emoción')}</span><b class="${emo ? (emo.tone === 'risk' ? 'warn' : 'pos') : ''}">${emo ? emo.label : '—'}</b></div>
+      <div><span class="tp-muted">${t('Confianza')}</span>${h.confidence ? `<span class="tp-conf">${[1, 2, 3, 4, 5].map(i=> `<i class="${i <= h.confidence ? 'on' : ''}"></i>`).join('')}</span><b>${h.confidence}/5</b>` : '<b>—</b>'}</div>
     </div>
-    ${errs.length ? `<div class="tags">${errs.map(e=> `<span class="tag bad">${e.label}</span>`).join('')}</div>` : '<p class="tp-muted">Sin errores marcados.</p>'}`)}
-    ${sec('Qué pasó en el trade', h.note ? `<p class="tp-note">${escapeHtml(h.note).replace(/\n/g, '<br>')}</p>` : '<p class="tp-muted">Sin comentarios.</p>')}
+    ${errs.length ? `<div class="tags">${errs.map(e=> `<span class="tag bad">${e.label}</span>`).join('')}</div>` : `<p class="tp-muted">${t('Sin errores marcados.')}</p>`}`)}
+    ${sec(t('Qué pasó en el trade'), h.note ? `<p class="tp-note">${escapeHtml(h.note).replace(/\n/g, '<br>')}</p>` : `<p class="tp-muted">${t('Sin comentarios.')}</p>`)}
   `;
   const img = document.querySelector('#tpBody .tp-img');
   if(img) img.addEventListener('click', ()=> openLightbox(tradeImage(h)));
 
   document.getElementById('tpFoot').innerHTML = `
-    <button type="button" class="danger-o" id="tpDelete">${Icons.svg('trash', 15)} Eliminar</button>
-    <button type="button" class="primary" id="tpEdit">${Icons.svg('pencil', 15)} Editar trade</button>`;
+    <button type="button" class="danger-o" id="tpDelete">${Icons.svg('trash', 15)} ${t('Eliminar')}</button>
+    <button type="button" class="primary" id="tpEdit">${Icons.svg('pencil', 15)} ${t('Editar trade')}</button>`;
   document.getElementById('tpEdit').addEventListener('click', ()=>{
     const id = h.id;
     closeTrade();
     startEditTrade(id);
   });
   document.getElementById('tpDelete').addEventListener('click', ()=>{
-    if(!confirm('¿Eliminar este trade? No se puede deshacer.')) return;
+    if(!confirm(t('¿Eliminar este trade? No se puede deshacer.'))) return;
     state.history = state.history.filter(x=> x.id !== h.id);
     ImageStore.remove(h.imageId);
     // Si ese trade estaba abierto para editar, el formulario vuelve a cero.
@@ -285,23 +285,25 @@ document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && openTradeId) 
 
 // ---- CSV ----
 function exportCsv(list){
-  const num = v=> v === null || v === undefined || v === '' ? '' : String(v).replace('.', ',');
+  // En inglés: coma como separador y punto decimal. En español: punto y coma y coma decimal (Excel en español).
+  const sep = LANG === 'es' ? ';' : ',';
+  const num = v=> v === null || v === undefined || v === '' ? '' : (LANG === 'es' ? String(v).replace('.', ',') : String(v));
   const cell = v=> {
-    const t = v === null || v === undefined ? '' : String(v);
-    return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    const txt = v === null || v === undefined ? '' : String(v);
+    return /[";,\n]/.test(txt) ? '"' + txt.replace(/"/g, '""') + '"' : txt;
   };
-  const head = ['Fecha', 'Hora (NY)', 'Cuenta', 'Activo', 'Dirección', 'Setup', 'Sesión', 'Resultado', 'Resultado %', 'Riesgo %', 'R:R planeado', 'R real', 'Duración (min)', 'Plan seguido', 'Reglas que faltaron', 'Emoción', 'Confianza', 'Errores', 'Nota'];
+  const head = ['Fecha', 'Hora (NY)', 'Cuenta', 'Activo', 'Dirección', 'Setup', 'Sesión', 'Resultado', 'Resultado %', 'Riesgo %', 'R:R planeado', 'R real', 'Duración (min)', 'Plan seguido', 'Reglas que faltaron', 'Emoción', 'Confianza', 'Errores', 'Nota'].map(h=> t(h));
   const rows = list.map(h=>{
     const rr = realR(h);
     const emo = emotionById(h.emotion);
     return [
       fmtDate(h.ts), fmtTime(h.ts, NY_TZ), (accountById(h.accountId) || {}).name || '', h.asset || '', h.direction === 'long' ? 'Long' : h.direction === 'short' ? 'Short' : '',
       h.setup || '', sessionOf(h.ts), RESULT_LABELS[h.result] || '', num(h.resultPct), num(h.riskPct), num(h.rrPlanned),
-      rr === null ? '' : num(rr.toFixed(2)), num(h.durationMin), h.followedPlan ? 'Sí' : 'No', (h.missing || []).join(' | '),
+      rr === null ? '' : num(rr.toFixed(2)), num(h.durationMin), h.followedPlan ? t('Sí') : t('No'), (h.missing || []).join(' | '),
       emo ? emo.label : '', h.confidence || '', (h.errors || []).map(id=> (errorById(id) || {label: id}).label).join(' | '), h.note || '',
-    ].map(cell).join(';');
+    ].map(cell).join(sep);
   });
-  const csv = '﻿' + [head.join(';')].concat(rows).join('\r\n');
+  const csv = '﻿' + [head.map(cell).join(sep)].concat(rows).join('\r\n');
   const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);

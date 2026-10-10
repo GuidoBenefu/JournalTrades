@@ -7,6 +7,7 @@
 //
 //   t('Te quedan {n} días.', {n: 3})       variables entre llaves
 //   tp(n, '{n} trade', '{n} trades')       singular / plural (n se pasa solo)
+//   tc('curva', 'Inicio')                  misma palabra, otro sentido
 //
 // El HTML fijo se traduce entero al cargar la página (translateDom): textos,
 // placeholder, title, aria-label y data-title. Cambiar de idioma recarga la
@@ -47,6 +48,12 @@ function t(s, vars){
     if(tr === undefined) I18N_MISSING.add(s); else out = tr;
   }
   return vars ? out.replace(/\{(\w+)\}/g, (m, k)=> k in vars ? vars[k] : m) : out;
+}
+// Misma palabra en español con distinto sentido: tc('curva', 'Inicio') busca
+// 'curva|Inicio' en el diccionario ("Start") y en español muestra "Inicio".
+function tc(ctx, s, vars){
+  if(LANG !== 'es' && I18N[LANG][ctx + '|' + s] !== undefined) return t(ctx + '|' + s, vars);
+  return t(s, vars);
 }
 function tp(n, one, other, vars){
   return t(n === 1 ? one : other, {n, ...vars});

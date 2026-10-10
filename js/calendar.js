@@ -7,7 +7,10 @@ function currentYM(){
   return [Number(k.slice(0, 4)), Number(k.slice(5, 7)) - 1];
 }
 
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+// Nombres de los meses en el idioma activo, con mayúscula inicial.
+const MONTHS = Array.from({length: 12}, (_, m)=>{ const s = new Date(2024, m, 1).toLocaleDateString(LOCALE, {month: 'long'}); return s.charAt(0).toUpperCase() + s.slice(1); });
+// En español el mes va en minúscula dentro de una frase; en inglés, no.
+const monthInText = m=> LANG === 'es' ? MONTHS[m].toLowerCase() : MONTHS[m];
 const cal = {
   date: new Date(currentYM()[0], currentYM()[1], 1),
   scope: 'month',   // 'month' | 'year'
@@ -68,7 +71,7 @@ function renderSummary(dayList, periodLabel, extra){
   const box = document.getElementById('calSummary');
   const trades = dayList.flatMap(([, d])=> d.trades);
   if(!trades.length){
-    box.innerHTML = `<div class="cs-empty">No registraste trades en ${periodLabel}.</div>`;
+    box.innerHTML = `<div class="cs-empty">${t('No registraste trades en {period}.', {period: periodLabel})}</div>`;
     return;
   }
   const sum = trades.reduce((a, h)=> a + Analytics.pct(h), 0);
@@ -76,9 +79,9 @@ function renderSummary(dayList, periodLabel, extra){
   const red = dayList.filter(([, d])=> d.sum < -0.05).length;
   const planPct = trades.filter(h=> h.followedPlan).length / trades.length * 100;
   const tiles = [
-    summaryTile('Resultado', fmtSignedPct(sum), `${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}`, signClass(sum)),
-    summaryTile('Días operados', dayList.length, `${green} verdes · ${red} rojos`),
-    summaryTile('Plan seguido', Math.round(planPct) + '%', `Meta: ${goalPct()}%`, planPct >= goalPct() ? 'pos' : 'warn'),
+    summaryTile(t('Resultado'), fmtSignedPct(sum), tp(trades.length, '{n} trade', '{n} trades'), signClass(sum)),
+    summaryTile(t('Días operados'), dayList.length, t('{g} verdes · {r} rojos', {g: green, r: red})),
+    summaryTile(t('Plan seguido'), Math.round(planPct) + '%', t('Meta: {goal}%', {goal: goalPct()}), planPct >= goalPct() ? 'pos' : 'warn'),
   ].concat(extra(dayList));
   box.innerHTML = tiles.join('');
 }
@@ -92,9 +95,9 @@ function bestWorstDays(dayList){
   let run = 0, best = 0;
   dayList.slice().sort((a, b)=> a[0] < b[0] ? -1 : 1).forEach(([, d])=>{ run = d.sum > 0.05 ? run + 1 : 0; best = Math.max(best, run); });
   return [
-    summaryTile('Mejor día', fmtSignedPct(bd.sum), fmtDay(bk), signClass(bd.sum)),
-    summaryTile('Peor día', fmtSignedPct(wd.sum), fmtDay(wk), signClass(wd.sum)),
-    summaryTile('Días en verde', best + (best === 1 ? ' día' : ' días'), 'Días seguidos en verde', best > 0 ? 'pos' : ''),
+    summaryTile(t('Mejor día'), fmtSignedPct(bd.sum), fmtDay(bk), signClass(bd.sum)),
+    summaryTile(t('Peor día'), fmtSignedPct(wd.sum), fmtDay(wk), signClass(wd.sum)),
+    summaryTile(t('Días en verde'), tp(best, '1 día', '{n} días'), t('Días seguidos en verde'), best > 0 ? 'pos' : ''),
   ];
 }
 
@@ -112,7 +115,7 @@ function renderMonth(days){
   }
   const maxAbs = Math.max(0.5, ...monthDays.map(([, d])=> Math.abs(d.sum)));
 
-  let html = '<div class="cal-grid">' + WEEKDAYS.map(d=> `<div class="cal-dow">${d}</div>`).join('') + '<div class="cal-dow">Semana</div>';
+  let html = '<div class="cal-grid">' + WEEKDAYS.map(d=> `<div class="cal-dow">${d}</div>`).join('') + `<div class="cal-dow">${t('Semana')}</div>`;
   let col = 0, week = [];
   const flushWeek = ()=>{
     const trades = week.flatMap(d=> d.trades);
@@ -123,7 +126,7 @@ function renderMonth(days){
       const plan = trades.filter(h=> h.followedPlan).length / trades.length * 100;
       html += `<div class="cal-week">
         <div class="cw-v ${cal.mode === 'plan' ? '' : signClass(sum)}">${cal.mode === 'plan' ? Math.round(plan) + '%' : fmtSignedPct(sum)}</div>
-        <div class="cw-s">${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}<span class="cw-plan"> · ${cal.mode === 'plan' ? fmtSignedPct(sum) : Math.round(plan) + '% plan'}</span></div>
+        <div class="cw-s">${tp(trades.length, '{n} trade', '{n} trades')}<span class="cw-plan"> · ${cal.mode === 'plan' ? fmtSignedPct(sum) : t('{n}% plan', {n: Math.round(plan)})}</span></div>
       </div>`;
     }
     week = [];
@@ -151,7 +154,7 @@ function renderMonth(days){
   document.getElementById('calView').innerHTML = html;
   document.querySelectorAll('#calView .cal-day[data-day]:not([disabled])').forEach(b=> b.addEventListener('click', ()=> openDay(b.dataset.day)));
 
-  renderSummary(monthDays, MONTHS[m].toLowerCase(), bestWorstDays);
+  renderSummary(monthDays, monthInText(m), bestWorstDays);
 }
 
 // ---------- Vista anual ----------
@@ -176,12 +179,12 @@ function renderYear(days){
     for(let d = 1; d <= daysInMonth; d++){
       const k = keyOf(y, m, d);
       const data = days[k];
-      cells += `<i class="${data ? 'has' : k > todayKey ? 'future' : ''}" style="${cellStyle(data, maxAbs)}" title="${d} de ${MONTHS[m].toLowerCase()}${data ? ' · ' + valueText(data) + ' · ' + data.n + (data.n === 1 ? ' trade' : ' trades') : ''}"></i>`;
+      cells += `<i class="${data ? 'has' : k > todayKey ? 'future' : ''}" style="${cellStyle(data, maxAbs)}" title="${keyDate(k).toLocaleDateString(LOCALE, {day: 'numeric', month: 'long'})}${data ? ' · ' + valueText(data) + ' · ' + tp(data.n, '{n} trade', '{n} trades') : ''}"></i>`;
     }
     html += `<button type="button" class="year-month" data-month="${m}">
       <div class="ym-head"><span class="ym-name">${MONTHS[m]}</span>${trades.length ? `<span class="ym-val ${cal.mode === 'plan' ? '' : signClass(sum)}">${cal.mode === 'plan' ? Math.round(plan) + '%' : fmtSignedPct(sum)}</span>` : ''}</div>
       <div class="ym-grid">${cells}</div>
-      <div class="ym-sub">${trades.length ? `${trades.length} ${trades.length === 1 ? 'trade' : 'trades'} · ${mDays.length} ${mDays.length === 1 ? 'día' : 'días'}` : 'Sin trades'}</div>
+      <div class="ym-sub">${trades.length ? `${tp(trades.length, '{n} trade', '{n} trades')} · ${tp(mDays.length, '1 día', '{n} días')}` : t('Sin trades')}</div>
     </button>`;
   }
   html += '</div>';
@@ -199,9 +202,9 @@ function renderYear(days){
     const best = sorted[0], worst = sorted[sorted.length - 1];
     const positive = active.filter(x=> x.sum > 0.05).length;
     return [
-      summaryTile('Mejor mes', fmtSignedPct(best.sum), MONTHS[best.m], signClass(best.sum)),
-      summaryTile('Peor mes', fmtSignedPct(worst.sum), MONTHS[worst.m], signClass(worst.sum)),
-      summaryTile('Meses en verde', `${positive} de ${active.length}`, 'Meses con trades', positive ? 'pos' : ''),
+      summaryTile(t('Mejor mes'), fmtSignedPct(best.sum), MONTHS[best.m], signClass(best.sum)),
+      summaryTile(t('Peor mes'), fmtSignedPct(worst.sum), MONTHS[worst.m], signClass(worst.sum)),
+      summaryTile(t('Meses en verde'), t('{n} de {total}', {n: positive, total: active.length}), t('Meses con trades'), positive ? 'pos' : ''),
     ];
   });
 }
@@ -227,8 +230,8 @@ function renderControls(){
   document.getElementById('calToday').disabled = atCurrent;
 
   document.getElementById('calLegend').innerHTML = cal.mode === 'plan'
-    ? '<span><i class="lg-sq" style="background:color-mix(in srgb, var(--brand) 28%, var(--card)); border-color:var(--brand)"></i>Plan siempre seguido</span><span><i class="lg-sq" style="background:color-mix(in srgb, var(--amber) 28%, var(--card)); border-color:var(--amber)"></i>A veces roto</span><span><i class="lg-sq" style="background:color-mix(in srgb, var(--danger) 28%, var(--card)); border-color:var(--danger)"></i>Siempre roto</span><span><i class="lg-dot ok"></i>Trade con plan seguido</span><span><i class="lg-dot"></i>Plan roto</span>'
-    : '<span class="lg-scale">Pérdida <i style="background:color-mix(in srgb, var(--danger) 45%, var(--card))"></i><i style="background:color-mix(in srgb, var(--danger) 18%, var(--card))"></i><i style="background:var(--card)"></i><i style="background:color-mix(in srgb, var(--brand) 18%, var(--card))"></i><i style="background:color-mix(in srgb, var(--brand) 45%, var(--card))"></i> Ganancia</span><span><i class="lg-dot ok"></i>Trade con plan seguido</span><span><i class="lg-dot"></i>Plan roto</span>';
+    ? `<span><i class="lg-sq" style="background:color-mix(in srgb, var(--brand) 28%, var(--card)); border-color:var(--brand)"></i>${t('Plan siempre seguido')}</span><span><i class="lg-sq" style="background:color-mix(in srgb, var(--amber) 28%, var(--card)); border-color:var(--amber)"></i>${t('A veces roto')}</span><span><i class="lg-sq" style="background:color-mix(in srgb, var(--danger) 28%, var(--card)); border-color:var(--danger)"></i>${t('Siempre roto')}</span><span><i class="lg-dot ok"></i>${t('Trade con plan seguido')}</span><span><i class="lg-dot"></i>${t('Plan roto')}</span>`
+    : `<span class="lg-scale">${t('Pérdida')} <i style="background:color-mix(in srgb, var(--danger) 45%, var(--card))"></i><i style="background:color-mix(in srgb, var(--danger) 18%, var(--card))"></i><i style="background:var(--card)"></i><i style="background:color-mix(in srgb, var(--brand) 18%, var(--card))"></i><i style="background:color-mix(in srgb, var(--brand) 45%, var(--card))"></i> ${t('Ganancia')}</span><span><i class="lg-dot ok"></i>${t('Trade con plan seguido')}</span><span><i class="lg-dot"></i>${t('Plan roto')}</span>`;
 }
 
 function renderCalendarTab(){
@@ -290,16 +293,16 @@ function renderDayPanel(){
   document.getElementById('dayTitle').textContent = title.charAt(0).toUpperCase() + title.slice(1);
   const body = document.getElementById('dayBody');
   if(!d){
-    body.innerHTML = `<div class="day-empty"><div class="day-empty-ic">${Icons.svg('inbox', 30)}</div><p>No registraste trades este día.</p></div>`;
+    body.innerHTML = `<div class="day-empty"><div class="day-empty-ic">${Icons.svg('inbox', 30)}</div><p>${t('No registraste trades este día.')}</p></div>`;
     return;
   }
   const wins = d.trades.filter(h=> h.result === 'win').length;
   const rs = d.trades.map(realR).filter(r=> r !== null);
   const summary = `<div class="day-summary">
-    <div><span class="ds-v ${signClass(d.sum)}">${fmtSignedPct(d.sum)}</span><span class="ds-l">Resultado</span></div>
-    <div><span class="ds-v">${d.n}</span><span class="ds-l">${d.n === 1 ? 'Trade' : 'Trades'}</span></div>
-    <div><span class="ds-v ${d.planPct === 100 ? 'pos' : d.planPct < 50 ? 'neg' : 'warn'}">${Math.round(d.planPct)}%</span><span class="ds-l">Plan seguido</span></div>
-    <div><span class="ds-v">${rs.length ? (rs.reduce((a, b)=> a + b, 0) >= 0 ? '+' : '') + rs.reduce((a, b)=> a + b, 0).toFixed(1) + 'R' : wins + '/' + d.n}</span><span class="ds-l">${rs.length ? 'R total' : 'Ganadores'}</span></div>
+    <div><span class="ds-v ${signClass(d.sum)}">${fmtSignedPct(d.sum)}</span><span class="ds-l">${t('Resultado')}</span></div>
+    <div><span class="ds-v">${d.n}</span><span class="ds-l">${d.n === 1 ? t('Trade') : t('Trades')}</span></div>
+    <div><span class="ds-v ${d.planPct === 100 ? 'pos' : d.planPct < 50 ? 'neg' : 'warn'}">${Math.round(d.planPct)}%</span><span class="ds-l">${t('Plan seguido')}</span></div>
+    <div><span class="ds-v">${rs.length ? (rs.reduce((a, b)=> a + b, 0) >= 0 ? '+' : '') + rs.reduce((a, b)=> a + b, 0).toFixed(1) + 'R' : wins + '/' + d.n}</span><span class="ds-l">${rs.length ? t('R total') : t('Ganadores')}</span></div>
   </div>`;
   const list = d.trades.map(h=>{
     const emo = emotionById(h.emotion);
@@ -308,23 +311,23 @@ function renderDayPanel(){
       <div class="dt-top">
         <div class="dt-main">
           <span class="dt-time">${fmtTime(h.ts)}</span>
-          <b>${escapeHtml(h.asset || 'Trade')}</b>
+          <b>${escapeHtml(h.asset || t('Trade'))}</b>
           ${h.direction ? `<span class="dt-dir">${h.direction === 'long' ? 'Long ↑' : 'Short ↓'}</span>` : ''}
         </div>
         <span class="dt-res ${signClass(Analytics.pct(h))}">${h.resultPct === null || h.resultPct === undefined ? '—' : fmtSignedPct(h.resultPct)}</span>
       </div>
       <div class="tags">
-        <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? 'Plan seguido' : 'Plan roto'}</span>
+        <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? t('Plan seguido') : t('Plan roto')}</span>
         <span class="tag">${sessionOf(h.ts)}</span>
         ${h.setup ? `<span class="tag">${escapeHtml(h.setup)}</span>` : ''}
         ${emo ? `<span class="tag">${emo.label}</span>` : ''}
         ${r !== null ? `<span class="tag">${r > 0 ? '+' : ''}${r.toFixed(1)}R</span>` : ''}
         ${(h.errors || []).map(id=> errorById(id)).filter(Boolean).map(e=> `<span class="tag bad">${e.label}</span>`).join('')}
       </div>
-      ${h.missing && h.missing.length ? `<div class="dt-miss">Faltó del plan: ${h.missing.map(escapeHtml).join(', ')}</div>` : ''}
+      ${h.missing && h.missing.length ? `<div class="dt-miss">${t('Faltó del plan: {rules}', {rules: h.missing.map(escapeHtml).join(', ')})}</div>` : ''}
       ${h.note ? `<p class="dt-note">${escapeHtml(h.note)}</p>` : ''}
-      ${hasImage(h) ? `<img src="${tradeImage(h)}" class="tradeThumb dayThumb" alt="Captura del trade">` : ''}
-      <div class="dt-actions"><button type="button" class="small" data-open-trade="${h.id}">Ver detalle</button></div>
+      ${hasImage(h) ? `<img src="${tradeImage(h)}" class="tradeThumb dayThumb" alt="${t('Captura del trade')}">` : ''}
+      <div class="dt-actions"><button type="button" class="small" data-open-trade="${h.id}">${t('Ver detalle')}</button></div>
     </div>`;
   }).join('');
   body.innerHTML = summary + list;

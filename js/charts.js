@@ -58,7 +58,7 @@ const Charts = {
     const pad = {l: 46, r: 14, t: 14, b: 26};
     const n = Math.max(...series.map(s=> s.values.length));
     if(n < 2){
-      el.innerHTML = '<div class="chart-empty">Registrá al menos un trade para ver tu curva.</div>';
+      el.innerHTML = `<div class="chart-empty">${t('Registrá al menos un trade para ver tu curva.')}</div>`;
       return;
     }
     const all = series.flatMap(s=> s.values).concat([0]);
@@ -97,8 +97,8 @@ const Charts = {
     const dots = points.map(p=> `<circle cx="${x(p.i)}" cy="${y(base[p.i])}" r="4" fill="${p.color}" stroke="var(--card)" stroke-width="1.5"/>`).join('');
 
     const xLabels = `
-      <text x="${x(0)}" y="${H - 6}" class="ch-label" text-anchor="start">Inicio</text>
-      <text x="${x(n - 1)}" y="${H - 6}" class="ch-label" text-anchor="end">Trade ${n - 1}</text>`;
+      <text x="${x(0)}" y="${H - 6}" class="ch-label" text-anchor="start">${tc('curva', 'Inicio')}</text>
+      <text x="${x(n - 1)}" y="${H - 6}" class="ch-label" text-anchor="end">${t('Trade {n}', {n: n - 1})}</text>`;
 
     const hover = `<line class="ch-guide" x1="0" x2="0" y1="${pad.t}" y2="${H - pad.b}" style="display:none"/>
       <circle class="ch-hover" r="5" fill="${series[0].color}" stroke="var(--card)" stroke-width="2" style="display:none"/>`;

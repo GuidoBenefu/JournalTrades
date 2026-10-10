@@ -1,9 +1,10 @@
 // Pestaña Estadísticas: filtro de período, números con tendencia, disciplina,
 // curva, patrones, mapa de calor, desglose, comparación y cierre mensual.
 
-const WEEKDAYS_ONE = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-const PERIOD_LABELS = {week: 'Esta semana', month: 'Este mes', 90: 'Últimos 3 meses', all: 'Todo tu historial'};
-const PREV_LABELS = {week: 'semana pasada', month: 'mes pasado', 90: '3 meses anteriores'};
+// Nombre de cada día (lunes = 0) en el idioma activo. El 1/1/2024 fue lunes.
+const WEEKDAYS_ONE = [0, 1, 2, 3, 4, 5, 6].map(i=> new Date(2024, 0, 1 + i).toLocaleDateString(LOCALE, {weekday: 'long'}));
+const PERIOD_LABELS = {week: t('Esta semana'), month: t('Este mes'), 90: t('Últimos 3 meses'), all: t('Todo tu historial')};
+const PREV_LABELS = {week: t('semana pasada'), month: t('mes pasado'), 90: t('3 meses anteriores')};
 let breakdownBy = 'emotion';
 let breakdownSort = {key: 'n', dir: -1};
 let statsPeriod = 'all';
@@ -45,7 +46,7 @@ function periodSummary(list){
 // ---- 1. Filtro ----
 function renderPeriodBar(cur){
   document.querySelectorAll('#statsPeriod button').forEach(b=> b.classList.toggle('active', b.dataset.p === statsPeriod));
-  document.getElementById('statsRange').textContent = `${PERIOD_LABELS[statsPeriod]} · ${cur.length} ${cur.length === 1 ? 'trade' : 'trades'}`;
+  document.getElementById('statsRange').textContent = `${PERIOD_LABELS[statsPeriod]} · ${tp(cur.length, '{n} trade', '{n} trades')}`;
 }
 
 document.querySelectorAll('#statsPeriod button').forEach(b=> b.addEventListener('click', ()=>{
@@ -68,34 +69,34 @@ function renderKpis(cur, prev){
     countS.push(i + 1);
   });
   const delta = (d, unit, label)=>{
-    if(!p || !s.n) return `<div class="sk-d">${statsPeriod === 'all' ? 'Todo el historial' : 'Sin período anterior'}</div>`;
-    if(Math.abs(d) < 0.05) return `<div class="sk-d">= que ${label}</div>`;
-    const txt = unit === 'pts' ? Math.round(Math.abs(d)) + ' pts' : unit === '%' ? fix1(Math.abs(d)) + '%' : Math.abs(Math.round(d));
-    return `<div class="sk-d ${d > 0 ? 'pos' : 'neg'}">${d > 0 ? '↑' : '↓'} ${txt} vs ${label}</div>`;
+    if(!p || !s.n) return `<div class="sk-d">${statsPeriod === 'all' ? t('Todo el historial') : t('Sin período anterior')}</div>`;
+    if(Math.abs(d) < 0.05) return `<div class="sk-d">${t('= que {label}', {label})}</div>`;
+    const txt = unit === 'pts' ? Math.round(Math.abs(d)) + ' ' + t('pts') : unit === '%' ? fix1(Math.abs(d)) + '%' : Math.abs(Math.round(d));
+    return `<div class="sk-d ${d > 0 ? 'pos' : 'neg'}">${d > 0 ? '↑' : '↓'} ${t('{txt} vs {label}', {txt, label})}</div>`;
   };
-  const prevLbl = PREV_LABELS[statsPeriod] || 'período anterior';
+  const prevLbl = PREV_LABELS[statsPeriod] || t('período anterior');
   const goal = goalPct();
   const card = (icon, tone, label, value, valCls, spark, d)=> `<div class="sk sk-${tone}">
     <div class="sk-top"><span class="sk-ic">${Icons.svg(icon, 16)}</span><span class="sk-l">${label}</span></div>
     <div class="sk-v ${valCls}">${value}</div>
     ${spark}${d}</div>`;
   document.getElementById('statsKpis').innerHTML = [
-    card('trending-up', s.sum >= 0 ? 'good' : 'bad', 'Resultado acumulado', s.n ? fmtSignedPct(s.sum) : '—', signClass(s.sum),
+    card('trending-up', s.sum >= 0 ? 'good' : 'bad', t('Resultado acumulado'), s.n ? fmtSignedPct(s.sum) : '—', signClass(s.sum),
       Charts.spark(accS, s.sum >= 0 ? 'pos' : 'neg'), delta(p ? s.sum - p.sum : 0, '%', prevLbl)),
-    card('shield-check', s.planPct >= goal ? 'good' : 'warn', 'Siguió el plan', s.n ? Math.round(s.planPct) + '%' : '—', s.n ? (s.planPct >= goal ? 'pos' : 'warn') : '',
+    card('shield-check', s.planPct >= goal ? 'good' : 'warn', t('Siguió el plan'), s.n ? Math.round(s.planPct) + '%' : '—', s.n ? (s.planPct >= goal ? 'pos' : 'warn') : '',
       Charts.spark(planS, s.planPct >= goal ? 'pos' : 'warn'), delta(p ? s.planPct - p.planPct : 0, 'pts', prevLbl)),
-    card('target', 'info', 'Win rate', s.n ? Math.round(s.winRate) + '%' : '—', '',
+    card('target', 'info', t('Win rate'), s.n ? Math.round(s.winRate) + '%' : '—', '',
       Charts.spark(winS, 'info'), delta(p ? s.winRate - p.winRate : 0, 'pts', prevLbl)),
-    card('chart-column', 'info', 'Trades', s.n, '',
+    card('chart-column', 'info', t('Trades'), s.n, '',
       Charts.spark(countS, 'info'), delta(p ? s.n - p.n : 0, 'n', prevLbl)),
   ].join('');
 
   const mini = (label, value)=> `<div class="sk2"><span>${label}</span><b>${value}</b></div>`;
   document.getElementById('statsSecondary').innerHTML = [
-    mini('Resultado prom./trade', s.n ? `<span class="${signClass(s.avg)}">${fmtSignedPct(s.avg)}</span>` : '—'),
-    mini('Riesgo promedio', s.avgRisk === null ? '—' : fix1(s.avgRisk) + '%'),
-    mini('Duración promedio', s.avgDur === null ? '—' : Math.round(s.avgDur) + ' min'),
-    mini('R real promedio', s.avgR === null ? '—' : `<span class="${signClass(s.avgR)}">${(s.avgR > 0 ? '+' : '') + s.avgR.toFixed(1)}R</span>`),
+    mini(t('Resultado prom./trade'), s.n ? `<span class="${signClass(s.avg)}">${fmtSignedPct(s.avg)}</span>` : '—'),
+    mini(t('Riesgo promedio'), s.avgRisk === null ? '—' : fix1(s.avgRisk) + '%'),
+    mini(t('Duración promedio'), s.avgDur === null ? '—' : Math.round(s.avgDur) + ' min'),
+    mini(t('R real promedio'), s.avgR === null ? '—' : `<span class="${signClass(s.avgR)}">${(s.avgR > 0 ? '+' : '') + s.avgR.toFixed(1)}R</span>`),
   ].join('');
 }
 
@@ -116,13 +117,13 @@ function renderRing(cur){
         <circle cx="90" cy="90" r="${R}" class="ring-fg" stroke-dasharray="${C * pct / 100} ${C}" transform="rotate(-90 90 90)"/>
         <circle cx="${gx}" cy="${gy}" r="5" class="ring-goal"/>
       </svg>
-      <div class="ring-c"><b>${s.n ? Math.round(pct) + '%' : '—'}</b><span>plan respetado</span></div>
+      <div class="ring-c"><b>${s.n ? Math.round(pct) + '%' : '—'}</b><span>${t('plan respetado')}</span></div>
     </div>
-    <div class="ring-msg ${tone}">${!s.n ? 'Registrá trades para medir tu disciplina.' : pct >= goal ? `${Icons.svg('check', 14)} Estás arriba de tu meta del ${goal}%` : `${Icons.svg('alert-triangle', 14)} Te faltan ${Math.ceil(goal - pct)} pts para tu meta del ${goal}%`}</div>
+    <div class="ring-msg ${tone}">${!s.n ? t('Registrá trades para medir tu disciplina.') : pct >= goal ? `${Icons.svg('check', 14)} ${t('Estás arriba de tu meta del {goal}%', {goal})}` : `${Icons.svg('alert-triangle', 14)} ${t('Te faltan {n} pts para tu meta del {goal}%', {n: Math.ceil(goal - pct), goal})}`}</div>
     <div class="ring-stats">
-      <div><b>${followed}/${s.n}</b><span>trades en plan</span></div>
-      <div><b>${currentStreak()}</b><span>racha actual</span></div>
-      <div><b>${state.bestStreak}</b><span>mejor racha</span></div>
+      <div><b>${followed}/${s.n}</b><span>${t('trades en plan')}</span></div>
+      <div><b>${currentStreak()}</b><span>${t('racha actual')}</span></div>
+      <div><b>${state.bestStreak}</b><span>${t('mejor racha')}</span></div>
     </div>`;
 }
 
@@ -132,7 +133,7 @@ function drawCurve(){
 }
 function renderCurveCard(cur){
   drawCurve();
-  document.getElementById('curveMeta').textContent = cur.length ? `${cur.length} ${cur.length === 1 ? 'trade' : 'trades'}` : '';
+  document.getElementById('curveMeta').textContent = cur.length ? tp(cur.length, '{n} trade', '{n} trades') : '';
 }
 
 // ---- 5. Patrones ----
@@ -144,12 +145,12 @@ function renderInsights(cur){
   const {real, plan} = Analytics.equityCurves(cur);
   const diff = plan[plan.length - 1] - real[real.length - 1];
   let hero = null;
-  if(cur.length && diff > 0.05) hero = {tone: 'bad', icon: 'trending-down', big: `Romper el plan te costó ${diff.toFixed(1)} puntos`,
-    text: `Resultado real ${fmtSignedPct(real[real.length - 1])} · con tu plan habrías hecho ${fmtSignedPct(plan[plan.length - 1])}.`};
-  else if(cur.length >= 3 && diff <= 0.05 && cur.every(h=> h.followedPlan)) hero = {tone: 'good', icon: 'sparkles', big: 'Respetaste tu plan en todos los trades',
-    text: `Resultado del período: ${fmtSignedPct(real[real.length - 1])}. Así se construye un sistema medible.`};
+  if(cur.length && diff > 0.05) hero = {tone: 'bad', icon: 'trending-down', big: t('Romper el plan te costó {n} puntos', {n: diff.toFixed(1)}),
+    text: t('Resultado real {real} · con tu plan habrías hecho {plan}.', {real: fmtSignedPct(real[real.length - 1]), plan: fmtSignedPct(plan[plan.length - 1])})};
+  else if(cur.length >= 3 && diff <= 0.05 && cur.every(h=> h.followedPlan)) hero = {tone: 'good', icon: 'sparkles', big: t('Respetaste tu plan en todos los trades'),
+    text: t('Resultado del período: {real}. Así se construye un sistema medible.', {real: fmtSignedPct(real[real.length - 1])})};
   if(!list.length && !hero){
-    box.innerHTML = `<div class="empty">${cur.length < 3 ? 'Con 3 trades o más en el período vas a empezar a ver patrones.' : 'Todavía no hay patrones claros. Registrá emoción, errores, activo y horario en cada trade: cuantos más datos, más patrones aparecen.'}</div>`;
+    box.innerHTML = `<div class="empty">${cur.length < 3 ? t('Con 3 trades o más en el período vas a empezar a ver patrones.') : t('Todavía no hay patrones claros. Registrá emoción, errores, activo y horario en cada trade: cuantos más datos, más patrones aparecen.')}</div>`;
     return;
   }
   const good = list.filter(i=> i.tone === 'good'), bad = list.filter(i=> i.tone === 'bad'), info = list.filter(i=> i.tone === 'info');
@@ -158,8 +159,8 @@ function renderInsights(cur){
     <div class="ins-col-t">${Icons.svg(icon, 15)} ${title}</div>
     ${items.length ? items.map(card).join('') : `<div class="ins-empty">${empty}</div>`}</div>`;
   box.innerHTML = (hero ? `<div class="ins-hero ${hero.tone}"><span class="ins-hero-ic">${Icons.svg(hero.icon, 24)}</span><div><b>${hero.big}</b><p>${hero.text}</p></div></div>` : '')
-    + `<div class="ins-cols">${col('good', 'smile', 'Lo que te funciona', good, 'Todavía no aparece un patrón positivo claro.')}${col('bad', 'alert-triangle', 'Lo que te cuesta plata', bad, 'No aparecen patrones que te estén costando.')}</div>`
-    + (info.length ? `<div class="ins-col info ins-info">${`<div class="ins-col-t">${Icons.svg('lightbulb', 15)} Para tener en cuenta</div>`}${info.map(card).join('')}</div>` : '');
+    + `<div class="ins-cols">${col('good', 'smile', t('Lo que te funciona'), good, t('Todavía no aparece un patrón positivo claro.'))}${col('bad', 'alert-triangle', t('Lo que te cuesta plata'), bad, t('No aparecen patrones que te estén costando.'))}</div>`
+    + (info.length ? `<div class="ins-col info ins-info">${`<div class="ins-col-t">${Icons.svg('lightbulb', 15)} ${t('Para tener en cuenta')}</div>`}${info.map(card).join('')}</div>` : '');
 }
 
 // ---- 6. Mapa de calor ----
@@ -174,7 +175,7 @@ function renderHeatmap(cur){
   const {cells} = Analytics.heatmap(cur);
   const keys = Object.keys(cells);
   if(!keys.length){
-    el.innerHTML = '<div class="empty">Registrá trades con su hora de entrada para ver el mapa.</div>';
+    el.innerHTML = `<div class="empty">${t('Registrá trades con su hora de entrada para ver el mapa.')}</div>`;
     el.style.gridTemplateColumns = '';
     return;
   }
@@ -197,10 +198,10 @@ function renderHeatmap(cur){
     const [di, h] = cell.dataset.k.split('-').map(Number);
     const c = cells[cell.dataset.k];
     const planPct = Math.round((c.n - c.broken) / c.n * 100);
-    const html = `<div class="tip-h">${WEEKDAYS_ONE[di].charAt(0).toUpperCase() + WEEKDAYS_ONE[di].slice(1)} · ${h}:00 a ${(h + 1) % 24}:00 NY</div>
-      <div class="tip-r"><span>Trades</span><b>${c.n}</b></div>
-      <div class="tip-r"><span>Plan seguido</span><b class="${planPct >= 80 ? 'pos' : planPct < 50 ? 'neg' : ''}">${planPct}%</b></div>
-      <div class="tip-r"><span>Resultado</span><b class="${signClass(c.sum)}">${fmtSignedPct(c.sum)}</b></div>`;
+    const html = `<div class="tip-h">${WEEKDAYS_ONE[di].charAt(0).toUpperCase() + WEEKDAYS_ONE[di].slice(1)} · ${t('{from}:00 a {to}:00 NY', {from: h, to: (h + 1) % 24})}</div>
+      <div class="tip-r"><span>${t('Trades')}</span><b>${c.n}</b></div>
+      <div class="tip-r"><span>${t('Plan seguido')}</span><b class="${planPct >= 80 ? 'pos' : planPct < 50 ? 'neg' : ''}">${planPct}%</b></div>
+      <div class="tip-r"><span>${t('Resultado')}</span><b class="${signClass(c.sum)}">${fmtSignedPct(c.sum)}</b></div>`;
     cell.addEventListener('mousemove', e=> ChartTip.show(html, e.clientX, e.clientY));
     cell.addEventListener('mouseleave', ()=> ChartTip.hide());
     cell.addEventListener('click', e=> ChartTip.show(html, e.clientX, e.clientY));
@@ -209,14 +210,14 @@ function renderHeatmap(cur){
 
 // ---- 7. Desglose ----
 const BREAKDOWNS = {
-  emotion: {label: 'Emoción', key: h=> h.emotion, name: k=>{ const e = emotionById(k); return e ? e.label : k; }, empty: 'Marcá cómo te sentías al entrar en cada trade para ver este desglose.'},
-  error: {label: 'Error', key: h=> h.errors || [], name: k=>{ const e = errorById(k); return e ? e.label : k; }, empty: 'Todavía no marcaste errores en tus trades.'},
-  session: {label: 'Sesión', key: h=> sessionOf(h.ts), name: k=> k},
-  asset: {label: 'Activo', key: h=> h.asset, name: k=> escapeHtml(k), empty: 'Cargá el activo en tus trades para ver este desglose.'},
-  setup: {label: 'Setup', key: h=> h.setup, name: k=> escapeHtml(k), empty: 'Cargá el setup en tus trades para ver este desglose.'},
-  direction: {label: 'Dirección', key: h=> h.direction, name: k=> k === 'long' ? 'Long' : 'Short', empty: 'Marcá si fue long o short para ver este desglose.'},
+  emotion: {label: t('Emoción'), key: h=> h.emotion, name: k=>{ const e = emotionById(k); return e ? e.label : k; }, empty: t('Marcá cómo te sentías al entrar en cada trade para ver este desglose.')},
+  error: {label: t('Error'), key: h=> h.errors || [], name: k=>{ const e = errorById(k); return e ? e.label : k; }, empty: t('Todavía no marcaste errores en tus trades.')},
+  session: {label: t('Sesión'), key: h=> sessionOf(h.ts), name: k=> k},
+  asset: {label: t('Activo'), key: h=> h.asset, name: k=> escapeHtml(k), empty: t('Cargá el activo en tus trades para ver este desglose.')},
+  setup: {label: t('Setup'), key: h=> h.setup, name: k=> escapeHtml(k), empty: t('Cargá el setup en tus trades para ver este desglose.')},
+  direction: {label: t('Dirección'), key: h=> h.direction, name: k=> k === 'long' ? t('Long') : t('Short'), empty: t('Marcá si fue long o short para ver este desglose.')},
 };
-const BD_COLS = [['name', null], ['n', 'Trades'], ['planPct', 'Plan seguido'], ['winRate', 'Win rate'], ['avg', 'Prom./trade'], ['sum', 'Total']];
+const BD_COLS = [['name', null], ['n', t('Trades')], ['planPct', t('Plan seguido')], ['winRate', t('Win rate')], ['avg', t('Prom./trade')], ['sum', t('Total')]];
 
 function renderBreakdown(cur){
   cur = cur || periodLists().cur;
@@ -225,7 +226,7 @@ function renderBreakdown(cur){
   const rows = Analytics.group(cur, cfg.key);
   const table = document.getElementById('breakdownTable');
   if(!rows.length){
-    table.innerHTML = `<tr><td class="empty">${cfg.empty || 'Todavía no hay datos.'}</td></tr>`;
+    table.innerHTML = `<tr><td class="empty">${cfg.empty || t('Todavía no hay datos.')}</td></tr>`;
     return;
   }
   const {key, dir} = breakdownSort;
@@ -241,7 +242,7 @@ function renderBreakdown(cur){
   table.innerHTML = `
     <thead><tr>${BD_COLS.map(th).join('')}</tr></thead>
     <tbody>${rows.map(r=> `<tr class="${r.key === best ? 'row-best' : r.key === worst ? 'row-worst' : ''}">
-      <td><span class="bd-name">${cfg.name(r.key)}</span>${r.key === best ? '<span class="bd-tag good">Mejor</span>' : r.key === worst ? '<span class="bd-tag bad">Peor</span>' : ''}</td>
+      <td><span class="bd-name">${cfg.name(r.key)}</span>${r.key === best ? `<span class="bd-tag good">${t('Mejor')}</span>` : r.key === worst ? `<span class="bd-tag bad">${t('Peor')}</span>` : ''}</td>
       <td>${r.n}</td>
       <td><div class="mini-bar ${r.planPct >= goalPct() ? '' : r.planPct >= 50 ? 'warn' : 'bad'}"><div style="width:${Math.round(r.planPct)}%"></div></div>${Math.round(r.planPct)}%</td>
       <td>${Math.round(r.winRate)}%</td>
@@ -265,15 +266,15 @@ function renderCompare(cur){
   const box = document.getElementById('compareBox');
   const f = periodSummary(cur.filter(h=> h.followedPlan));
   const b = periodSummary(cur.filter(h=> !h.followedPlan));
-  if(!cur.length){ box.innerHTML = '<div class="empty">Todavía no hay trades en el período.</div>'; return; }
+  if(!cur.length){ box.innerHTML = `<div class="empty">${t('Todavía no hay trades en el período.')}</div>`; return; }
   const rows = [
-    ['Trades', f.n, b.n, v=> v, (a, c)=> (a - c > 0 ? '+' : '') + (a - c)],
-    ['Prom./trade', f.avg, b.avg, fmtSignedPct, (a, c)=> (a - c > 0 ? '+' : '') + (a - c).toFixed(1) + ' pts'],
-    ['Win rate', f.winRate, b.winRate, v=> Math.round(v) + '%', (a, c)=> (a - c > 0 ? '+' : '') + Math.round(a - c) + ' pts'],
-    ['Duración', f.avgDur, b.avgDur, v=> v === null ? '—' : Math.round(v) + ' min', (a, c)=> a === null || c === null ? '' : (a - c > 0 ? '+' : '') + Math.round(a - c) + ' min'],
-    ['Acumulado', f.sum, b.sum, fmtSignedPct, (a, c)=> (a - c > 0 ? '+' : '') + (a - c).toFixed(1) + ' pts'],
+    [t('Trades'), f.n, b.n, v=> v, (a, c)=> (a - c > 0 ? '+' : '') + (a - c)],
+    [t('Prom./trade'), f.avg, b.avg, fmtSignedPct, (a, c)=> (a - c > 0 ? '+' : '') + (a - c).toFixed(1) + ' ' + t('pts')],
+    [t('Win rate'), f.winRate, b.winRate, v=> Math.round(v) + '%', (a, c)=> (a - c > 0 ? '+' : '') + Math.round(a - c) + ' ' + t('pts')],
+    [t('Duración'), f.avgDur, b.avgDur, v=> v === null ? '—' : Math.round(v) + ' min', (a, c)=> a === null || c === null ? '' : (a - c > 0 ? '+' : '') + Math.round(a - c) + ' min'],
+    [t('Acumulado'), f.sum, b.sum, fmtSignedPct, (a, c)=> (a - c > 0 ? '+' : '') + (a - c).toFixed(1) + ' ' + t('pts')],
   ];
-  box.innerHTML = `<div class="vs-head"><span class="vs-good">${Icons.svg('shield-check', 15)} Plan seguido</span><span></span><span class="vs-bad">Plan roto ${Icons.svg('alert-triangle', 15)}</span></div>`
+  box.innerHTML = `<div class="vs-head"><span class="vs-good">${Icons.svg('shield-check', 15)} ${t('Plan seguido')}</span><span></span><span class="vs-bad">${t('Plan roto')} ${Icons.svg('alert-triangle', 15)}</span></div>`
     + rows.map(([label, a, c, fmt, diff])=>{
       const na = f.n ? a : null, nc = b.n ? c : null;
       const m = Math.max(Math.abs(na || 0), Math.abs(nc || 0)) || 1;
@@ -290,8 +291,8 @@ function renderCompare(cur){
 
 function renderItemStats(cur){
   const box = document.getElementById('itemStats');
-  if(!state.items.length){ box.innerHTML = '<div class="empty">Armá tu Trading Plan en Ajustes para ver qué reglas cumplís más.</div>'; return; }
-  if(!cur.length){ box.innerHTML = '<div class="empty">Todavía no hay trades en el período.</div>'; return; }
+  if(!state.items.length){ box.innerHTML = `<div class="empty">${t('Armá tu Trading Plan en Ajustes para ver qué reglas cumplís más.')}</div>`; return; }
+  if(!cur.length){ box.innerHTML = `<div class="empty">${t('Todavía no hay trades en el período.')}</div>`; return; }
   // Cada regla se mide solo en los trades registrados después de crearla.
   const rows = state.items.map(it=>{
     const since = ruleCreatedAt(it);
@@ -300,7 +301,7 @@ function renderItemStats(cur){
     const c = list.length - miss;
     return {label: it.label, c, n: list.length, pct: list.length ? Math.round(c / list.length * 100) : 0};
   }).filter(r=> r.n).sort((a, b)=> b.pct - a.pct);
-  if(!rows.length){ box.innerHTML = '<div class="empty">Tus reglas actuales son más nuevas que los trades del período.</div>'; return; }
+  if(!rows.length){ box.innerHTML = `<div class="empty">${t('Tus reglas actuales son más nuevas que los trades del período.')}</div>`; return; }
   box.innerHTML = rows.map(r=> `<div class="itemstat ${r.pct >= 80 ? 'good' : r.pct >= 50 ? 'warn' : 'bad'}">
     <div class="top"><span>${escapeHtml(r.label)}</span><span><b>${r.pct}%</b> · ${r.c}/${r.n}</span></div>
     <div class="bar"><div class="fill" style="width:${r.pct}%"></div></div></div>`).join('');
@@ -319,14 +320,14 @@ function renderMonths(){
     const tone = !m.count ? '' : m.sum > 0 ? 'pos' : m.sum < 0 ? 'neg' : '';
     const met = m.followedPctRaw >= goal;
     return `<div class="month ${tone} ${m.current ? 'current' : ''}">
-      <div class="month-top"><span class="month-l">${m.label}</span>${m.current ? '<span class="month-tag">En curso</span>' : `<span class="month-tag ${met ? 'good' : 'warn'}">${met ? 'Meta cumplida' : 'Meta no cumplida'}</span>`}</div>
+      <div class="month-top"><span class="month-l">${m.label}</span>${m.current ? `<span class="month-tag">${t('En curso')}</span>` : `<span class="month-tag ${met ? 'good' : 'warn'}">${met ? t('Meta cumplida') : t('Meta no cumplida')}</span>`}</div>
       <div class="month-v ${tone}">${m.count ? fmtSignedPct(m.sum) : '—'}</div>
-      <div class="month-plan"><span>Plan seguido</span><b>${m.count ? m.followedPct + '%' : '—'}</b></div>
+      <div class="month-plan"><span>${t('Plan seguido')}</span><b>${m.count ? m.followedPct + '%' : '—'}</b></div>
       <div class="month-bar"><div class="${met ? 'good' : 'warn'}" style="width:${m.count ? m.followedPct : 0}%"></div><i style="left:${goal}%"></i></div>
       <div class="month-stats">
-        <span><b>${m.count}</b> trades</span>
-        <span><b>${m.avgPerDay === null || m.avgPerDay === undefined ? '—' : m.avgPerDay.toFixed(1)}</b> por día operado</span>
-        <span><b>${m.riskMgmtPct === null || m.riskMgmtPct === undefined ? '—' : m.riskMgmtPct + '%'}</b> risk mgmt</span>
+        <span>${t('<b>{n}</b> trades', {n: m.count})}</span>
+        <span>${t('<b>{n}</b> por día operado', {n: m.avgPerDay === null || m.avgPerDay === undefined ? '—' : m.avgPerDay.toFixed(1)})}</span>
+        <span>${t('<b>{n}</b> risk mgmt', {n: m.riskMgmtPct === null || m.riskMgmtPct === undefined ? '—' : m.riskMgmtPct + '%'})}</span>
       </div>
     </div>`;
   }).join('');
