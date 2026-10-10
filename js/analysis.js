@@ -266,7 +266,8 @@ function renderRing(cur){
       <div><b>${followed}/${s.n}</b><span>${t('trades en plan')}</span></div>
       <div><b>${currentStreak()}</b><span>${t('racha actual')}</span></div>
       <div><b>${state.bestStreak}</b><span>${t('mejor racha')}</span></div>
-    </div>`;
+    </div>
+    ${state.viewAccount === 'all' ? '' : `<div class="ring-note">${t('Las rachas cuentan los trades de todas tus cuentas.')}</div>`}`;
 }
 
 // ---- 4. Curva ----

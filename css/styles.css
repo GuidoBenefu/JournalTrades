@@ -986,6 +986,7 @@ body.no-scroll{overflow:hidden;}
 .ring-stats{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; margin-top:14px;}
 .ring-stats div{background:var(--bg); border-radius:10px; padding:8px 4px; text-align:center; display:flex; flex-direction:column;}
 .ring-stats b{font-size:16px;}
+.ring-note{font-size:12px; color:var(--text-3); text-align:center; margin-top:8px;}
 .ring-stats span{font-size:10.5px; color:var(--text-3); margin-top:2px;}
 
 .ch-band{fill:var(--danger); opacity:.16;}

@@ -582,6 +582,8 @@ const I18N_EN = {
   '{n} de 3': '{n} of 3',
   'Racha actual': 'Current streak',
   'Mejor racha: {n}': 'Best streak: {n}',
+  'Mejor racha: {n} · todas las cuentas': 'Best streak: {n} · all accounts',
+  'Las rachas cuentan los trades de todas tus cuentas.': 'Streaks count trades from all your accounts.',
   'Resultado semana': 'Week result',
   'Plan semana': 'Week plan',
   'Win rate semana': 'Week win rate',
