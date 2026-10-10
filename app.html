@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=28"></script>
+<script src="js/theme.js?v=29"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=28">
-<script src="js/auth.js?v=28"></script>
+<link rel="stylesheet" href="css/styles.css?v=29">
+<script src="js/auth.js?v=29"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -91,24 +91,19 @@
         <div id="homeGoal"></div>
       </section>
 
+      <section class="card span-2" id="fundedProgressCard" style="display:none;">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="landmark" data-size="18"></i></span>
+          <div><h2>Cuenta de fondeo</h2><p>Cuánto margen te queda según las reglas de tu prop firm.</p></div>
+        </div>
+        <div id="fundedProgress"></div>
+      </section>
+
       <section class="card span-2 home-data">
         <div class="card-head"><h2>Tu semana</h2><button type="button" class="link-btn" data-goto="calendar">Calendario →</button></div>
         <div class="week-strip" id="homeWeek"></div>
       </section>
 
-      <section class="card span-2 home-data">
-        <div class="card-head">
-          <h2>Tu curva</h2>
-          <div class="card-head-r">
-            <div class="seg seg-sm" id="homeCurvePeriod">
-              <button type="button" data-p="7">7 días</button><button type="button" data-p="30">30 días</button><button type="button" data-p="all">Todo</button>
-            </div>
-            <button type="button" class="link-btn" data-goto="stats">Análisis →</button>
-          </div>
-        </div>
-        <div class="chart" id="homeChart"></div>
-        <div class="legend"><span><i class="lg-real"></i>Resultado real</span><span><i class="lg-plan"></i>Si hubieras seguido tu plan</span></div>
-      </section>
 
       <section class="card home-data">
         <div class="card-head"><h2>Últimos trades</h2><button type="button" class="link-btn" data-goto="history">Historial →</button></div>
@@ -256,11 +251,6 @@
 
       <div class="stack tf-side">
         <div class="card tp-card" id="tradePreview"></div>
-        <div class="streak" id="streakBox"></div>
-        <div class="card" id="fundedProgressCard" style="display:none;">
-          <h2>Cuenta de fondeo</h2>
-          <div id="fundedProgress"></div>
-        </div>
       </div>
     </div><!-- /tab register -->
 
@@ -268,15 +258,15 @@
       <div class="span-2 st-period">
         <div class="st-period-l"><b>Período</b><span id="statsRange"></span></div>
         <div class="seg seg-sm" id="statsPeriod">
-          <button type="button" data-p="7">7 días</button>
-          <button type="button" data-p="30">30 días</button>
+          <button type="button" data-p="week">Esta semana</button>
+          <button type="button" data-p="month">Este mes</button>
           <button type="button" data-p="90">3 meses</button>
           <button type="button" data-p="all">Todo</button>
         </div>
       </div>
 
       <div class="span-2 st-kpis" id="statsKpis"></div>
-      <div class="span-2 st-kpis-sec" id="stats"></div>
+      <div class="span-2 st-kpis-sec" id="statsSecondary"></div>
 
       <div class="span-2 st-row">
         <section class="card st-ring-card">
@@ -772,21 +762,21 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=28"></script>
-<script src="js/storage.js?v=28"></script>
-<script src="js/images.js?v=28"></script>
-<script src="js/session.js?v=28"></script>
-<script src="js/app.js?v=28"></script>
-<script src="js/analytics.js?v=28"></script>
-<script src="js/charts.js?v=28"></script>
-<script src="js/achievements.js?v=28"></script>
-<script src="js/dashboard.js?v=28"></script>
-<script src="js/analysis.js?v=28"></script>
-<script src="js/review.js?v=28"></script>
-<script src="js/calendar.js?v=28"></script>
-<script src="js/onboarding.js?v=28"></script>
-<script src="js/settings.js?v=28"></script>
-<script src="js/history.js?v=28"></script>
+<script src="js/icons.js?v=29"></script>
+<script src="js/storage.js?v=29"></script>
+<script src="js/images.js?v=29"></script>
+<script src="js/session.js?v=29"></script>
+<script src="js/app.js?v=29"></script>
+<script src="js/analytics.js?v=29"></script>
+<script src="js/charts.js?v=29"></script>
+<script src="js/achievements.js?v=29"></script>
+<script src="js/dashboard.js?v=29"></script>
+<script src="js/analysis.js?v=29"></script>
+<script src="js/review.js?v=29"></script>
+<script src="js/calendar.js?v=29"></script>
+<script src="js/onboarding.js?v=29"></script>
+<script src="js/settings.js?v=29"></script>
+<script src="js/history.js?v=29"></script>
 
 </body>
 </html>

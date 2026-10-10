@@ -35,11 +35,8 @@ function equityChart(el, height, list){
   });
 }
 
-let homeCurvePeriod = 'all';
 let showAllBadges = false;
-try{ homeCurvePeriod = localStorage.getItem('jt_home_curve') || 'all'; }catch(e){}
 
-const homeCls = v=> v > 0 ? 'pos' : v < 0 ? 'neg' : '';
 
 // Progreso hacia cada logro (0 a 1) para mostrar el próximo.
 function achievementProgress(a){
@@ -76,8 +73,7 @@ function renderHero(user, streak){
   if(user) paintAvatar(document.getElementById('heroAvatar'), user);
   const sub = document.getElementById('helloSub');
   if(!state.history.length) sub.innerHTML = 'Bienvenido a tu journal. Empezá por los tres pasos de abajo.';
-  else if(streak > 0) sub.innerHTML = `${Icons.svg('flame', 15)} Racha de <b>${streak}</b> ${streak === 1 ? 'trade' : 'trades'} en plan · tu mejor es <b>${state.bestStreak}</b>`;
-  else sub.innerHTML = 'Tu último trade rompió el plan. El próximo es una nueva oportunidad de arrancar la racha.';
+  else sub.textContent = 'Operá con un plan. Ejecutá con disciplina.';
 }
 
 // Regla del día: el compromiso de la revisión semanal o una regla del plan que rota.
@@ -105,7 +101,7 @@ function renderStarter(){
     {done: Object.keys(state.reviews).length > 0, t: 'Hacé tu primera revisión', s: 'Cinco minutos al final de la semana.', go: 'review', btn: 'Ir a Revisión'},
   ];
   const done = steps.filter(s=> s.done).length;
-  const show = done < 3 && state.history.length < 10;
+  const show = done < 3 && state.history.length < 3;
   box.style.display = show ? '' : 'none';
   document.querySelectorAll('.home-data').forEach(el=> el.style.display = state.history.length ? '' : 'none');
   if(!show) return;
@@ -119,27 +115,25 @@ function renderStarter(){
     </div>`).join('')}</div>`;
 }
 
+// Los números de Inicio miran todos la semana actual (lunes a domingo);
+// el mes queda para el anillo de la meta.
 function renderHomeKpis(streak){
-  const weekKey = Analytics.weekKey(Date.now());
-  const week = Analytics.chronological(Analytics.tradesOfWeek(weekKey));
+  const week = Analytics.chronological(Analytics.tradesOfWeek(Analytics.weekKey(Date.now())));
   const ws = Analytics.summary(week);
-  const month = state.history.filter(h=> monthKeyOf(h.ts) === monthKeyOf(Date.now()));
-  const ms = Analytics.summary(month);
-  const last20 = Analytics.chronological(state.history.slice(0, 20));
-  const ls = Analytics.summary(last20);
   let acc = 0; const weekS = [0].concat(week.map(h=> acc += Analytics.pct(h)));
-  let p = 0; const monthS = Analytics.chronological(month).map((h, i)=> (p += h.followedPlan ? 1 : 0) / (i + 1) * 100);
-  let w = 0; const winS = last20.map((h, i)=> (w += h.result === 'win' ? 1 : 0) / (i + 1) * 100);
+  let p = 0; const planS = week.map((h, i)=> (p += h.followedPlan ? 1 : 0) / (i + 1) * 100);
+  let w = 0; const winS = week.map((h, i)=> (w += h.result === 'win' ? 1 : 0) / (i + 1) * 100);
   const streakS = Analytics.chronological().slice(-20).reduce((arr, h)=>{ arr.push(h.followedPlan ? (arr[arr.length - 1] || 0) + 1 : 0); return arr; }, []);
   const goal = goalPct();
   const card = (icon, tone, label, value, valCls, spark, sub)=> `<div class="sk sk-${tone}">
     <div class="sk-top"><span class="sk-ic">${Icons.svg(icon, 16)}</span><span class="sk-l">${label}</span></div>
     <div class="sk-v ${valCls}">${value}</div>${spark}<div class="sk-d">${sub}</div></div>`;
+  const tradesTxt = `${ws.n} ${ws.n === 1 ? 'trade' : 'trades'} esta semana`;
   document.getElementById('homeKpis').innerHTML = [
     card('flame', streak > 0 ? 'good' : 'info', 'Racha actual', streak, streak > 0 ? 'pos' : '', Charts.spark(streakS, 'pos'), `Mejor racha: ${state.bestStreak}`),
-    card('trending-up', ws.sum >= 0 ? 'good' : 'bad', 'Resultado semana', ws.n ? fmtSignedPct(ws.sum) : '—', homeCls(ws.sum), Charts.spark(weekS, ws.sum >= 0 ? 'pos' : 'neg'), `${ws.n} ${ws.n === 1 ? 'trade' : 'trades'} esta semana`),
-    card('shield-check', !ms.n ? 'info' : ms.planPct >= goal ? 'good' : 'warn', 'Plan este mes', ms.n ? Math.round(ms.planPct) + '%' : '—', !ms.n ? '' : ms.planPct >= goal ? 'pos' : 'warn', Charts.spark(monthS, ms.planPct >= goal ? 'pos' : 'warn'), `Meta: ${goal}%`),
-    card('target', 'info', 'Win rate', ls.n ? Math.round(ls.winRate) + '%' : '—', '', Charts.spark(winS, 'info'), `Últimos ${ls.n} trades`),
+    card('trending-up', ws.sum >= 0 ? 'good' : 'bad', 'Resultado semana', ws.n ? fmtSignedPct(ws.sum) : '—', signClass(ws.sum), Charts.spark(weekS, ws.sum >= 0 ? 'pos' : 'neg'), tradesTxt),
+    card('shield-check', !ws.n ? 'info' : ws.planPct >= goal ? 'good' : 'warn', 'Plan semana', ws.n ? Math.round(ws.planPct) + '%' : '—', !ws.n ? '' : ws.planPct >= goal ? 'pos' : 'warn', Charts.spark(planS, ws.planPct >= goal ? 'pos' : 'warn'), `Meta: ${goal}%`),
+    card('target', 'info', 'Win rate semana', ws.n ? Math.round(ws.winRate) + '%' : '—', '', Charts.spark(winS, 'info'), tradesTxt),
   ].join('');
 }
 
@@ -163,7 +157,7 @@ function renderToday(){
   document.getElementById('homeToday').innerHTML = `
     <div class="today-stats">
       <div><span>Trades</span><b>${s.n}</b></div>
-      <div><span>Resultado</span><b class="${homeCls(s.sum)}">${s.n ? fmtSignedPct(s.sum) : '—'}</b></div>
+      <div><span>Resultado</span><b class="${signClass(s.sum)}">${s.n ? fmtSignedPct(s.sum) : '—'}</b></div>
       <div><span>En plan</span><b class="${!s.n ? '' : broken ? 'neg' : 'pos'}">${s.n ? `${s.n - broken}/${s.n}` : '—'}</b></div>
     </div>
     <div class="today-risk ${rTone}">
@@ -207,9 +201,8 @@ function renderGoalRing(){
 function renderWeekStrip(){
   const start = Analytics.weekStart(Date.now()).getTime();
   const todayKey = dayKeyFromTs(Date.now());
-  const names = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   const box = document.getElementById('homeWeek');
-  box.innerHTML = names.map((n, i)=>{
+  box.innerHTML = WEEKDAYS.map((n, i)=>{
     const ts = start + i * 86400000 + 12 * 3600000;
     const key = dayKeyFromTs(ts);
     const list = state.history.filter(h=> dayKeyFromTs(h.ts) === key);
@@ -229,21 +222,6 @@ function renderWeekStrip(){
   }));
 }
 
-function homeCurveList(){
-  if(homeCurvePeriod === 'all') return state.history;
-  const span = Number(homeCurvePeriod) * 86400000;
-  return state.history.filter(h=> h.ts > Date.now() - span);
-}
-function drawHomeCurve(){
-  document.querySelectorAll('#homeCurvePeriod button').forEach(b=> b.classList.toggle('active', b.dataset.p === homeCurvePeriod));
-  equityChart(document.getElementById('homeChart'), 200, homeCurveList());
-}
-document.querySelectorAll('#homeCurvePeriod button').forEach(b=> b.addEventListener('click', ()=>{
-  homeCurvePeriod = b.dataset.p;
-  try{ localStorage.setItem('jt_home_curve', homeCurvePeriod); }catch(e){}
-  drawHomeCurve();
-}));
-
 function renderLastTrades(){
   const box = document.getElementById('homeLast');
   const list = state.history.slice(0, 5);
@@ -256,7 +234,7 @@ function renderLastTrades(){
         <i class="mt-dot ${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}"></i>
         <b>${h.asset ? escapeHtml(h.asset) : 'Trade'}</b>
         <span class="mt-meta">${fmtDate(h.ts)}${h.followedPlan ? '' : ' · <span class="neg">plan roto</span>'}</span>
-        <span class="mt-v ${homeCls(v)}">${fmtSignedPct(v)}</span>
+        <span class="mt-v ${signClass(v)}">${fmtSignedPct(v)}</span>
       </button>`;
     }).join('')}</div>`;
   box.querySelectorAll('[data-id]').forEach(b=> b.addEventListener('click', ()=>{
@@ -303,7 +281,7 @@ function renderHome(){
   renderToday();
   renderGoalRing();
   renderWeekStrip();
-  drawHomeCurve();
+  renderFundedProgress();
   renderLastTrades();
   renderInsightList(document.getElementById('homeInsights'), Analytics.insights().slice(0, 3),
     state.history.length < 3 ? 'Con 3 trades o más vas a empezar a ver patrones de tu operativa acá.' : 'Todavía no hay patrones claros. Seguí registrando emociones y errores en cada trade.');
@@ -312,6 +290,5 @@ function renderHome(){
 
 renderHome.tab = 'home';
 onDataChange.push(renderHome);
-Charts.register(()=>{ if(state.history.length) drawHomeCurve(); });
 // Se dibuja cuando terminan de cargar todos los módulos (usa el Historial y el Calendario).
 document.addEventListener('DOMContentLoaded', ()=> renderOrDefer(renderHome));

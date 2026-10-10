@@ -5,7 +5,6 @@
   if(!JournalAuth.needsOnboarding(user)) return;
 
   const $ = id => document.getElementById(id);
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const num = v => {
     const n = parseFloat(String(v || '').replace(',', '.'));
     return isNaN(n) ? null : n;
@@ -31,8 +30,8 @@
       <div class="ob-item editing">
         <span class="ob-num">${i + 1}</span>
         <div class="ob-edit">
-          <input type="text" class="ob-edit-label" value="${esc(it.label)}" aria-label="Regla">
-          <input type="text" class="ob-edit-hint" value="${esc(it.hint || '')}" placeholder="Aclaración (opcional)" aria-label="Aclaración">
+          <input type="text" class="ob-edit-label" value="${escapeHtml(it.label)}" aria-label="Regla">
+          <input type="text" class="ob-edit-hint" value="${escapeHtml(it.hint || '')}" placeholder="Aclaración (opcional)" aria-label="Aclaración">
           <div class="ob-edit-actions">
             <button type="button" class="primary small" data-save="${i}">Guardar</button>
             <button type="button" class="ghost small" data-cancel>Cancelar</button>
@@ -41,7 +40,7 @@
       </div>` : `
       <div class="ob-item">
         <span class="ob-num">${i + 1}</span>
-        <div class="ob-text"><span class="t">${esc(it.label)}</span>${it.hint ? `<span class="h">${esc(it.hint)}</span>` : ''}</div>
+        <div class="ob-text"><span class="t">${escapeHtml(it.label)}</span>${it.hint ? `<span class="h">${escapeHtml(it.hint)}</span>` : ''}</div>
         <div class="ob-actions">
           <button type="button" class="ob-icon" data-edit="${i}" aria-label="Editar regla" title="Editar">${Icons.svg('pencil', 15)}</button>
           <button type="button" class="ob-icon danger" data-del="${i}" aria-label="Eliminar regla" title="Eliminar">${Icons.svg('x', 15)}</button>
@@ -137,9 +136,7 @@
     renderItemsManager();
     renderChecklist();
     updateAddButton();
-    renderHistory();
     renderAll();
-    renderFundedProgress();
     close();
   }
 

@@ -88,7 +88,6 @@ function checkAchievements(silent){
   if(changed) saveState();
 }
 
-document.getElementById('goalPlanInput').value = goalPct();
 document.getElementById('goalPlanInput').addEventListener('change', e=>{
   const v = Math.round(Number(String(e.target.value).replace(',', '.')));
   state.goals.planPct = v > 0 && v <= 100 ? v : 80;

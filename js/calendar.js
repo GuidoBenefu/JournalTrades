@@ -51,9 +51,6 @@ function valueText(d){
   return cal.mode === 'plan' ? Math.round(d.planPct) + '%' : fmtSignedPct(d.sum);
 }
 
-function signCls(v){
-  return v > 0.05 ? 'pos' : v < -0.05 ? 'neg' : '';
-}
 
 // ---------- Resumen ----------
 
@@ -73,7 +70,7 @@ function renderSummary(dayList, periodLabel, extra){
   const red = dayList.filter(([, d])=> d.sum < -0.05).length;
   const planPct = trades.filter(h=> h.followedPlan).length / trades.length * 100;
   const tiles = [
-    summaryTile('Resultado', fmtSignedPct(sum), `${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}`, signCls(sum)),
+    summaryTile('Resultado', fmtSignedPct(sum), `${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}`, signClass(sum)),
     summaryTile('Días operados', dayList.length, `${green} verdes · ${red} rojos`),
     summaryTile('Plan seguido', Math.round(planPct) + '%', `Meta: ${goalPct()}%`, planPct >= goalPct() ? 'pos' : 'warn'),
   ].concat(extra(dayList));
@@ -89,9 +86,9 @@ function bestWorstDays(dayList){
   let run = 0, best = 0;
   dayList.slice().sort((a, b)=> a[0] < b[0] ? -1 : 1).forEach(([, d])=>{ run = d.sum > 0.05 ? run + 1 : 0; best = Math.max(best, run); });
   return [
-    summaryTile('Mejor día', fmtSignedPct(bd.sum), fmtDay(bk), signCls(bd.sum)),
-    summaryTile('Peor día', fmtSignedPct(wd.sum), fmtDay(wk), signCls(wd.sum)),
-    summaryTile('Racha verde', best + (best === 1 ? ' día' : ' días'), 'Días seguidos en verde', best > 0 ? 'pos' : ''),
+    summaryTile('Mejor día', fmtSignedPct(bd.sum), fmtDay(bk), signClass(bd.sum)),
+    summaryTile('Peor día', fmtSignedPct(wd.sum), fmtDay(wk), signClass(wd.sum)),
+    summaryTile('Días en verde', best + (best === 1 ? ' día' : ' días'), 'Días seguidos en verde', best > 0 ? 'pos' : ''),
   ];
 }
 
@@ -109,7 +106,7 @@ function renderMonth(days){
   }
   const maxAbs = Math.max(0.5, ...monthDays.map(([, d])=> Math.abs(d.sum)));
 
-  let html = '<div class="cal-grid">' + ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d=> `<div class="cal-dow">${d}</div>`).join('') + '<div class="cal-dow">Semana</div>';
+  let html = '<div class="cal-grid">' + WEEKDAYS.map(d=> `<div class="cal-dow">${d}</div>`).join('') + '<div class="cal-dow">Semana</div>';
   let col = 0, week = [];
   const flushWeek = ()=>{
     const trades = week.flatMap(d=> d.trades);
@@ -119,7 +116,7 @@ function renderMonth(days){
       const sum = trades.reduce((a, h)=> a + Analytics.pct(h), 0);
       const plan = trades.filter(h=> h.followedPlan).length / trades.length * 100;
       html += `<div class="cal-week">
-        <div class="cw-v ${cal.mode === 'plan' ? '' : signCls(sum)}">${cal.mode === 'plan' ? Math.round(plan) + '%' : fmtSignedPct(sum)}</div>
+        <div class="cw-v ${cal.mode === 'plan' ? '' : signClass(sum)}">${cal.mode === 'plan' ? Math.round(plan) + '%' : fmtSignedPct(sum)}</div>
         <div class="cw-s">${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}<span class="cw-plan"> · ${cal.mode === 'plan' ? fmtSignedPct(sum) : Math.round(plan) + '% plan'}</span></div>
       </div>`;
     }
@@ -176,7 +173,7 @@ function renderYear(days){
       cells += `<i class="${data ? 'has' : k > todayKey ? 'future' : ''}" style="${cellStyle(data, maxAbs)}" title="${d} de ${MONTHS[m].toLowerCase()}${data ? ' · ' + valueText(data) + ' · ' + data.n + (data.n === 1 ? ' trade' : ' trades') : ''}"></i>`;
     }
     html += `<button type="button" class="year-month" data-month="${m}">
-      <div class="ym-head"><span class="ym-name">${MONTHS[m]}</span>${trades.length ? `<span class="ym-val ${cal.mode === 'plan' ? '' : signCls(sum)}">${cal.mode === 'plan' ? Math.round(plan) + '%' : fmtSignedPct(sum)}</span>` : ''}</div>
+      <div class="ym-head"><span class="ym-name">${MONTHS[m]}</span>${trades.length ? `<span class="ym-val ${cal.mode === 'plan' ? '' : signClass(sum)}">${cal.mode === 'plan' ? Math.round(plan) + '%' : fmtSignedPct(sum)}</span>` : ''}</div>
       <div class="ym-grid">${cells}</div>
       <div class="ym-sub">${trades.length ? `${trades.length} ${trades.length === 1 ? 'trade' : 'trades'} · ${mDays.length} ${mDays.length === 1 ? 'día' : 'días'}` : 'Sin trades'}</div>
     </button>`;
@@ -196,8 +193,8 @@ function renderYear(days){
     const best = sorted[0], worst = sorted[sorted.length - 1];
     const positive = active.filter(x=> x.sum > 0.05).length;
     return [
-      summaryTile('Mejor mes', fmtSignedPct(best.sum), MONTHS[best.m], signCls(best.sum)),
-      summaryTile('Peor mes', fmtSignedPct(worst.sum), MONTHS[worst.m], signCls(worst.sum)),
+      summaryTile('Mejor mes', fmtSignedPct(best.sum), MONTHS[best.m], signClass(best.sum)),
+      summaryTile('Peor mes', fmtSignedPct(worst.sum), MONTHS[worst.m], signClass(worst.sum)),
       summaryTile('Meses en verde', `${positive} de ${active.length}`, 'Meses con trades', positive ? 'pos' : ''),
     ];
   });
@@ -293,7 +290,7 @@ function renderDayPanel(){
   const wins = d.trades.filter(h=> h.result === 'win').length;
   const rs = d.trades.map(realR).filter(r=> r !== null);
   const summary = `<div class="day-summary">
-    <div><span class="ds-v ${signCls(d.sum)}">${fmtSignedPct(d.sum)}</span><span class="ds-l">Resultado</span></div>
+    <div><span class="ds-v ${signClass(d.sum)}">${fmtSignedPct(d.sum)}</span><span class="ds-l">Resultado</span></div>
     <div><span class="ds-v">${d.n}</span><span class="ds-l">${d.n === 1 ? 'Trade' : 'Trades'}</span></div>
     <div><span class="ds-v ${d.planPct === 100 ? 'pos' : d.planPct < 50 ? 'neg' : 'warn'}">${Math.round(d.planPct)}%</span><span class="ds-l">Plan seguido</span></div>
     <div><span class="ds-v">${rs.length ? (rs.reduce((a, b)=> a + b, 0) >= 0 ? '+' : '') + rs.reduce((a, b)=> a + b, 0).toFixed(1) + 'R' : wins + '/' + d.n}</span><span class="ds-l">${rs.length ? 'R total' : 'Ganadores'}</span></div>
@@ -304,11 +301,11 @@ function renderDayPanel(){
     return `<div class="dtrade">
       <div class="dt-top">
         <div class="dt-main">
-          <span class="dt-time">${new Date(h.ts).toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'})}</span>
+          <span class="dt-time">${fmtTime(h.ts)}</span>
           <b>${escapeHtml(h.asset || 'Trade')}</b>
           ${h.direction ? `<span class="dt-dir">${h.direction === 'long' ? 'Long ↑' : 'Short ↓'}</span>` : ''}
         </div>
-        <span class="dt-res ${signCls(Analytics.pct(h))}">${h.resultPct === null || h.resultPct === undefined ? '—' : fmtSignedPct(h.resultPct)}</span>
+        <span class="dt-res ${signClass(Analytics.pct(h))}">${h.resultPct === null || h.resultPct === undefined ? '—' : fmtSignedPct(h.resultPct)}</span>
       </div>
       <div class="tags">
         <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? 'Plan seguido' : 'Plan roto'}</span>
@@ -321,18 +318,16 @@ function renderDayPanel(){
       ${h.missing && h.missing.length ? `<div class="dt-miss">Faltó del plan: ${h.missing.map(escapeHtml).join(', ')}</div>` : ''}
       ${h.note ? `<p class="dt-note">${escapeHtml(h.note)}</p>` : ''}
       ${hasImage(h) ? `<img src="${tradeImage(h)}" class="tradeThumb dayThumb" alt="Captura del trade">` : ''}
-      <div class="dt-actions"><button type="button" class="small" data-edit-trade="${h.id}">Editar</button></div>
+      <div class="dt-actions"><button type="button" class="small" data-open-trade="${h.id}">Ver detalle</button></div>
     </div>`;
   }).join('');
   body.innerHTML = summary + list;
-  body.querySelectorAll('[data-edit-trade]').forEach(b=> b.addEventListener('click', ()=>{
+  // Igual que en Inicio, Historial y Revisión: tocar un trade abre su detalle.
+  body.querySelectorAll('[data-open-trade]').forEach(b=> b.addEventListener('click', ()=>{
     closeDay();
-    startEditTrade(b.dataset.editTrade);
+    openTrade(b.dataset.openTrade);
   }));
-  body.querySelectorAll('.dayThumb').forEach(img=> img.addEventListener('click', ()=>{
-    document.getElementById('lightboxImg').src = img.src;
-    document.getElementById('lightbox').style.display = 'flex';
-  }));
+  body.querySelectorAll('.dayThumb').forEach(img=> img.addEventListener('click', ()=> openLightbox(img.src)));
 }
 
 document.querySelectorAll('[data-close-day]').forEach(el=> el.addEventListener('click', closeDay));

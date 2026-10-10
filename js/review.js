@@ -14,7 +14,6 @@ function reviewFormValues(){
     change: document.getElementById('rvChange').value, score: reviewScore};
 }
 const DAY_MS_RV = 86400000;
-const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 function weekStartTs(key){ return new Date(key + 'T00:00:00').getTime(); }
 function shiftWeek(key, n){ return Analytics.weekKey(weekStartTs(key) + n * 7 * DAY_MS_RV + 12 * 3600000); }
@@ -108,7 +107,7 @@ function renderReviewSummary(){
 // ---- Gráfico por día ----
 function renderReviewChart(){
   const start = weekStartTs(reviewWeek);
-  const days = DAY_NAMES.map((name, i)=>{
+  const days = WEEKDAYS.map((name, i)=>{
     const key = dayKeyFromTs(start + i * DAY_MS_RV + 12 * 3600000);
     const list = state.history.filter(h=> dayKeyFromTs(h.ts) === key);
     return {name, n: list.length, sum: list.reduce((a, h)=> a + Analytics.pct(h), 0), broke: list.some(h=> !h.followedPlan)};
@@ -170,7 +169,7 @@ function renderReviewTrades(){
   box.innerHTML = trades.map(h=>{
     const d = new Date(h.ts);
     const day = d.toLocaleDateString('es-AR', {weekday: 'short', day: 'numeric'});
-    const time = d.toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'});
+    const time = fmtTime(h.ts);
     const v = Analytics.pct(h);
     const emo = emotionById(h.emotion);
     const errs = (h.errors || []).map(id=> errorById(id)).filter(Boolean);
@@ -188,7 +187,7 @@ function renderReviewTrades(){
       <span class="rt-res ${v > 0 ? 'pos' : v < 0 ? 'neg' : ''}">${fmtSignedPct(v)}</span>
     </button>`;
   }).join('');
-  box.querySelectorAll('.rt').forEach(b=> b.addEventListener('click', ()=> startEditTrade(b.dataset.id)));
+  box.querySelectorAll('.rt').forEach(b=> b.addEventListener('click', ()=> openTrade(b.dataset.id)));
 }
 
 // ---- Formulario ----
