@@ -63,7 +63,6 @@ const Analytics = {
   // Matriz día de la semana x hora de entrada.
   heatmap(list = state.history){
     const cells = {};
-    let minH = 24, maxH = -1;
     list.forEach(h=>{
       const d = this.weekdayOf(h.ts), hr = this.hourOf(h.ts);
       const k = d + '-' + hr;
@@ -71,10 +70,8 @@ const Analytics = {
       cells[k].n++;
       if(!h.followedPlan) cells[k].broken++;
       cells[k].sum += this.pct(h);
-      minH = Math.min(minH, hr);
-      maxH = Math.max(maxH, hr);
     });
-    return {cells, minH, maxH};
+    return {cells};
   },
 
   // Lunes (00:00) de la semana de ts, como clave AAAA-MM-DD.
@@ -119,9 +116,9 @@ const Analytics = {
     const followed = trades.filter(h=> h.followedPlan), broken = trades.filter(h=> !h.followedPlan);
     if(followed.length >= MIN_SAMPLE && broken.length >= MIN_SAMPLE){
       const f = this.summary(followed), b = this.summary(broken);
-      if(f.avg > b.avg) out.push({tone: 'info', icon: 'chart-column', weight: 70,
+      if(f.avg > b.avg) out.push({id: 'plan_vs_broken', tone: 'info', icon: 'chart-column', weight: 70,
         text: `Cuando seguís tu plan promediás <b>${fmt(f.avg)}</b> por trade; cuando lo rompés, <b>${fmt(b.avg)}</b>.`});
-      if(b.sum < 0) out.push({tone: 'bad', icon: 'trending-down', weight: 85,
+      if(b.sum < 0) out.push({id: 'broken_cost', tone: 'bad', icon: 'trending-down', weight: 85,
         text: `Romper el plan ya te costó <b>${fmt(b.sum)}</b> en total (${b.n} trades).`});
     }
 

@@ -6,10 +6,8 @@ const hx = {q: '', period: 'all', sort: 'date', result: null, plan: null, dir: n
 let openTradeId = null;
 let hxObserver = null;
 
-const hxCls = v=> v > 0 ? 'pos' : v < 0 ? 'neg' : '';
-const hxTime = ts=> new Date(ts).toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'});
 function hxResult(h){
-  if(h.resultPct !== null && h.resultPct !== undefined) return {txt: fmtSignedPct(h.resultPct), cls: hxCls(h.resultPct)};
+  if(h.resultPct !== null && h.resultPct !== undefined) return {txt: fmtSignedPct(h.resultPct), cls: signClass(h.resultPct)};
   if(h.result === 'win') return {txt: 'Ganador', cls: 'pos'};
   if(h.result === 'loss') return {txt: 'Perdedor', cls: 'neg'};
   return {txt: 'BE', cls: ''};
@@ -74,7 +72,7 @@ function renderHxSummary(list){
   const item = (label, value, cls = '')=> `<div class="hxs"><span>${label}</span><b class="${cls}">${value}</b></div>`;
   box.innerHTML = `<div class="hxs-items">
       ${item(filtersActive() ? 'Trades filtrados' : 'Trades', `${s.n}${filtersActive() ? `<small>/${state.history.length}</small>` : ''}`)}
-      ${item('Resultado', s.n ? fmtSignedPct(s.sum) : '—', hxCls(s.sum))}
+      ${item('Resultado', s.n ? fmtSignedPct(s.sum) : '—', signClass(s.sum))}
       ${item('Plan seguido', s.n ? Math.round(s.planPct) + '%' : '—', !s.n ? '' : s.planPct >= goalPct() ? 'pos' : 'warn')}
       ${item('Win rate', s.n ? Math.round(s.winRate) + '%' : '—')}
     </div>
@@ -98,7 +96,7 @@ function tradeRow(h, showDate){
   if(emo) tags.push(`<span class="tag ${emo.tone === 'risk' ? 'warn' : ''}">${emo.label}</span>`);
   errs.slice(0, 2).forEach(e=> tags.push(`<span class="tag bad">${e.label}</span>`));
   if(errs.length > 2) tags.push(`<span class="tag bad">+${errs.length - 2}</span>`);
-  const meta = [h.setup && escapeHtml(h.setup), sessionOf(h.ts), (showDate ? fmtDate(h.ts) + ' ' : '') + hxTime(h.ts)].filter(Boolean).join(' · ');
+  const meta = [h.setup && escapeHtml(h.setup), sessionOf(h.ts), (showDate ? fmtDate(h.ts) + ' ' : '') + fmtTime(h.ts)].filter(Boolean).join(' · ');
   return `<button type="button" class="hx-row ${hxTone(h)}" data-id="${h.id}">
     <span class="hx-stripe"></span>
     <span class="hx-main">
@@ -123,7 +121,7 @@ function dayHeader(key, trades){
   return `<div class="hx-day">
     <span class="hx-day-t">${txt.charAt(0).toUpperCase() + txt.slice(1)}</span>
     <span class="hx-day-m">${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}${broken ? ` · <span class="neg">${broken} fuera de plan</span>` : ''}</span>
-    <b class="${hxCls(sum)}">${fmtSignedPct(sum)}</b>
+    <b class="${signClass(sum)}">${fmtSignedPct(sum)}</b>
   </div>`;
 }
 
@@ -204,7 +202,7 @@ function renderTradePanel(){
   if(!h){ closeTrade(); return; }
   const d = new Date(h.ts);
   const date = d.toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
-  document.getElementById('tpKicker').textContent = date.charAt(0).toUpperCase() + date.slice(1) + ' · ' + hxTime(h.ts);
+  document.getElementById('tpKicker').textContent = date.charAt(0).toUpperCase() + date.slice(1) + ' · ' + fmtTime(h.ts);
   document.getElementById('tpTitle').innerHTML = `${h.asset ? escapeHtml(h.asset) : 'Trade'} ${h.direction ? `<span class="tp-dir ${h.direction}">${Icons.svg(h.direction === 'long' ? 'arrow-up' : 'arrow-down', 13)}${h.direction === 'long' ? 'Long' : 'Short'}</span>` : ''}`;
 
   const r = hxResult(h);
@@ -230,11 +228,12 @@ function renderTradePanel(){
   document.getElementById('tpBody').innerHTML = `
     <div class="day-summary">
       ${cell('Resultado', r.txt, r.cls)}
-      ${cell('R real', rr === null ? '—' : (rr > 0 ? '+' : '') + rr.toFixed(1) + 'R', hxCls(rr || 0))}
+      ${cell('R real', rr === null ? '—' : (rr > 0 ? '+' : '') + rr.toFixed(1) + 'R', signClass(rr || 0))}
       ${cell('R:R planeado', h.rrPlanned ? '1:' + h.rrPlanned : '—')}
       ${cell('Riesgo', h.riskPct !== null && h.riskPct !== undefined ? h.riskPct + '%' : '—')}
     </div>
     <div class="tp-chips">
+      ${typeof h.score === 'number' ? `<span class="tag ${h.score >= 80 ? 'good' : h.score >= 50 ? 'warn' : 'bad'}">Disciplina ${h.score}/100</span>` : ''}
       <span class="tag">${sessionOf(h.ts)}</span>
       ${h.setup ? `<span class="tag">${escapeHtml(h.setup)}</span>` : ''}
       ${h.durationMin !== null && h.durationMin !== undefined ? `<span class="tag">${h.durationMin} min</span>` : ''}
@@ -251,10 +250,7 @@ function renderTradePanel(){
     ${sec('Qué pasó en el trade', h.note ? `<p class="tp-note">${escapeHtml(h.note).replace(/\n/g, '<br>')}</p>` : '<p class="tp-muted">Sin comentarios.</p>')}
   `;
   const img = document.querySelector('#tpBody .tp-img');
-  if(img) img.addEventListener('click', ()=>{
-    document.getElementById('lightboxImg').src = tradeImage(h);
-    document.getElementById('lightbox').style.display = 'flex';
-  });
+  if(img) img.addEventListener('click', ()=> openLightbox(tradeImage(h)));
 
   document.getElementById('tpFoot').innerHTML = `
     <button type="button" class="danger-o" id="tpDelete">${Icons.svg('trash', 15)} Eliminar</button>
@@ -291,7 +287,7 @@ function exportCsv(list){
     const rr = realR(h);
     const emo = emotionById(h.emotion);
     return [
-      fmtDate(h.ts), hxTime(h.ts), h.asset || '', h.direction === 'long' ? 'Long' : h.direction === 'short' ? 'Short' : '',
+      fmtDate(h.ts), fmtTime(h.ts), h.asset || '', h.direction === 'long' ? 'Long' : h.direction === 'short' ? 'Short' : '',
       h.setup || '', sessionOf(h.ts), RESULT_LABELS[h.result] || '', num(h.resultPct), num(h.riskPct), num(h.rrPlanned),
       rr === null ? '' : num(rr.toFixed(2)), num(h.durationMin), h.followedPlan ? 'Sí' : 'No', (h.missing || []).join(' | '),
       emo ? emo.label : '', h.confidence || '', (h.errors || []).map(id=> (errorById(id) || {label: id}).label).join(' | '), h.note || '',

@@ -48,6 +48,16 @@ function fmtSignedPct(v){
   return (v > 0 ? '+' : '') + v.toFixed(1) + '%';
 }
 
+// Clase de color por signo, la misma en toda la app. Lo que se ve como "+0.0%" queda neutro.
+function signClass(v){
+  return v > 0.05 ? 'pos' : v < -0.05 ? 'neg' : '';
+}
+
+const TIME_FMT = new Intl.DateTimeFormat('es-AR', {hour: '2-digit', minute: '2-digit'});
+function fmtTime(ts){
+  return TIME_FMT.format(new Date(ts));
+}
+
 function toLocalInputValue(ts){
   const d = new Date(ts);
   const pad = n => String(n).padStart(2, '0');
@@ -61,6 +71,8 @@ let editOriginalPlan = null;
 let planEditedInForm = false;
 // Si el usuario no cambió la hora, el trade se guarda con la hora del momento de guardar.
 let entryTimeTouched = false;
+// Pestaña desde donde se abrió la edición, para volver ahí al guardar.
+let editOriginTab = null;
 let editingTradeId = null;
 
 let currentImageData = null;
@@ -98,11 +110,7 @@ function renderImagePreview(){
       <label class="small-btn" for="tradeImageInput">${Icons.svg('repeat', 14)} Cambiar</label>
       <button type="button" class="small-btn" id="removeImageBtn">${Icons.svg('x', 14)} Quitar</button>
     </div></div>`;
-  box.querySelector('img').addEventListener('click', ()=>{
-    const lb = document.getElementById('lightbox');
-    lb.querySelector('img').src = currentImageData;
-    lb.style.display = 'flex';
-  });
+  box.querySelector('img').addEventListener('click', ()=> openLightbox(currentImageData));
   document.getElementById('removeImageBtn').addEventListener('click', ()=>{
     currentImageData = null;
     document.getElementById('tradeImageInput').value = '';
@@ -138,6 +146,12 @@ document.getElementById('tradeImageInput').addEventListener('change', e=> loadTr
     if(item) loadTradeImage(item.getAsFile());
   });
 })();
+
+function openLightbox(src){
+  if(!src) return;
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').style.display = 'flex';
+}
 
 document.getElementById('lightbox').addEventListener('click', ()=>{
   document.getElementById('lightbox').style.display = 'none';
@@ -233,10 +247,6 @@ document.getElementById('importInput').addEventListener('change', async e=>{
     msg.style.display = 'block';
   }
 });
-
-function todayKey(){
-  return new Date().toISOString().slice(0,10);
-}
 
 // Momento en que se creó una regla (los ids llevan la fecha: item_<ms>_<rand>).
 function ruleCreatedAt(it){
@@ -523,7 +533,6 @@ function renderChecklist(){
 
 function updateAddButton(){
   const btn = document.getElementById('addTradeBtn');
-  btn.disabled = false;
   btn.textContent = editingTradeId ? 'Guardar cambios' : 'Agregar trade';
   document.getElementById('cancelEditBtn').style.display = editingTradeId ? '' : 'none';
   document.getElementById('tradeFormTitle').textContent = editingTradeId ? 'Editar trade' : 'Registrar trade';
@@ -705,6 +714,7 @@ function startEditTrade(id){
   const h = state.history.find(x=> x.id === id);
   if(!h) return;
   editingTradeId = id;
+  editOriginTab = activeTab();
   const missing = new Set(h.missingIds || []);
   const missingLabels = new Set(h.missing || []);
   state.items.forEach(it=> state.checked[it.id] = !missing.has(it.id) && !(!h.missingIds && missingLabels.has(it.label)));
@@ -746,8 +756,8 @@ function renderOrDefer(fn){
   else{ pendingTabRenders.delete(fn); fn(); }
 }
 function renderAll(){
-  renderHistory();
-  renderStreak();
+  renderDailyRisk();
+  updateBestStreak();
   renderFundedProgress();
   renderDatalists();
   onDataChange.forEach(renderOrDefer);
@@ -797,9 +807,13 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     missingIds: missingItems.map(it=>it.id),
     rulesTotal: state.items.length,
   };
+  // Puntaje de disciplina del trade (el mismo de la vista previa), guardado con el trade.
+  const rulesDone = Math.max(0, (plan.rulesTotal || 0) - plan.missing.length);
+  const score = disciplineScore(rulesDone, plan.rulesTotal || 0, tradeForm.errors.length, tradeForm.emotion, true);
   const data = {
     ts,
     ...plan,
+    score,
     result,
     resultPct,
     riskPct,
@@ -854,7 +868,7 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
   const wasEditing = !!editingTradeId;
   resetForm();
   renderAll();
-  if(wasEditing) showTab('history');
+  if(wasEditing) showTab(editOriginTab && editOriginTab !== 'register' ? editOriginTab : 'history');
 });
 
 // Formateador reutilizable: crear uno por llamada es lento con miles de trades.
@@ -923,11 +937,6 @@ document.getElementById('maxDailyRiskInput').addEventListener('input', e=>{
   riskInputTimer = setTimeout(()=>{ saveState(); renderAll(); }, 400);
 });
 
-// La lista del Historial vive en history.js (se suma con onDataChange).
-function renderHistory(){
-  renderDailyRisk();
-}
-
 // Racha actual (desde el trade más nuevo) y mejor racha histórica, siempre
 // calculadas sobre el historial: si se borran o editan trades, se ajustan.
 function computeStreaks(){
@@ -944,18 +953,13 @@ function computeStreaks(){
   return {current, best};
 }
 
-function renderStreak(){
-  const box = document.getElementById('streakBox');
-  const {current: streak, best} = computeStreaks();
+// La mejor racha se guarda para los logros y se recalcula con cada cambio.
+function updateBestStreak(){
+  const {best} = computeStreaks();
   if(best !== state.bestStreak){
     state.bestStreak = best;
     saveState();
   }
-  box.innerHTML = `
-    <div class="n ${streak === 0 ? 'zero' : ''}">${streak}</div>
-    <div class="l">${streak === 1 ? 'trade seguido' : 'trades seguidos'} respetando tu Trading Plan</div>
-    <div class="best">Mejor racha: ${state.bestStreak}</div>
-  `;
 }
 
 function dayKeyFromTs(ts){

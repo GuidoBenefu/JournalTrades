@@ -2,23 +2,36 @@
 // curva, patrones, mapa de calor, desglose, comparación y cierre mensual.
 
 const WEEKDAYS_ONE = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-const PERIOD_LABELS = {7: 'Últimos 7 días', 30: 'Últimos 30 días', 90: 'Últimos 3 meses', all: 'Todo tu historial'};
+const PERIOD_LABELS = {week: 'Esta semana', month: 'Este mes', 90: 'Últimos 3 meses', all: 'Todo tu historial'};
+const PREV_LABELS = {week: 'semana pasada', month: 'mes pasado', 90: '3 meses anteriores'};
 let breakdownBy = 'emotion';
 let breakdownSort = {key: 'n', dir: -1};
 let statsPeriod = 'all';
 try{ statsPeriod = localStorage.getItem('jt_stats_period') || 'all'; }catch(e){}
 if(!PERIOD_LABELS[statsPeriod]) statsPeriod = 'all';
 
-const toneCls = v=> v > 0 ? 'pos' : v < 0 ? 'neg' : '';
 const avgOf = arr=> arr.length ? arr.reduce((a, b)=> a + b, 0) / arr.length : null;
 
 // Trades del período elegido y del período anterior (para comparar).
+// "Esta semana" y "Este mes" son calendario (igual que en Inicio, Historial y
+// Revisión); "3 meses" son los últimos 90 días.
 function periodLists(){
   if(statsPeriod === 'all') return {cur: state.history, prev: null};
-  const span = Number(statsPeriod) * 86400000, now = Date.now();
+  const now = new Date();
+  let from, prevFrom;
+  if(statsPeriod === 'week'){
+    from = Analytics.weekStart(Date.now()).getTime();
+    prevFrom = Analytics.weekStart(from - 3 * 86400000).getTime();
+  } else if(statsPeriod === 'month'){
+    from = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    prevFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+  } else {
+    from = Date.now() - 90 * 86400000;
+    prevFrom = from - 90 * 86400000;
+  }
   return {
-    cur: state.history.filter(h=> h.ts > now - span),
-    prev: state.history.filter(h=> h.ts > now - 2 * span && h.ts <= now - span),
+    cur: state.history.filter(h=> h.ts >= from),
+    prev: state.history.filter(h=> h.ts >= prevFrom && h.ts < from),
   };
 }
 
@@ -26,9 +39,8 @@ function periodSummary(list){
   const s = Analytics.summary(list);
   const risks = list.map(h=> h.riskPct).filter(v=> v !== null && v !== undefined);
   const durs = list.map(h=> h.durationMin).filter(v=> v !== null && v !== undefined);
-  const items = state.items.length;
-  const checked = items ? list.map(h=>{ const t = rulesTotalOf(h); return Math.max(0, (t - ((h.missing && h.missing.length) || 0)) / t * 100); }) : [];
-  return {...s, avgRisk: avgOf(risks), avgDur: avgOf(durs), avgChecked: avgOf(checked)};
+  const rs = list.map(realR).filter(v=> v !== null);
+  return {...s, avgRisk: avgOf(risks), avgDur: avgOf(durs), avgR: avgOf(rs)};
 }
 
 // ---- 1. Filtro ----
@@ -62,14 +74,14 @@ function renderKpis(cur, prev){
     const txt = unit === 'pts' ? Math.round(Math.abs(d)) + ' pts' : unit === '%' ? Math.abs(d).toFixed(1) + '%' : Math.abs(Math.round(d));
     return `<div class="sk-d ${d > 0 ? 'pos' : 'neg'}">${d > 0 ? '↑' : '↓'} ${txt} vs ${label}</div>`;
   };
-  const prevLbl = 'período anterior';
+  const prevLbl = PREV_LABELS[statsPeriod] || 'período anterior';
   const goal = goalPct();
   const card = (icon, tone, label, value, valCls, spark, d)=> `<div class="sk sk-${tone}">
     <div class="sk-top"><span class="sk-ic">${Icons.svg(icon, 16)}</span><span class="sk-l">${label}</span></div>
     <div class="sk-v ${valCls}">${value}</div>
     ${spark}${d}</div>`;
   document.getElementById('statsKpis').innerHTML = [
-    card('trending-up', s.sum >= 0 ? 'good' : 'bad', 'Resultado acumulado', s.n ? fmtSignedPct(s.sum) : '—', toneCls(s.sum),
+    card('trending-up', s.sum >= 0 ? 'good' : 'bad', 'Resultado acumulado', s.n ? fmtSignedPct(s.sum) : '—', signClass(s.sum),
       Charts.spark(accS, s.sum >= 0 ? 'pos' : 'neg'), delta(p ? s.sum - p.sum : 0, '%', prevLbl)),
     card('shield-check', s.planPct >= goal ? 'good' : 'warn', 'Siguió el plan', s.n ? Math.round(s.planPct) + '%' : '—', s.n ? (s.planPct >= goal ? 'pos' : 'warn') : '',
       Charts.spark(planS, s.planPct >= goal ? 'pos' : 'warn'), delta(p ? s.planPct - p.planPct : 0, 'pts', prevLbl)),
@@ -80,11 +92,11 @@ function renderKpis(cur, prev){
   ].join('');
 
   const mini = (label, value)=> `<div class="sk2"><span>${label}</span><b>${value}</b></div>`;
-  document.getElementById('stats').innerHTML = [
-    mini('Resultado prom./trade', s.n ? `<span class="${toneCls(s.avg)}">${fmtSignedPct(s.avg)}</span>` : '—'),
+  document.getElementById('statsSecondary').innerHTML = [
+    mini('Resultado prom./trade', s.n ? `<span class="${signClass(s.avg)}">${fmtSignedPct(s.avg)}</span>` : '—'),
     mini('Riesgo promedio', s.avgRisk === null ? '—' : s.avgRisk.toFixed(1) + '%'),
     mini('Duración promedio', s.avgDur === null ? '—' : Math.round(s.avgDur) + ' min'),
-    mini('Reglas tildadas (prom.)', s.avgChecked === null || !s.n ? '—' : Math.round(s.avgChecked) + '%'),
+    mini('R real promedio', s.avgR === null ? '—' : `<span class="${signClass(s.avgR)}">${(s.avgR > 0 ? '+' : '') + s.avgR.toFixed(1)}R</span>`),
   ].join('');
 }
 
@@ -127,7 +139,9 @@ function renderCurveCard(cur){
 // ---- 5. Patrones ----
 function renderInsights(cur){
   const box = document.getElementById('allInsights');
-  const list = Analytics.insights(cur);
+  // El costo de romper el plan ya está en el destacado y en "Plan seguido vs. roto":
+  // no se repite en la lista.
+  const list = Analytics.insights(cur).filter(i=> i.id !== 'broken_cost' && i.id !== 'plan_vs_broken');
   const {real, plan} = Analytics.equityCurves(cur);
   const diff = plan[plan.length - 1] - real[real.length - 1];
   let hero = null;
@@ -139,14 +153,14 @@ function renderInsights(cur){
     box.innerHTML = `<div class="empty">${cur.length < 3 ? 'Con 3 trades o más en el período vas a empezar a ver patrones.' : 'Todavía no hay patrones claros. Registrá emoción, errores, activo y horario en cada trade: cuantos más datos, más patrones aparecen.'}</div>`;
     return;
   }
-  const good = list.filter(i=> i.tone === 'good'), bad = list.filter(i=> i.tone === 'bad');
-  list.filter(i=> i.tone === 'info').forEach(i=> (good.length <= bad.length ? good : bad).push(i));
+  const good = list.filter(i=> i.tone === 'good'), bad = list.filter(i=> i.tone === 'bad'), info = list.filter(i=> i.tone === 'info');
   const card = i=> `<div class="insight ${i.tone}"><span class="insight-ic">${Icons.svg(i.icon, 17)}</span><p>${i.text}</p></div>`;
   const col = (cls, icon, title, items, empty)=> `<div class="ins-col ${cls}">
     <div class="ins-col-t">${Icons.svg(icon, 15)} ${title}</div>
     ${items.length ? items.map(card).join('') : `<div class="ins-empty">${empty}</div>`}</div>`;
   box.innerHTML = (hero ? `<div class="ins-hero ${hero.tone}"><span class="ins-hero-ic">${Icons.svg(hero.icon, 24)}</span><div><b>${hero.big}</b><p>${hero.text}</p></div></div>` : '')
-    + `<div class="ins-cols">${col('good', 'smile', 'Lo que te funciona', good, 'Todavía no aparece un patrón positivo claro.')}${col('bad', 'alert-triangle', 'Lo que te cuesta plata', bad, 'No aparecen patrones que te estén costando.')}</div>`;
+    + `<div class="ins-cols">${col('good', 'smile', 'Lo que te funciona', good, 'Todavía no aparece un patrón positivo claro.')}${col('bad', 'alert-triangle', 'Lo que te cuesta plata', bad, 'No aparecen patrones que te estén costando.')}</div>`
+    + (info.length ? `<div class="ins-col info ins-info">${`<div class="ins-col-t">${Icons.svg('lightbulb', 15)} Para tener en cuenta</div>`}${info.map(card).join('')}</div>` : '');
 }
 
 // ---- 6. Mapa de calor ----
@@ -187,7 +201,7 @@ function renderHeatmap(cur){
     const html = `<div class="tip-h">${WEEKDAYS_ONE[di].charAt(0).toUpperCase() + WEEKDAYS_ONE[di].slice(1)} · ${h}:00 a ${(h + 1) % 24}:00</div>
       <div class="tip-r"><span>Trades</span><b>${c.n}</b></div>
       <div class="tip-r"><span>Plan seguido</span><b class="${planPct >= 80 ? 'pos' : planPct < 50 ? 'neg' : ''}">${planPct}%</b></div>
-      <div class="tip-r"><span>Resultado</span><b class="${toneCls(c.sum)}">${fmtSignedPct(c.sum)}</b></div>`;
+      <div class="tip-r"><span>Resultado</span><b class="${signClass(c.sum)}">${fmtSignedPct(c.sum)}</b></div>`;
     cell.addEventListener('mousemove', e=> ChartTip.show(html, e.clientX, e.clientY));
     cell.addEventListener('mouseleave', ()=> ChartTip.hide());
     cell.addEventListener('click', e=> ChartTip.show(html, e.clientX, e.clientY));
@@ -232,8 +246,8 @@ function renderBreakdown(cur){
       <td>${r.n}</td>
       <td><div class="mini-bar ${r.planPct >= goalPct() ? '' : r.planPct >= 50 ? 'warn' : 'bad'}"><div style="width:${Math.round(r.planPct)}%"></div></div>${Math.round(r.planPct)}%</td>
       <td>${Math.round(r.winRate)}%</td>
-      <td class="${toneCls(r.avg)}">${fmtSignedPct(r.avg)}</td>
-      <td><div class="div-bar"><div class="div-track"><div class="${r.sum >= 0 ? 'pos' : 'neg'}" style="width:${Math.abs(r.sum) / maxAbs * 50}%"></div></div><span class="${toneCls(r.sum)}">${fmtSignedPct(r.sum)}</span></div></td>
+      <td class="${signClass(r.avg)}">${fmtSignedPct(r.avg)}</td>
+      <td><div class="div-bar"><div class="div-track"><div class="${r.sum >= 0 ? 'pos' : 'neg'}" style="width:${Math.abs(r.sum) / maxAbs * 50}%"></div></div><span class="${signClass(r.sum)}">${fmtSignedPct(r.sum)}</span></div></td>
     </tr>`).join('')}</tbody>`;
   table.querySelectorAll('th.sortable').forEach(t=> t.addEventListener('click', ()=>{
     const k = t.dataset.k;

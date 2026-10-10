@@ -60,7 +60,6 @@ const ICON_PATHS = {
   'chevron-right': '<path d="m9 18 6-6-6-6"/>',
   'chevron-up': '<path d="m18 15-6-6-6 6"/>',
   'chevron-down': '<path d="m6 9 6 6 6-6"/>',
-  'circle-alert': '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
   'arrow-up': '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
   'arrow-down': '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
   'arrow-left-right': '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
