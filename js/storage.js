@@ -164,6 +164,9 @@ function sanitizeImport(data){
     accounts,
     viewAccount: data.viewAccount === 'all' || ids.has(data.viewAccount) ? data.viewAccount : 'all',
     goals: {planPct: isObj(data.goals) && optNum(data.goals.planPct) ? data.goals.planPct : 80},
+    ...(Array.isArray(data.sessions) ? {sessions: data.sessions.filter(s=> isObj(s) && typeof s.name === 'string' && s.name.trim()
+      && HHMM.test(s.start) && HHMM.test(s.end) && s.start !== s.end).slice(0, 12)
+      .map((s, i)=> ({id: safeId(s.id) || 'ses_' + i, name: s.name.trim().slice(0, 30), start: s.start, end: s.end}))} : {}),
     timePrefs: {display: isObj(data.timePrefs) && data.timePrefs.display === 'local' ? 'local' : 'ny',
       dayEnd: isObj(data.timePrefs) && data.timePrefs.dayEnd === 17 ? 17 : 0},
     achievements: {},

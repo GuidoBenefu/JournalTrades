@@ -115,6 +115,7 @@ function setTimePref(key, value){
   state.timePrefs = {...timePrefs(), [key]: value};
   saveState();
   renderTimePrefs();
+renderSessions();
   if(!editingTradeId && !entryTimeTouched) document.getElementById('entryTimeInput').value = toLocalInputValue(Date.now());
   renderFormHints();
   renderAll();
@@ -128,6 +129,63 @@ document.querySelectorAll('#tzDisplayPills button').forEach(b=> b.addEventListen
   renderFormHints();
 }));
 document.querySelectorAll('#dayEndPills button').forEach(b=> b.addEventListener('click', ()=> setTimePref('dayEnd', Number(b.dataset.v))));
+
+// ---- Sesiones ----
+// La misma hora de NY en la zona local del usuario (hoy), para que vea su equivalente.
+function nyHhmmToLocal(v){
+  const p = nyParts(Date.now());
+  return fmtTime(zonedToTs(p.y, p.m, p.d, Number(v.slice(0, 2)), Number(v.slice(3, 5)), NY_TZ), LOCAL_TZ);
+}
+function renderSessions(){
+  const list = sessionList();
+  const showLocal = !localIsNy();
+  document.getElementById('sessionList').innerHTML = list.length ? list.map((s, i)=> `<div class="ses-row" data-i="${i}">
+      <input type="text" data-k="name" value="${escapeHtml(s.name)}" maxlength="30" aria-label="Nombre de la sesión">
+      <input type="time" data-k="start" value="${s.start}" aria-label="Empieza (hora NY)">
+      <span class="ses-sep">a</span>
+      <input type="time" data-k="end" value="${s.end}" aria-label="Termina (hora NY)">
+      <button type="button" class="ob-icon danger" data-del aria-label="Eliminar sesión" title="Eliminar">${Icons.svg('x', 15)}</button>
+      ${showLocal ? `<span class="ses-local">${nyHhmmToLocal(s.start)} a ${nyHhmmToLocal(s.end)} en tu hora</span>` : ''}
+    </div>`).join('') : '<div class="ses-empty">Sin sesiones: todos los trades quedan "Fuera de sesión".</div>';
+  document.querySelectorAll('#sessionList .ses-row').forEach(row=>{
+    const i = Number(row.dataset.i);
+    row.querySelectorAll('input').forEach(inp=> inp.addEventListener('change', ()=> updateSession(i, inp.dataset.k, inp.value.trim())));
+    row.querySelector('[data-del]').addEventListener('click', ()=> setSessions(sessionList().filter((_, j)=> j !== i)));
+  });
+}
+function updateSession(i, key, value){
+  const err = document.getElementById('sessionError');
+  const next = sessionList().map(s=> ({...s}));
+  next[i][key] = value;
+  const s = next[i];
+  const bad = !s.name ? 'Poné un nombre a la sesión.'
+    : !HHMM.test(s.start) || !HHMM.test(s.end) ? 'Completá la hora de inicio y de fin.'
+    : s.start === s.end ? 'La sesión tiene que empezar y terminar a horas distintas.' : '';
+  if(bad){ err.textContent = bad; renderSessions(); return; }
+  setSessions(next);
+}
+function setSessions(list){
+  document.getElementById('sessionError').textContent = '';
+  state.sessions = list.slice(0, 12);
+  saveState();
+  renderSessions();
+  renderFormHints();
+  renderAll();
+}
+document.getElementById('addSessionBtn').addEventListener('click', ()=>{
+  if(sessionList().length >= 12){ document.getElementById('sessionError').textContent = 'Podés tener hasta 12 sesiones.'; return; }
+  setSessions(sessionList().concat({id: 'ses_' + Date.now(), name: 'Nueva sesión', start: '09:30', end: '11:00'}));
+  const rows = document.querySelectorAll('#sessionList .ses-row input[data-k="name"]');
+  rows[rows.length - 1].select();
+});
+document.getElementById('addKillzonesBtn').addEventListener('click', ()=>{
+  const names = new Set(sessionList().map(s=> s.name));
+  const add = KILLZONE_SESSIONS.filter(k=> !names.has(k.name)).map((k, i)=> ({id: 'ses_' + Date.now() + '_' + i, ...k}));
+  if(add.length) setSessions(sessionList().concat(add));
+});
+document.getElementById('resetSessionsBtn').addEventListener('click', ()=>{
+  if(confirm('¿Volver a las sesiones de siempre (Asia, Londres y Nueva York)? Se borran las que agregaste.')) setSessions(DEFAULT_SESSIONS.map(s=> ({...s})));
+});
 
 // ---- Aviso de guardado ----
 let savedTimer = null;
@@ -154,3 +212,4 @@ renderProfile();
 renderGoalPreview();
 renderRiskQuick();
 renderTimePrefs();
+renderSessions();
