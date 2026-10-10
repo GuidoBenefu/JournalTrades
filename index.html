@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=45"></script>
-<script src="js/i18n.js?v=45"></script>
+<script src="js/lang-en.js?v=46"></script>
+<script src="js/i18n.js?v=46"></script>
 <title>Journal Trading · Primero la mente, después los resultados</title>
 <meta name="description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade hasta operar como una máquina. Los resultados llegan después.">
 <meta property="og:type" content="website">
@@ -20,18 +20,18 @@
 <meta name="twitter:title" content="Journal Trading · Dominá tu mente. Dominá tu trading.">
 <meta name="twitter:description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade.">
 <meta name="twitter:image" content="https://guidobenefu.github.io/JournalTrades/img/og-image.png">
-<script src="js/theme.js?v=45"></script>
+<script src="js/theme.js?v=46"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#161615">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Journal">
-<script src="js/pwa.js?v=45" defer></script>
+<script src="js/pwa.js?v=46" defer></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=45">
-<link rel="stylesheet" href="css/site.css?v=45">
+<link rel="stylesheet" href="css/styles.css?v=46">
+<link rel="stylesheet" href="css/site.css?v=46">
 </head>
 <body>
 <div class="site">
@@ -230,16 +230,16 @@
       <div class="plan">
         <h3>Prueba gratis</h3>
         <div class="price"><span class="old-price is-hidden" aria-hidden="true">&nbsp;</span>USD 0 <span>/ 7 días</span></div>
-        <p class="desc">Todo Pro durante 7 días, sin tarjeta. Si después pasás a Pro, tus datos se mantienen.</p>
+        <p class="price-day">7 días para medir tu disciplina.</p>
+        <p class="desc">Todo Pro, sin tarjeta. En una semana vas a ver cuánto te cuesta romper tu plan.</p>
         <ul>
-          <li>Tu Trading Plan, personalizado</li>
-          <li>Racha y estadísticas de disciplina</li>
-          <li>Calendarios de resultados y de cumplimiento</li>
-          <li>Risk management diario</li>
-          <li>Seguimiento de cuentas de fondeo</li>
-          <li>Backup de tus datos</li>
+          <li>Tu Trading Plan escrito antes del primer trade</li>
+          <li>Tu primera racha de disciplina</li>
+          <li>Tu primera revisión semanal guiada</li>
+          <li>Tu % de plan seguido y lo que te costó romperlo</li>
+          <li>Tus trades se mantienen si pasás a Pro</li>
         </ul>
-        <a class="btn-link lg" href="auth.html?mode=register&plan=trial">Empezar prueba gratis</a>
+        <a class="btn-link lg" href="auth.html?mode=register&plan=trial">Empezar mi racha</a>
       </div>
       <div class="plan featured">
         <div class="plan-head">
@@ -247,17 +247,25 @@
           <span class="tag">Recomendado</span>
         </div>
         <div class="price"><s class="old-price is-hidden" id="proOld"></s><span class="amount" id="proPrice">USD 14,99</span> <span id="proPeriod">/ mes</span></div>
-        <div class="price-note" id="proNote">O pagá anual con un 20% de descuento.</div>
-        <p class="desc">Todo, sin límite de tiempo.</p>
+        <p class="price-day" id="proDay">Menos de USD 0,50 por día: menos de lo que te cuesta un trade impulsivo.</p>
+        <div class="price-note" id="proNote">El hábito se construye en meses: pagando anual tenés más de 2 meses gratis.</div>
+        <p class="desc">Entrená tu disciplina todos los días, no una semana.</p>
         <ul>
-          <li>Tu Trading Plan, personalizado</li>
-          <li>Racha y estadísticas de disciplina</li>
-          <li>Calendarios de resultados y de cumplimiento</li>
-          <li>Risk management diario</li>
-          <li>Seguimiento de cuentas de fondeo</li>
-          <li>Backup de tus datos</li>
+          <li class="group">Antes de operar</li>
+          <li>Trading Plan con reglas generales y playbook de setups</li>
+          <li class="group">En cada trade</li>
+          <li>Checklist contra tu plan y emoción registrada</li>
+          <li>Freno al sobre-riesgo diario</li>
+          <li class="group">Después</li>
+          <li>Racha, % de plan seguido y curva real vs. con tu plan</li>
+          <li>Patrones automáticos: cuándo y por qué rompés el plan</li>
+          <li>Revisión semanal guiada y meta mensual con logros</li>
+          <li>Calendario de disciplina junto a tu PnL</li>
+          <li class="group">Además</li>
+          <li>Cuentas de fondeo: drawdown diario, trailing y profit target</li>
+          <li>Importador CSV, reporte mensual en PDF y backup</li>
         </ul>
-        <a class="btn-link primary lg" id="proCta" href="auth.html?mode=register&plan=pro&billing=monthly">Ir a Pro</a>
+        <a class="btn-link primary lg" id="proCta" href="auth.html?mode=register&plan=pro&billing=monthly">Entrenar con Pro</a>
       </div>
     </div>
   </section>
@@ -277,8 +285,8 @@
 </div>
 
 <script>translateDom();</script>
-<script src="js/icons.js?v=45"></script>
-<script src="js/auth.js?v=45"></script>
+<script src="js/icons.js?v=46"></script>
+<script src="js/auth.js?v=46"></script>
 <script>
   const pricing = JournalAuth.PRO_PRICING;
   function renderBilling(billing){
@@ -290,9 +298,14 @@
     // Se oculta sin sacarlo del flujo para que el precio no salte al cambiar.
     old.classList.toggle('is-hidden', !annual);
     old.textContent = JournalAuth.formatUSD(pricing.annual.fullYear);
+    // Meses gratis que equivale el descuento anual (35,98 / 14,99 = 2,4 → "más de 2").
+    const freeMonths = Math.floor(pricing.annual.savings / pricing.monthly.price);
+    // Costo por día redondeado hacia arriba, así "menos de" siempre es cierto.
+    const perDay = Math.ceil((annual ? pricing.annual.price / 365 : pricing.monthly.price / 30) * 100) / 100;
+    document.getElementById('proDay').textContent = t('Menos de {price} por día: menos de lo que te cuesta un trade impulsivo.', {price: JournalAuth.formatUSD(perDay)});
     document.getElementById('proNote').innerHTML = annual
-      ? t('<strong>20% de descuento pagando anual.</strong> Equivale a {perMonth}/mes: ahorrás {savings} al año.', {perMonth: JournalAuth.formatUSD(pricing.annual.perMonth), savings: JournalAuth.formatUSD(pricing.annual.savings)})
-      : t('O pagá anual con un 20% de descuento.');
+      ? t('<strong>Más de {n} meses gratis pagando anual.</strong> Equivale a {perMonth}/mes: ahorrás {savings} al año.', {n: freeMonths, perMonth: JournalAuth.formatUSD(pricing.annual.perMonth), savings: JournalAuth.formatUSD(pricing.annual.savings)})
+      : t('El hábito se construye en meses: pagando anual tenés más de {n} meses gratis.', {n: freeMonths});
     document.getElementById('proCta').href = 'auth.html?mode=register&plan=pro&billing=' + billing;
   }
   document.querySelectorAll('.billing-toggle button').forEach(b=> b.addEventListener('click', ()=> renderBilling(b.dataset.billing)));
