@@ -491,6 +491,13 @@ const I18N_EN = {
   'Atrás': 'Back',
   'Siguiente': 'Next',
   'Empezar a operar': 'Start trading',
+  'Paso 2 de 4 · Trading Plan': 'Step 2 of 4 · Trading Plan',
+  'Paso 3 de 4 · Trading Plan': 'Step 3 of 4 · Trading Plan',
+  'Tus reglas generales': 'Your general rules',
+  'Tu Trading Plan tiene dos partes: las reglas generales, que cumplís en todos los trades, y tus setups. Empezá por las reglas: en cada operación vas a confirmar si las respetaste.': 'Your Trading Plan has two parts: the general rules, which apply to every trade, and your setups. Start with the rules: on each trade you\'ll confirm whether you followed them.',
+  'Tu setup': 'Your setup',
+  'El setup que operás, con los criterios que tienen que darse para entrar. Al registrar un trade lo elegís y tildás sus criterios junto con las reglas generales. Después podés sumar más en la pestaña Plan.': 'The setup you trade, with the criteria that must be met to enter. When you log a trade you pick it and check its criteria along with the general rules. You can add more later in the Plan tab.',
+  'Agregá al menos un criterio de entrada a tu setup.': 'Add at least one entry criterion to your setup.',
 
   // ---- Importador (texto fijo) ----
   'Importar trades': 'Import trades',
