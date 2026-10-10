@@ -3,8 +3,8 @@
 // progreso de las reglas en Inicio y editor en Ajustes.
 // El modelo (newAccount, accountById, viewTrades...) vive en storage.js y app.js.
 
-const ACCOUNT_TYPE_LABELS = {personal: 'Personal', challenge: 'Challenge', funded: 'Fondeada'};
-const ACCOUNT_STATUS_LABELS = {active: 'Activa', passed: 'Aprobada', failed: 'Quemada', archived: 'Archivada'};
+const ACCOUNT_TYPE_LABELS = {personal: t('Personal'), challenge: t('Challenge'), funded: t('Fondeada')};
+const ACCOUNT_STATUS_LABELS = {active: t('Activa'), passed: t('Aprobada'), failed: t('Quemada'), archived: t('Archivada')};
 const ACCOUNT_STATUS_TONE = {active: '', passed: 'good', failed: 'bad', archived: ''};
 
 const ruleNum = v=>{
@@ -40,9 +40,9 @@ function evalAccount(acc){
     if(cum > peak) peak = cum;
     if(total){
       floor = r.ddType !== 'trailing' ? -total : r.ddLock ? Math.min(peak - total, 0) : peak - total;
-      if(!breach && r6(cum) <= r6(floor)) breach = {rule: 'drawdown máximo', ts: h.ts};
+      if(!breach && r6(cum) <= r6(floor)) breach = {rule: t('drawdown máximo'), ts: h.ts};
     }
-    if(daily && !breach && r6(dayPnl[k]) <= -daily) breach = {rule: 'drawdown diario', ts: h.ts};
+    if(daily && !breach && r6(dayPnl[k]) <= -daily) breach = {rule: t('drawdown diario'), ts: h.ts};
   });
   const todayPnl = dayPnl[today] || 0;
   const days = Object.keys(dayPnl).length;
@@ -66,8 +66,8 @@ function renderAccountSwitch(){
   const sel = document.getElementById('accountSwitch');
   const visible = state.accounts.filter(a=> a.status !== 'archived' || a.id === state.viewAccount);
   sel.style.display = state.accounts.length > 1 ? '' : 'none';
-  sel.innerHTML = `<option value="all">Todas las cuentas</option>` + visible.map(a=>
-    `<option value="${a.id}">${escapeHtml(a.name)}${a.status !== 'active' ? ' (' + ACCOUNT_STATUS_LABELS[a.status].toLowerCase() + ')' : ''}</option>`).join('');
+  sel.innerHTML = `<option value="all">${t('Todas las cuentas')}</option>` + visible.map(a=>
+    `<option value="${a.id}">${escapeHtml(a.name)}${a.status !== 'active' ? ' (' + ACCOUNT_STATUS_LABELS[a.status].toLowerCase(LOCALE) + ')' : ''}</option>`).join('');
   sel.value = state.viewAccount;
 }
 document.getElementById('accountSwitch').addEventListener('change', e=>{
@@ -105,15 +105,15 @@ function renderAccountHint(){
   const acc = accountById(formAccountId());
   const e = acc && isPropAccount(acc) && !editingTradeId ? evalAccount(acc) : null;
   if(!e || e.margin === null){ box.textContent = ''; box.className = 'field-hint'; return; }
-  const which = e.dailyLeft !== null && e.dailyLeft === e.margin ? 'el drawdown diario' : 'el drawdown máximo';
+  const which = e.dailyLeft !== null && e.dailyLeft === e.margin ? t('el drawdown diario') : t('el drawdown máximo');
   const risk = parseNum(document.getElementById('riskInput').value);
   const over = typeof risk === 'number' && !isNaN(risk) && risk > e.margin;
   box.className = 'field-hint' + (over || e.margin <= 0 ? ' hint-bad' : '');
   box.textContent = e.margin <= 0
-    ? `${acc.name}: ya no te queda margen hasta ${which}. Hoy no operes esta cuenta.`
+    ? t('{acc}: ya no te queda margen hasta {which}. Hoy no operes esta cuenta.', {acc: acc.name, which})
     : over
-      ? `Cuidado: arriesgás ${fix1(risk)}% y en ${acc.name} te quedan ${fix1(e.margin)}% hasta ${which}.`
-      : `${acc.name}: te quedan ${fix1(e.margin)}%${accMoney(acc, e.margin)} hasta ${which}.`;
+      ? t('Cuidado: arriesgás {risk}% y en {acc} te quedan {left}% hasta {which}.', {risk: fix1(risk), acc: acc.name, left: fix1(e.margin), which})
+      : t('{acc}: te quedan {left} hasta {which}.', {acc: acc.name, left: fix1(e.margin) + '%' + accMoney(acc, e.margin), which});
 }
 document.getElementById('tradeAccountInput').addEventListener('change', renderAccountHint);
 document.getElementById('riskInput').addEventListener('input', renderAccountHint);
@@ -142,12 +142,12 @@ function goalBar(title, value, goal, unit, sub){
 // Estado que se muestra arriba de cada cuenta.
 function accountVerdict(acc, e){
   if(acc.status !== 'active') return {tone: ACCOUNT_STATUS_TONE[acc.status], text: ACCOUNT_STATUS_LABELS[acc.status]};
-  if(e.breach) return {tone: 'bad', text: 'Regla rota', action: 'failed',
-    msg: `Rompiste el ${e.breach.rule} el ${fmtDate(e.breach.ts)}. Si tu prop firm la dio por perdida, marcala como quemada.`};
-  if(e.passed) return {tone: 'good', text: 'Objetivo cumplido', action: 'passed',
-    msg: 'Cumpliste todas las reglas del challenge. Cuando tu firma lo confirme, marcala como aprobada.'};
-  if(e.targetMet) return {tone: 'warn', text: 'Falta una regla', msg: !e.daysMet ? 'Llegaste al objetivo pero te faltan días operados.' : 'Llegaste al objetivo pero tu mejor día pesa demasiado (regla de consistencia).'};
-  return {tone: '', text: 'En curso'};
+  if(e.breach) return {tone: 'bad', text: t('Regla rota'), action: 'failed',
+    msg: t('Rompiste el {rule} el {date}. Si tu prop firm la dio por perdida, marcala como quemada.', {rule: e.breach.rule, date: fmtDate(e.breach.ts)})};
+  if(e.passed) return {tone: 'good', text: t('Objetivo cumplido'), action: 'passed',
+    msg: t('Cumpliste todas las reglas del challenge. Cuando tu firma lo confirme, marcala como aprobada.')};
+  if(e.targetMet) return {tone: 'warn', text: t('Falta una regla'), msg: !e.daysMet ? t('Llegaste al objetivo pero te faltan días operados.') : t('Llegaste al objetivo pero tu mejor día pesa demasiado (regla de consistencia).')};
+  return {tone: '', text: t('En curso')};
 }
 
 function propAccountHtml(acc){
@@ -155,29 +155,30 @@ function propAccountHtml(acc){
   const fmt = fmtSignedPct;
   const v = accountVerdict(acc, e);
   let rows = '';
-  if(e.daily) rows += ruleBar('Drawdown diario', -e.todayPnl, e.daily,
-    `Hoy: ${fmt(e.todayPnl)} · ${e.dailyLeft > 0 ? 'te quedan ' + fix1(e.dailyLeft) + '%' + accMoney(acc, e.dailyLeft) : 'límite alcanzado'}`);
+  const leftTxt = v=> v > 0 ? t('te quedan {left}', {left: fix1(v) + '%' + accMoney(acc, v)}) : t('límite alcanzado');
+  if(e.daily) rows += ruleBar(t('Drawdown diario'), -e.todayPnl, e.daily,
+    `${t('Hoy: {pnl}', {pnl: fmt(e.todayPnl)})} · ${leftTxt(e.dailyLeft)}`);
   if(e.total){
     const trailing = acc.rules.ddType === 'trailing';
-    rows += ruleBar('Drawdown máximo' + (trailing ? ' (trailing' + (acc.rules.ddLock ? ', se congela en el inicial)' : ')') : ' (estático)'),
+    rows += ruleBar(t('Drawdown máximo') + ' ' + (trailing ? (acc.rules.ddLock ? t('(trailing, se congela en el inicial)') : t('(trailing)')) : t('(estático)')),
       e.total - e.totalLeft, e.total,
-      (trailing ? `Pico: ${fmt(e.peak)} · Piso: ${fmt(e.floor)} · ` : '') + `Acumulado: ${fmt(e.cum)} · ${e.totalLeft > 0 ? 'te quedan ' + fix1(e.totalLeft) + '%' + accMoney(acc, e.totalLeft) : 'límite alcanzado'}`);
+      (trailing ? `${t('Pico: {v}', {v: fmt(e.peak)})} · ${t('Piso: {v}', {v: fmt(e.floor)})} · ` : '') + `${t('Acumulado: {v}', {v: fmt(e.cum)})} · ${leftTxt(e.totalLeft)}`);
   }
-  if(e.target) rows += goalBar('Profit target', e.cum, e.target, '%',
-    e.targetMet ? 'Objetivo alcanzado' : `Te falta ${fix1(e.target - Math.max(0, e.cum))}%${accMoney(acc, e.target - Math.max(0, e.cum))}`);
-  if(e.minDays) rows += goalBar('Días operados', e.days, e.minDays, '',
-    e.daysMet ? 'Mínimo cumplido' : `Te ${e.minDays - e.days === 1 ? 'falta 1 día' : 'faltan ' + (e.minDays - e.days) + ' días'} con trades`);
+  if(e.target) rows += goalBar(t('Profit target'), e.cum, e.target, '%',
+    e.targetMet ? t('Objetivo alcanzado') : t('Te falta {v}', {v: fix1(e.target - Math.max(0, e.cum)) + '%' + accMoney(acc, e.target - Math.max(0, e.cum))}));
+  if(e.minDays) rows += goalBar(t('Días operados'), e.days, e.minDays, '',
+    e.daysMet ? t('Mínimo cumplido') : tp(e.minDays - e.days, 'Te falta 1 día con trades', 'Te faltan {n} días con trades'));
   if(e.consistency) rows += `<div class="fp-row">
-    <div class="top"><span>Consistencia</span><span>${e.consRatio === null ? '—' : Math.round(e.consRatio) + '%'} / máx. ${e.consistency}%</span></div>
-    <div class="sub">${e.consRatio === null ? 'Se mide cuando tengas ganancia acumulada.' : `Tu mejor día (${fmt(e.bestDay)}) es el ${Math.round(e.consRatio)}% de la ganancia total. ${e.consMet ? 'Dentro de la regla.' : 'Supera el máximo: necesitás más días en verde.'}`}</div>
+    <div class="top"><span>${t('Consistencia')}</span><span>${e.consRatio === null ? '—' : Math.round(e.consRatio) + '%'} / ${t('máx.')} ${e.consistency}%</span></div>
+    <div class="sub">${e.consRatio === null ? t('Se mide cuando tengas ganancia acumulada.') : t('Tu mejor día ({best}) es el {pct}% de la ganancia total.', {best: fmt(e.bestDay), pct: Math.round(e.consRatio)}) + ' ' + (e.consMet ? t('Dentro de la regla.') : t('Supera el máximo: necesitás más días en verde.'))}</div>
   </div>`;
   return `<div class="acct-prog">
     <div class="acct-prog-head">
       <div><b>${escapeHtml(acc.name)}</b><span>${ACCOUNT_TYPE_LABELS[acc.type]}${acc.firm ? ' · ' + escapeHtml(acc.firm) : ''}${acc.size ? ' · ' + USD_FMT.format(acc.size) : ''}</span></div>
       <span class="tag ${v.tone}">${v.text}</span>
     </div>
-    ${v.msg ? `<div class="acct-msg ${v.tone}"><span>${v.msg}</span>${v.action ? `<button type="button" class="small" data-acc-status="${v.action}" data-acc="${acc.id}">Marcar como ${ACCOUNT_STATUS_LABELS[v.action].toLowerCase()}</button>` : ''}</div>` : ''}
-    ${rows || '<p class="empty">Cargá las reglas de esta cuenta en Ajustes → Cuentas.</p>'}
+    ${v.msg ? `<div class="acct-msg ${v.tone}"><span>${v.msg}</span>${v.action ? `<button type="button" class="small" data-acc-status="${v.action}" data-acc="${acc.id}">${t('Marcar como {status}', {status: ACCOUNT_STATUS_LABELS[v.action].toLowerCase(LOCALE)})}</button>` : ''}</div>` : ''}
+    ${rows || `<p class="empty">${t('Cargá las reglas de esta cuenta en Ajustes → Cuentas.')}</p>`}
   </div>`;
 }
 
@@ -187,7 +188,7 @@ function renderPropAccounts(){
     && (state.viewAccount === 'all' || a.id === state.viewAccount));
   card.style.display = list.length ? '' : 'none';
   if(!list.length) return;
-  document.getElementById('fundedProgressTitle').textContent = list.length === 1 ? 'Cuenta de fondeo' : 'Cuentas de fondeo';
+  document.getElementById('fundedProgressTitle').textContent = list.length === 1 ? t('Cuenta de fondeo') : t('Cuentas de fondeo');
   const box = document.getElementById('fundedProgress');
   box.innerHTML = list.map(propAccountHtml).join('');
   box.querySelectorAll('[data-acc-status]').forEach(b=> b.addEventListener('click', ()=> setAccountStatus(b.dataset.acc, b.dataset.accStatus)));
@@ -213,19 +214,19 @@ function accountRowHtml(acc){
   return `<div class="acct-row ${acc.status === 'archived' ? 'archived' : ''}">
     <div class="acct-main">
       <b>${escapeHtml(acc.name)}</b>
-      <span>${ACCOUNT_TYPE_LABELS[acc.type]}${acc.firm ? ' · ' + escapeHtml(acc.firm) : ''}${acc.size ? ' · ' + USD_FMT.format(acc.size) : ''} · ${n} ${n === 1 ? 'trade' : 'trades'}</span>
+      <span>${ACCOUNT_TYPE_LABELS[acc.type]}${acc.firm ? ' · ' + escapeHtml(acc.firm) : ''}${acc.size ? ' · ' + USD_FMT.format(acc.size) : ''} · ${tp(n, '{n} trade', '{n} trades')}</span>
     </div>
     <span class="tag ${v.tone}">${v.text}</span>
     <div class="acct-actions">
-      ${canFund ? `<button type="button" class="small" data-acc-fund="${acc.id}">Crear fondeada</button>` : ''}
-      <button type="button" class="small ghost" data-acc-edit="${acc.id}">Editar</button>
+      ${canFund ? `<button type="button" class="small" data-acc-fund="${acc.id}">${t('Crear fondeada')}</button>` : ''}
+      <button type="button" class="small ghost" data-acc-edit="${acc.id}">${t('Editar')}</button>
     </div>
   </div>`;
 }
 
 function renderAccounts(){
   const sorted = state.accounts.slice().sort((a, b)=> (a.status === 'archived') - (b.status === 'archived'));
-  document.getElementById('accountCount').textContent = state.accounts.length === 1 ? '1 cuenta' : state.accounts.length + ' cuentas';
+  document.getElementById('accountCount').textContent = tp(state.accounts.length, '{n} cuenta', '{n} cuentas');
   const list = document.getElementById('accountList');
   list.innerHTML = sorted.map(a=> editingAccountId === a.id ? accountEditorHtml(a) : accountRowHtml(a)).join('')
     + (editingAccountId === 'new' ? accountEditorHtml(null) : '');
@@ -248,41 +249,41 @@ function accountEditorHtml(acc){
     <div class="input-suffix"><input type="text" inputmode="decimal" id="${id}" value="${escapeHtml(val)}" placeholder="${ph}"><span>%</span></div></div>`;
   const n = acc ? state.history.filter(h=> h.accountId === acc.id).length : 0;
   return `<div class="acct-editor">
-    <div class="set-sub">${acc ? 'Editar cuenta' : 'Nueva cuenta'}</div>
+    <div class="set-sub">${acc ? t('Editar cuenta') : t('Nueva cuenta')}</div>
     <div class="field">
-      <label>Tipo</label>
+      <label>${t('Tipo')}</label>
       <div class="seg" id="accTypeSeg">
         ${Object.entries(ACCOUNT_TYPE_LABELS).map(([k, l])=> `<button type="button" data-v="${k}" class="${d.type === k ? 'active' : ''}">${l}</button>`).join('')}
       </div>
-      <div class="field-hint">${d.type === 'personal' ? 'Tu propia cuenta, sin reglas de una prop firm.' : d.type === 'challenge' ? 'La evaluación de una prop firm: tenés que llegar al objetivo sin romper las reglas.' : 'Cuenta ya fondeada: se cuidan los drawdowns, sin objetivo.'}</div>
+      <div class="field-hint">${d.type === 'personal' ? t('Tu propia cuenta, sin reglas de una prop firm.') : d.type === 'challenge' ? t('La evaluación de una prop firm: tenés que llegar al objetivo sin romper las reglas.') : t('Cuenta ya fondeada: se cuidan los drawdowns, sin objetivo.')}</div>
     </div>
     <div class="form-grid">
-      <div class="field"><label for="accName">Nombre</label><input type="text" id="accName" maxlength="40" value="${escapeHtml(d.name)}" placeholder="${prop ? 'Ej. Challenge 50K fase 1' : 'Ej. Mi cuenta'}"></div>
-      ${prop ? `<div class="field"><label for="accFirm">Prop firm</label><input type="text" id="accFirm" maxlength="40" value="${escapeHtml(d.firm)}" placeholder="Ej. tu prop firm"></div>` : ''}
-      <div class="field"><label for="accSize">Tamaño en USD (opcional)</label><input type="text" inputmode="decimal" id="accSize" value="${d.size || ''}" placeholder="Ej. 50000"></div>
+      <div class="field"><label for="accName">${t('Nombre')}</label><input type="text" id="accName" maxlength="40" value="${escapeHtml(d.name)}" placeholder="${prop ? t('Ej. Challenge 50K fase 1') : t('Ej. Mi cuenta')}"></div>
+      ${prop ? `<div class="field"><label for="accFirm">${t('Prop firm')}</label><input type="text" id="accFirm" maxlength="40" value="${escapeHtml(d.firm)}" placeholder="${t('Ej. tu prop firm')}"></div>` : ''}
+      <div class="field"><label for="accSize">${t('Tamaño en USD (opcional)')}</label><input type="text" inputmode="decimal" id="accSize" value="${d.size || ''}" placeholder="${t('Ej. {v}', {v: 50000})}"></div>
     </div>
-    ${prop ? `<div class="set-sub">Reglas</div>
+    ${prop ? `<div class="set-sub">${t('Reglas')}</div>
     <div class="form-grid">
-      ${pct('accDaily', 'Drawdown diario', r.dailyDrawdown, 'Ej. 5')}
-      ${pct('accTotal', 'Drawdown máximo', r.totalDrawdown, 'Ej. 10')}
-      <div class="field"><label>Tipo de drawdown máximo</label>
-        <div class="seg" id="accDdSeg"><button type="button" data-v="static" class="${r.ddType !== 'trailing' ? 'active' : ''}">Estático</button><button type="button" data-v="trailing" class="${r.ddType === 'trailing' ? 'active' : ''}">Trailing</button></div>
+      ${pct('accDaily', t('Drawdown diario'), r.dailyDrawdown, t('Ej. {v}', {v: 5}))}
+      ${pct('accTotal', t('Drawdown máximo'), r.totalDrawdown, t('Ej. {v}', {v: 10}))}
+      <div class="field"><label>${t('Tipo de drawdown máximo')}</label>
+        <div class="seg" id="accDdSeg"><button type="button" data-v="static" class="${r.ddType !== 'trailing' ? 'active' : ''}">${t('Estático')}</button><button type="button" data-v="trailing" class="${r.ddType === 'trailing' ? 'active' : ''}">Trailing</button></div>
       </div>
-      ${d.type === 'challenge' ? pct('accTarget', 'Profit target', r.profitTarget, 'Ej. 8') : ''}
-      <div class="field"><label for="accMinDays">Días mínimos (opcional)</label><input type="text" inputmode="numeric" id="accMinDays" value="${escapeHtml(r.minDays)}" placeholder="Ej. 4"></div>
-      ${pct('accCons', 'Consistencia (opcional)', r.consistency, 'Ej. 30')}
+      ${d.type === 'challenge' ? pct('accTarget', t('Profit target'), r.profitTarget, t('Ej. {v}', {v: 8})) : ''}
+      <div class="field"><label for="accMinDays">${t('Días mínimos (opcional)')}</label><input type="text" inputmode="numeric" id="accMinDays" value="${escapeHtml(r.minDays)}" placeholder="${t('Ej. {v}', {v: 4})}"></div>
+      ${pct('accCons', t('Consistencia (opcional)'), r.consistency, t('Ej. {v}', {v: 30}))}
     </div>
-    ${r.ddType === 'trailing' ? `<div class="field"><label class="check-row"><input type="checkbox" id="accLock" ${r.ddLock ? 'checked' : ''}><span>El piso deja de subir cuando llega al balance inicial (mi firma congela el trailing)</span></label></div>` : ''}
-    <div class="field-hint">La consistencia limita cuánto puede pesar tu mejor día sobre la ganancia total (ej. 30%: ningún día puede ser más del 30% del total).</div>` : ''}
-    ${acc ? `<div class="field"><label>Estado</label>
+    ${r.ddType === 'trailing' ? `<div class="field"><label class="check-row"><input type="checkbox" id="accLock" ${r.ddLock ? 'checked' : ''}><span>${t('El piso deja de subir cuando llega al balance inicial (mi firma congela el trailing)')}</span></label></div>` : ''}
+    <div class="field-hint">${t('La consistencia limita cuánto puede pesar tu mejor día sobre la ganancia total (ej. 30%: ningún día puede ser más del 30% del total).')}</div>` : ''}
+    ${acc ? `<div class="field"><label>${t('Estado')}</label>
       <div class="seg" id="accStatusSeg">${Object.entries(ACCOUNT_STATUS_LABELS).map(([k, l])=> `<button type="button" data-v="${k}" class="${d.status === k ? 'active' : ''}">${l}</button>`).join('')}</div>
     </div>` : ''}
     <div class="field-error" id="accError"></div>
     <div class="acct-editor-actions">
-      ${acc && state.accounts.length > 1 ? `<button type="button" class="danger-o small" id="accDelete">${n ? 'Eliminar…' : 'Eliminar'}</button>` : ''}
+      ${acc && state.accounts.length > 1 ? `<button type="button" class="danger-o small" id="accDelete">${n ? t('Eliminar…') : t('Eliminar')}</button>` : ''}
       <span></span>
-      <button type="button" class="ghost small" id="accCancel">Cancelar</button>
-      <button type="button" class="primary small" id="accSave">Guardar</button>
+      <button type="button" class="ghost small" id="accCancel">${t('Cancelar')}</button>
+      <button type="button" class="primary small" id="accSave">${t('Guardar')}</button>
     </div>
   </div>`;
 }
@@ -319,17 +320,17 @@ function saveAccountEditor(){
   readAccountEditor();
   const d = accDraft, err = document.getElementById('accError');
   const fail = msg=>{ err.textContent = msg; };
-  if(!d.name) return fail('Poné un nombre para reconocer la cuenta.');
+  if(!d.name) return fail(t('Poné un nombre para reconocer la cuenta.'));
   const size = String(d.size || '').replace(/[$\s.]/g, '').replace(',', '.');
-  if(size && !(Number(size) > 0)) return fail('El tamaño tiene que ser un número (ej. 50000).');
+  if(size && !(Number(size) > 0)) return fail(t('El tamaño tiene que ser un número (ej. 50000).'));
   const prop = isPropAccount(d);
   if(prop){
-    const pcts = {dailyDrawdown: 'drawdown diario', totalDrawdown: 'drawdown máximo', profitTarget: 'profit target', consistency: 'consistencia'};
+    const pcts = {dailyDrawdown: t('drawdown diario'), totalDrawdown: t('drawdown máximo'), profitTarget: t('profit target'), consistency: t('consistencia')};
     for(const [k, l] of Object.entries(pcts)){
       const raw = d.rules[k];
-      if(raw && !(ruleNum(raw) && ruleNum(raw) <= 100)) return fail(`Revisá el ${l}: tiene que ser un número entre 0 y 100.`);
+      if(raw && !(ruleNum(raw) && ruleNum(raw) <= 100)) return fail(t('Revisá el {rule}: tiene que ser un número entre 0 y 100.', {rule: l}));
     }
-    if(d.rules.minDays && !(Number.isInteger(Number(d.rules.minDays)) && Number(d.rules.minDays) > 0)) return fail('Los días mínimos tienen que ser un número entero (ej. 4).');
+    if(d.rules.minDays && !(Number.isInteger(Number(d.rules.minDays)) && Number(d.rules.minDays) > 0)) return fail(t('Los días mínimos tienen que ser un número entero (ej. 4).'));
   }
   // Una personal no lleva reglas; una fondeada no tiene objetivo.
   if(!prop) d.rules = newAccount().rules;
@@ -337,7 +338,7 @@ function saveAccountEditor(){
   const clean = newAccount({...d, size: size ? Number(size) : null});
   const i = state.accounts.findIndex(a=> a.id === clean.id);
   if(i >= 0) state.accounts[i] = clean; else state.accounts.push(clean);
-  if(!saveState()) return fail('No se pudo guardar.');
+  if(!saveState()) return fail(t('No se pudo guardar.'));
   editingAccountId = null; accDraft = null;
   afterAccountsChange();
 }
@@ -349,7 +350,7 @@ function deleteAccount(){
   const other = state.accounts.find(a=> a.id !== acc.id && a.status === 'active') || state.accounts.find(a=> a.id !== acc.id);
   if(trades.length){
     // Los trades no se borran: pasan a otra cuenta (o se puede archivar la cuenta).
-    if(!confirm(`"${acc.name}" tiene ${trades.length} ${trades.length === 1 ? 'trade' : 'trades'}. Si la eliminás, pasan a "${other.name}". Si querés conservarlos aparte, mejor archivala (Estado → Archivada). ¿Eliminar igual?`)) return;
+    if(!confirm(tp(trades.length, '"{acc}" tiene 1 trade. Si la eliminás, pasa a "{other}". Si querés conservarlo aparte, mejor archivala (Estado → Archivada). ¿Eliminar igual?', '"{acc}" tiene {n} trades. Si la eliminás, pasan a "{other}". Si querés conservarlos aparte, mejor archivala (Estado → Archivada). ¿Eliminar igual?', {acc: acc.name, other: other.name}))) return;
     trades.forEach(h=> h.accountId = other.id);
   }
   state.accounts = state.accounts.filter(a=> a.id !== acc.id);
@@ -365,7 +366,7 @@ function createFundedFrom(id){
   const src = accountById(id);
   if(!src) return;
   const acc = newAccount({...src, id: null, createdAt: Date.now(), type: 'funded', status: 'active',
-    name: (src.firm || src.name).slice(0, 30) + ' fondeada', rules: {...src.rules, profitTarget: '', minDays: '', consistency: ''}});
+    name: t('{name} fondeada', {name: (src.firm || src.name).slice(0, 30)}), rules: {...src.rules, profitTarget: '', minDays: '', consistency: ''}});
   state.accounts.push(acc);
   saveState();
   editingAccountId = acc.id; accDraft = null;

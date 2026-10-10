@@ -33,6 +33,8 @@ js/auth.js       Usuarios, sesión y planes (simulados en localStorage)
 js/session.js    Header del usuario, plan, paywall al vencer la prueba y logout
 js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
                  versión de esquema, migraciones, export/import
+js/i18n.js       Idiomas: t('texto') traduce, translateDom() traduce el HTML fijo
+js/lang-en.js    Diccionario al inglés (clave = texto original en español)
 js/time.js       Horarios: todo se calcula en hora de Nueva York (día de trading,
                  sesiones, mapa de calor); las horas se muestran en NY o en la local
 js/app.js        Lógica y renderizado del journal
@@ -73,6 +75,15 @@ pasar a un backend:
 
 Si cambia la forma de los datos, subir `SCHEMA_VERSION` y agregar la migración
 correspondiente en `MIGRATIONS`.
+
+## Idiomas
+
+El español es el texto original y queda escrito en el código y en el HTML.
+Para mostrar algo traducible desde JS se usa `t('Texto en español')` (con
+variables: `t('Te quedan {n} días.', {n})`; con plural:
+`tp(n, '{n} trade', '{n} trades')`). El HTML fijo se traduce solo al cargar.
+Cada frase nueva necesita su traducción en `js/lang-en.js`; si falta, se ve en
+español y queda anotada en `I18N_MISSING` (consola del navegador).
 
 ## Publicar cambios
 

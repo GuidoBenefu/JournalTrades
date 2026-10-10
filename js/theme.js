@@ -19,7 +19,8 @@
 
   function renderToggles(){
     const next = current() === 'dark' ? 'light' : 'dark';
-    const label = next === 'light' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    const tr = typeof t === 'function' ? t : s=> s;
+    const label = next === 'light' ? tr('Cambiar a modo claro') : tr('Cambiar a modo oscuro');
     document.querySelectorAll('[data-theme-toggle]').forEach(btn=>{
       btn.innerHTML = ICONS[next];
       btn.setAttribute('aria-label', label);

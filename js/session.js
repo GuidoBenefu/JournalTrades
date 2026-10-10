@@ -35,15 +35,15 @@ function renderSession(user){
   const badge = document.getElementById('planBadge');
   const upgradeBtn = document.getElementById('upgradeBtn');
   if(user.plan === 'pro'){
-    badge.textContent = user.billing === 'annual' ? 'Pro · anual' : 'Pro · mensual';
+    badge.textContent = user.billing === 'annual' ? t('Pro · anual') : t('Pro · mensual');
     badge.className = 'planbadge pro';
     upgradeBtn.style.display = 'none';
   } else {
     const days = JournalAuth.trialDaysLeft(user);
     // En celular se oculta "Prueba gratis · " para que entre en la barra.
     badge.innerHTML = days > 0
-      ? '<span class="desktop-only">Prueba gratis · </span>' + (days === 1 ? 'queda 1 día' : 'quedan ' + days + ' días')
-      : 'Prueba terminada';
+      ? `<span class="desktop-only">${t('Prueba gratis')} · </span>` + tp(days, 'queda 1 día', 'quedan {n} días')
+      : t('Prueba terminada');
     badge.className = 'planbadge ' + (days > 2 ? 'trial' : 'ending');
     upgradeBtn.style.display = '';
   }
@@ -54,17 +54,17 @@ function renderSession(user){
 const pricing = JournalAuth.PRO_PRICING;
 document.getElementById('pwMonthly').textContent = JournalAuth.formatUSD(pricing.monthly.price);
 document.getElementById('pwAnnual').textContent = JournalAuth.formatUSD(pricing.annual.price);
-document.getElementById('pwAnnualSub').textContent = 'por año · ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes';
+document.getElementById('pwAnnualSub').textContent = t('por año · {price}/mes', {price: JournalAuth.formatUSD(pricing.annual.perMonth)});
 
 // expired: la prueba terminó y no se puede cerrar sin pasar a Pro.
 let paywallExpired = false;
 function openUpgrade(expired){
   paywallExpired = !!expired;
   document.getElementById('paywallIcon').innerHTML = Icons.svg(expired ? 'hourglass' : 'rocket', 26);
-  document.getElementById('paywallTitle').textContent = expired ? 'Tu prueba gratis terminó' : 'Pasate a Pro';
+  document.getElementById('paywallTitle').textContent = expired ? t('Tu prueba gratis terminó') : t('Pasate a Pro');
   document.getElementById('paywallText').textContent = expired
-    ? 'Pasate a Pro para seguir registrando trades. Tus datos siguen guardados.'
-    : 'Seguí entrenando tu disciplina sin límite de tiempo.';
+    ? t('Pasate a Pro para seguir registrando trades. Tus datos siguen guardados.')
+    : t('Seguí entrenando tu disciplina sin límite de tiempo.');
   document.getElementById('paywallCloseBtn').style.display = expired ? 'none' : '';
   document.getElementById('paywallExportBtn').style.display = expired ? '' : 'none';
   document.getElementById('paywall').style.display = 'flex';
@@ -86,7 +86,7 @@ document.querySelectorAll('.billing-card').forEach(btn=>{
     closePaywall();
     renderSession(user);
     if(typeof renderProfile === 'function') renderProfile();
-    if(typeof showToast === 'function') showToast(`<span class="toast-ic">${Icons.svg('sparkles', 22)}</span><div><b>¡Listo, ya sos Pro!</b><br>Seguí registrando tus trades sin límite.</div>`);
+    if(typeof showToast === 'function') showToast(`<span class="toast-ic">${Icons.svg('sparkles', 22)}</span><div><b>${t('¡Listo, ya sos Pro!')}</b><br>${t('Seguí registrando tus trades sin límite.')}</div>`);
     // Si la prueba venció antes de terminar la configuración guiada, se muestra ahora.
     if(JournalAuth.needsOnboarding(user) && typeof openOnboarding === 'function') openOnboarding();
   });

@@ -17,7 +17,9 @@ const PRO_PRICING = {
 };
 
 function formatUSD(n){
-  return 'USD ' + n.toFixed(2).replace('.', ',');
+  // En inglés el decimal es con punto; en español, con coma.
+  const en = typeof LANG !== 'undefined' && LANG === 'en';
+  return 'USD ' + (en ? n.toFixed(2) : n.toFixed(2).replace('.', ','));
 }
 
 function readJSON(key, fallback){

@@ -67,7 +67,7 @@ function renderHero(user, streak){
   const hour = now.getHours();
   const greet = hour < 12 ? 'Buen día' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
   const first = user ? user.name.split(' ')[0] : '';
-  const dateTxt = now.toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long'});
+  const dateTxt = now.toLocaleDateString(LOCALE, {weekday: 'long', day: 'numeric', month: 'long'});
   document.getElementById('helloDate').textContent = dateTxt.charAt(0).toUpperCase() + dateTxt.slice(1);
   document.getElementById('helloTitle').textContent = `${greet}${first ? ', ' + first : ''}`;
   if(user) paintAvatar(document.getElementById('heroAvatar'), user);
@@ -144,7 +144,7 @@ function renderToday(){
   const broken = today.filter(h=> !h.followedPlan).length;
   const maxRisk = getMaxDailyRisk();
   const used = todayRiskUsed();
-  const d = keyDate(todayKey).toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long'});
+  const d = keyDate(todayKey).toLocaleDateString(LOCALE, {weekday: 'long', day: 'numeric', month: 'long'});
   document.getElementById('todayDate').textContent = d.charAt(0).toUpperCase() + d.slice(1);
   let alert;
   if(maxRisk !== null && used >= maxRisk) alert = ['bad', 'alert-triangle', used > maxRisk ? `Superaste tu riesgo máximo (${fix1(used)}% de ${maxRisk}%). Hoy no operes más.` : 'Llegaste a tu límite de riesgo. Hoy no operes más.'];

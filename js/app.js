@@ -5,27 +5,27 @@ function escapeHtml(str){
 
 // Datos extra de cada trade: emoción, errores y sesión.
 const EMOTIONS = [
-  {id:'calm', label:'Tranquilo', tone:'good'},
-  {id:'confident', label:'Confiado', tone:'good'},
-  {id:'anxious', label:'Ansioso', tone:'risk'},
+  {id:'calm', label:t('Tranquilo'), tone:'good'},
+  {id:'confident', label:t('Confiado'), tone:'good'},
+  {id:'anxious', label:t('Ansioso'), tone:'risk'},
   {id:'fomo', label:'FOMO', tone:'risk'},
-  {id:'revenge', label:'Revancha', tone:'risk'},
-  {id:'bored', label:'Aburrido', tone:'risk'},
+  {id:'revenge', label:t('Revancha'), tone:'risk'},
+  {id:'bored', label:t('Aburrido'), tone:'risk'},
 ];
-const RESULT_LABELS = {win: 'Ganador', loss: 'Perdedor', be: 'Break even'};
-const CONFIDENCE_LABELS = ['', 'Nada seguro', 'Poco seguro', 'Neutral', 'Bastante seguro', 'Totalmente seguro'];
+const RESULT_LABELS = {win: t('Ganador'), loss: t('Perdedor'), be: t('Break even')};
+const CONFIDENCE_LABELS = ['', t('Nada seguro'), t('Poco seguro'), t('Neutral'), t('Bastante seguro'), t('Totalmente seguro')];
 const ERROR_TAGS = [
-  {id:'moved_sl', label:'Moví el stop'},
-  {id:'early_exit', label:'Cerré antes de tiempo'},
-  {id:'late_entry', label:'Entré tarde'},
-  {id:'no_confirmation', label:'Entré sin confirmación'},
-  {id:'overtrading', label:'Sobreoperé'},
-  {id:'size_up', label:'Aumenté el tamaño'},
-  {id:'ignored_tp', label:'No respeté el TP'},
+  {id:'moved_sl', label:t('Moví el stop')},
+  {id:'early_exit', label:t('Cerré antes de tiempo')},
+  {id:'late_entry', label:t('Entré tarde')},
+  {id:'no_confirmation', label:t('Entré sin confirmación')},
+  {id:'overtrading', label:t('Sobreoperé')},
+  {id:'size_up', label:t('Aumenté el tamaño')},
+  {id:'ignored_tp', label:t('No respeté el TP')},
 ];
 const emotionById = id => EMOTIONS.find(e=>e.id === id);
 // Nombre de la emoción dentro de una frase ("con ansioso" → "con ansioso", pero FOMO en mayúsculas).
-const emotionWord = e => e.id === 'fomo' ? 'FOMO' : e.label.toLowerCase();
+const emotionWord = e => e.id === 'fomo' ? 'FOMO' : e.label.toLowerCase(LOCALE);
 const errorById = id => ERROR_TAGS.find(e=>e.id === id);
 
 // R real = resultado / riesgo (ej. +1% arriesgando 0.5% = +2R).
@@ -91,10 +91,10 @@ function renderImagePreview(){
   const box = document.getElementById('tradeImagePreview');
   document.getElementById('dropzone').style.display = currentImageData ? 'none' : '';
   if(!currentImageData){ box.innerHTML = ''; renderTradeFormStatus(); return; }
-  box.innerHTML = `<div class="img-preview"><img src="${currentImageData}" alt="Captura del trade">
+  box.innerHTML = `<div class="img-preview"><img src="${currentImageData}" alt="${t('Captura del trade')}">
     <div class="img-preview-actions">
-      <label class="small-btn" for="tradeImageInput">${Icons.svg('repeat', 14)} Cambiar</label>
-      <button type="button" class="small-btn" id="removeImageBtn">${Icons.svg('x', 14)} Quitar</button>
+      <label class="small-btn" for="tradeImageInput">${Icons.svg('repeat', 14)} ${t('Cambiar')}</label>
+      <button type="button" class="small-btn" id="removeImageBtn">${Icons.svg('x', 14)} ${t('Quitar')}</button>
     </div></div>`;
   box.querySelector('img').addEventListener('click', ()=> openLightbox(currentImageData));
   document.getElementById('removeImageBtn').addEventListener('click', ()=>{
@@ -167,7 +167,7 @@ function loadState(){
   if(!state.achievements) state.achievements = {};
   state.timePrefs = timePrefs();
   // Siempre hay al menos una cuenta, y cada trade pertenece a una que existe.
-  if(!Array.isArray(state.accounts) || !state.accounts.length) state.accounts = [newAccount({id: 'acc_main', name: 'Mi cuenta'})];
+  if(!Array.isArray(state.accounts) || !state.accounts.length) state.accounts = [newAccount({id: 'acc_main', name: t('Mi cuenta')})];
   state.history.forEach(h=>{ if(!accountById(h.accountId)) h.accountId = state.accounts[0].id; });
   if(state.viewAccount !== 'all' && !accountById(state.viewAccount)) state.viewAccount = 'all';
   // Antes los meses cerrados se guardaban como foto; ahora se calculan del historial.
@@ -205,12 +205,12 @@ function hideStorageWarning(){
 }
 
 JournalStore.onLoadError = ()=>{
-  showStorageWarning('No se pudieron leer tus datos guardados (el archivo está dañado). Se guardó una copia aparte; si tenés un backup, importalo desde Ajustes.');
+  showStorageWarning(t('No se pudieron leer tus datos guardados (el archivo está dañado). Se guardó una copia aparte; si tenés un backup, importalo desde Ajustes.'));
 };
 JournalStore.onSaveError = reason=>{
   showStorageWarning(reason === 'quota'
-    ? 'No se pudo guardar: el almacenamiento del navegador está lleno. Exportá un backup y borrá trades viejos o imágenes.'
-    : 'No se pudo guardar en el navegador. Exportá un backup desde Ajustes para no perder datos.');
+    ? t('No se pudo guardar: el almacenamiento del navegador está lleno. Exportá un backup y borrá trades viejos o imágenes.')
+    : t('No se pudo guardar en el navegador. Exportá un backup desde Ajustes para no perder datos.'));
 };
 
 document.getElementById('exportBtn').addEventListener('click', ()=>{
@@ -238,7 +238,7 @@ document.getElementById('importInput').addEventListener('change', async e=>{
     const data = JournalStore.parseImport(await file.text());
     const dropped = data._dropped;
     delete data._dropped;
-    if(!confirm(`Esto reemplaza todos los datos actuales por los del backup (${data.history.length} trades${dropped ? `; ${dropped} registros dañados se van a descartar` : ''}). ¿Continuar?`)) return;
+    if(!confirm(t('Esto reemplaza todos los datos actuales por los del backup ({n} trades{extra}). ¿Continuar?', {n: data.history.length, extra: dropped ? t('; {n} registros dañados se van a descartar', {n: dropped}) : ''}))) return;
     await ImageStore.clearUser();
     if(ImageStore.available){
       for(const h of data.history){
@@ -250,7 +250,7 @@ document.getElementById('importInput').addEventListener('change', async e=>{
     }
     if(JournalStore.save(data)) location.reload();
   }catch(err){
-    msg.textContent = err.message || 'No se pudo leer el archivo.';
+    msg.textContent = err.message || t('No se pudo leer el archivo.');
     msg.style.display = 'block';
   }
 });
@@ -292,16 +292,16 @@ function moveItem(id, toIndex){
 function renderItemsManager(){
   const box = document.getElementById('itemsManager');
   const n = state.items.length;
-  document.getElementById('planCount').textContent = n === 1 ? '1 regla' : n + ' reglas';
+  document.getElementById('planCount').textContent = tp(n, '{n} regla', '{n} reglas');
   box.innerHTML = state.items.map((it, i)=>{
     if(editingItemId === it.id){
       return `
         <div class="editRow" data-id="${it.id}">
-          <input type="text" class="editLabel" value="${escapeHtml(it.label)}" aria-label="Regla">
-          <input type="text" class="editHint" value="${escapeHtml(it.hint || '')}" placeholder="Aclaración (opcional)" aria-label="Aclaración">
+          <input type="text" class="editLabel" value="${escapeHtml(it.label)}" aria-label="${t('Regla')}">
+          <input type="text" class="editHint" value="${escapeHtml(it.hint || '')}" placeholder="${t('Aclaración (opcional)')}" aria-label="${t('Aclaración')}">
           <div class="row">
-            <button class="primary small editSaveBtn" data-id="${it.id}">Guardar</button>
-            <button class="ghost small editCancelBtn">Cancelar</button>
+            <button class="primary small editSaveBtn" data-id="${it.id}">${t('Guardar')}</button>
+            <button class="ghost small editCancelBtn">${t('Cancelar')}</button>
           </div>
         </div>`;
     }
@@ -314,19 +314,19 @@ function renderItemsManager(){
           ${it.hint ? `<div class="hint">${escapeHtml(it.hint)}</div>` : ''}
         </div>
         <div class="actions">
-          <button type="button" class="icon-btn move-btn upBtn" data-id="${it.id}" aria-label="Subir" ${i === 0 ? 'disabled' : ''}>${Icons.svg('chevron-up', 15)}</button>
-          <button type="button" class="icon-btn move-btn downBtn" data-id="${it.id}" aria-label="Bajar" ${i === n - 1 ? 'disabled' : ''}>${Icons.svg('chevron-down', 15)}</button>
-          <button type="button" class="icon-btn editBtn" data-id="${it.id}" aria-label="Editar regla">${Icons.svg('pencil', 15)}</button>
-          <button type="button" class="icon-btn icon-danger delBtn" data-id="${it.id}" aria-label="Eliminar regla">${Icons.svg('trash', 15)}</button>
+          <button type="button" class="icon-btn move-btn upBtn" data-id="${it.id}" aria-label="${t('Subir')}" ${i === 0 ? 'disabled' : ''}>${Icons.svg('chevron-up', 15)}</button>
+          <button type="button" class="icon-btn move-btn downBtn" data-id="${it.id}" aria-label="${t('Bajar')}" ${i === n - 1 ? 'disabled' : ''}>${Icons.svg('chevron-down', 15)}</button>
+          <button type="button" class="icon-btn editBtn" data-id="${it.id}" aria-label="${t('Editar regla')}">${Icons.svg('pencil', 15)}</button>
+          <button type="button" class="icon-btn icon-danger delBtn" data-id="${it.id}" aria-label="${t('Eliminar regla')}">${Icons.svg('trash', 15)}</button>
         </div>
       </div>`;
-  }).join('') || '<div class="rules-empty">Tu Trading Plan está vacío. Agregá la primera regla abajo.</div>';
+  }).join('') || `<div class="rules-empty">${t('Tu Trading Plan está vacío. Agregá la primera regla abajo.')}</div>`;
 
   const on = (sel, fn)=> box.querySelectorAll(sel).forEach(btn=> btn.addEventListener('click', ()=> fn(btn.dataset.id, btn)));
   on('.editBtn', id=>{ editingItemId = id; renderItemsManager(); const inp = box.querySelector('.editLabel'); if(inp) inp.focus(); });
   on('.delBtn', id=>{
     const it = state.items.find(x=> x.id === id);
-    if(!confirm(`¿Eliminar la regla "${it ? it.label : ''}" de tu Trading Plan? Los trades que ya cargaste la siguen mostrando como estaba.`)) return;
+    if(!confirm(t('¿Eliminar la regla "{rule}" de tu Trading Plan? Los trades que ya cargaste la siguen mostrando como estaba.', {rule: it ? it.label : ''}))) return;
     state.items = state.items.filter(it=> it.id !== id);
     delete state.checked[id];
     afterPlanChange();
@@ -392,8 +392,8 @@ function renderChecklist(){
   box.innerHTML = '';
   if(!state.items.length){
     box.innerHTML = `<div class="plan-empty">
-      <p>Todavía no armaste tu Trading Plan. Cargá las reglas que tiene que cumplir cada trade y acá vas a poder tildarlas.</p>
-      <button type="button" class="primary small" id="goToPlanBtn">Armar mi Trading Plan</button>
+      <p>${t('Todavía no armaste tu Trading Plan. Cargá las reglas que tiene que cumplir cada trade y acá vas a poder tildarlas.')}</p>
+      <button type="button" class="primary small" id="goToPlanBtn">${t('Armar mi Trading Plan')}</button>
     </div>`;
     document.getElementById('goToPlanBtn').addEventListener('click', ()=>{
       document.querySelector('.tabbtn[data-tab="settings"]').click();
@@ -420,9 +420,9 @@ function renderChecklist(){
 
 function updateAddButton(){
   const btn = document.getElementById('addTradeBtn');
-  btn.textContent = editingTradeId ? 'Guardar cambios' : 'Agregar trade';
+  btn.textContent = editingTradeId ? t('Guardar cambios') : t('Agregar trade');
   document.getElementById('cancelEditBtn').style.display = editingTradeId ? '' : 'none';
-  document.getElementById('tradeFormTitle').textContent = editingTradeId ? 'Editar trade' : 'Registrar trade';
+  document.getElementById('tradeFormTitle').textContent = editingTradeId ? t('Editar trade') : t('Registrar trade');
 }
 
 // El historial se mantiene ordenado del trade más nuevo al más viejo según
@@ -436,7 +436,7 @@ function renderChips(){
   const group = (tone, title)=> `<div class="emo-group emo-${tone}"><div class="emo-group-t">${title}</div><div class="chips">${
     EMOTIONS.filter(e=> e.tone === tone).map(e=>`<button type="button" class="chip chip-${tone} ${tradeForm.emotion === e.id ? 'active' : ''}" data-v="${e.id}">${e.label}</button>`).join('')
   }</div></div>`;
-  emo.innerHTML = group('good', 'Estados que ayudan') + group('risk', 'Estados de riesgo');
+  emo.innerHTML = group('good', t('Estados que ayudan')) + group('risk', t('Estados de riesgo'));
   emo.querySelectorAll('.chip').forEach(b=> b.addEventListener('click', ()=>{
     tradeForm.emotion = tradeForm.emotion === b.dataset.v ? null : b.dataset.v;
     renderChips();
@@ -500,13 +500,13 @@ function renderTradeFormStatus(){
   const n = Object.values(steps).filter(Boolean).length;
   document.querySelectorAll('.fstep').forEach(sec=> sec.classList.toggle('done', steps[sec.dataset.step]));
   document.getElementById('tfProgressFill').style.width = (n / 4 * 100) + '%';
-  document.getElementById('tfProgressTxt').textContent = `${n} de 4 secciones completas`;
+  document.getElementById('tfProgressTxt').textContent = t('{n} de 4 secciones completas', {n});
 
   const pct = total ? done / total * 100 : 0;
   const meter = document.getElementById('planMeter');
   meter.style.display = total ? '' : 'none';
   meter.className = 'plan-meter ' + (done === total ? 'good' : done === 0 ? '' : 'warn');
-  meter.innerHTML = `<div class="pm-top"><span>Cumpliste <b>${done}/${total}</b> reglas</span><span>${done === total ? 'Dentro del plan' : (done || tradeForm.planTouched) ? 'Fuera del plan' : 'Sin marcar'}</span></div>
+  meter.innerHTML = `<div class="pm-top"><span>${t('Cumpliste <b>{done}/{total}</b> reglas', {done, total})}</span><span>${done === total ? t('Dentro del plan') : (done || tradeForm.planTouched) ? t('Fuera del plan') : t('Sin marcar')}</span></div>
     <div class="pm-bar"><div style="width:${pct}%"></div></div>`;
   document.getElementById('planStatus').textContent = total ? `${done}/${total}` : '';
 
@@ -527,23 +527,23 @@ function renderTradeFormStatus(){
   const dir = tradeForm.direction
     ? `<span class="tp-dir ${tradeForm.direction}">${Icons.svg(tradeForm.direction === 'long' ? 'arrow-up' : 'arrow-down', 14)}${tradeForm.direction === 'long' ? 'Long' : 'Short'}</span>` : '';
   document.getElementById('tradePreview').innerHTML = `
-    <div class="tp-kicker">Vista previa</div>
+    <div class="tp-kicker">${t('Vista previa')}</div>
     <div class="tp-top">
-      <div class="tp-asset">${asset ? escapeHtml(asset) : '<span class="tp-ph">Activo</span>'}${dir}</div>
+      <div class="tp-asset">${asset ? escapeHtml(asset) : `<span class="tp-ph">${t('Activo')}</span>`}${dir}</div>
       <div class="tp-res ${resCls}">${okNum(res) ? fmtSignedPct(res) : tradeForm.result ? RESULT_LABELS[tradeForm.result] : '—'}</div>
     </div>
-    <div class="tp-sub">${[val('setupInput') && escapeHtml(val('setupInput')), !isNaN(ts) && sessionOf(ts)].filter(Boolean).join(' · ') || 'Completá el formulario y el trade se arma acá.'}</div>
+    <div class="tp-sub">${[val('setupInput') && escapeHtml(val('setupInput')), !isNaN(ts) && sessionOf(ts)].filter(Boolean).join(' · ') || t('Completá el formulario y el trade se arma acá.')}</div>
     <div class="tp-rows">
-      ${row('R:R planeado', okNum(rrPlan) ? '1:' + rrPlan.toFixed(1) : '—')}
-      ${row('R real', rReal === null ? '—' : (rReal > 0 ? '+' : '') + rReal.toFixed(1) + 'R')}
-      ${row('Plan respetado', total ? `<span class="${done === total ? 'pos' : 'neg'}">${done === total ? 'Sí' : 'No'} · ${done}/${total}</span>` : '—')}
-      ${row('Emoción', emo ? `<span class="${emo.tone === 'risk' ? 'warn' : 'pos'}">${emo.label}</span>` : '—')}
-      ${row('Errores', tradeForm.errors.length ? `<span class="neg">${tradeForm.errors.length}</span>` : '0')}
+      ${row(t('R:R planeado'), okNum(rrPlan) ? '1:' + rrPlan.toFixed(1) : '—')}
+      ${row(t('R real'), rReal === null ? '—' : (rReal > 0 ? '+' : '') + rReal.toFixed(1) + 'R')}
+      ${row(t('Plan respetado'), total ? `<span class="${done === total ? 'pos' : 'neg'}">${done === total ? t('Sí') : t('No')} · ${done}/${total}</span>` : '—')}
+      ${row(t('Emoción'), emo ? `<span class="${emo.tone === 'risk' ? 'warn' : 'pos'}">${emo.label}</span>` : '—')}
+      ${row(t('Errores'), tradeForm.errors.length ? `<span class="neg">${tradeForm.errors.length}</span>` : '0')}
     </div>
     <div class="tp-score ${scoreCls}">
       <div class="tp-ring" style="--p:${score || 0}"><span>${score === null ? '—' : score}</span></div>
-      <div><div class="tp-score-t">Puntaje de disciplina</div>
-      <div class="tp-score-s">${score === null ? 'Completá el formulario para ver tu puntaje.' : score >= 80 ? 'Trade ejecutado con disciplina.' : score >= 50 ? 'Hay cosas para ajustar.' : 'Este trade se alejó de tu plan.'}</div></div>
+      <div><div class="tp-score-t">${t('Puntaje de disciplina')}</div>
+      <div class="tp-score-s">${score === null ? t('Completá el formulario para ver tu puntaje.') : score >= 80 ? t('Trade ejecutado con disciplina.') : score >= 50 ? t('Hay cosas para ajustar.') : t('Este trade se alejó de tu plan.')}</div></div>
     </div>`;
 }
 ['assetInput', 'setupInput', 'riskInput', 'rrPlanInput', 'resultPctInput', 'resultNote', 'entryTimeInput']
@@ -559,15 +559,15 @@ function parseNum(raw){
 function renderFormHints(){
   const val = document.getElementById('entryTimeInput').value;
   const ts = val ? fromInputValue(val) : Date.now();
-  document.getElementById('entryTzLabel').textContent = '(' + (timePrefs().display === 'ny' ? 'hora de Nueva York' : 'tu hora local') + ')';
+  document.getElementById('entryTzLabel').textContent = '(' + (timePrefs().display === 'ny' ? t('hora de Nueva York') : t('tu hora local')) + ')';
   // La sesión, la hora en las dos zonas y, si cambia, el día de trading en el que cuenta.
   const otherDay = !isNaN(ts) && val && dayKeyFromTs(ts) !== val.slice(0, 10);
   document.getElementById('sessionHint').textContent = isNaN(ts) ? '' :
-    ['Sesión: ' + sessionOf(ts), fmtTimeBoth(ts), otherDay && 'Cuenta para el día ' + fmtDate(ts)].filter(Boolean).join(' · ');
+    [t('Sesión: {s}', {s: sessionOf(ts)}), fmtTimeBoth(ts), otherDay && t('Cuenta para el día {d}', {d: fmtDate(ts)})].filter(Boolean).join(' · ');
   const risk = parseNum(document.getElementById('riskInput').value);
   const res = parseNum(document.getElementById('resultPctInput').value);
   const r = (typeof risk === 'number' && !isNaN(risk) && risk > 0 && typeof res === 'number' && !isNaN(res)) ? res / risk : null;
-  document.getElementById('rrRealHint').textContent = r === null ? '' : 'R real: ' + (r > 0 ? '+' : '') + r.toFixed(1) + 'R';
+  document.getElementById('rrRealHint').textContent = r === null ? '' : t('R real: {r}', {r: (r > 0 ? '+' : '') + r.toFixed(1) + 'R'});
 }
 ['entryTimeInput', 'riskInput', 'resultPctInput'].forEach(id=> document.getElementById(id).addEventListener('input', renderFormHints));
 document.getElementById('entryTimeInput').addEventListener('input', ()=>{ entryTimeTouched = true; });
@@ -662,36 +662,36 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
   const fail = msg=>{ errBox.textContent = msg; errBox.style.display = 'block'; };
 
   const riskPct = parseNum(document.getElementById('riskInput').value);
-  if(Number.isNaN(riskPct)) return fail('El riesgo tiene que ser un número (ej. 0.5).');
-  if(riskPct !== null && (riskPct <= 0 || riskPct > 100)) return fail('El riesgo tiene que ser mayor a 0 y como máximo 100%.');
+  if(Number.isNaN(riskPct)) return fail(t('El riesgo tiene que ser un número (ej. 0.5).'));
+  if(riskPct !== null && (riskPct <= 0 || riskPct > 100)) return fail(t('El riesgo tiene que ser mayor a 0 y como máximo 100%.'));
   const rrPlanned = parseNum(document.getElementById('rrPlanInput').value);
-  if(Number.isNaN(rrPlanned)) return fail('El R:R planeado tiene que ser un número (ej. 2).');
-  if(rrPlanned !== null && rrPlanned <= 0) return fail('El R:R planeado tiene que ser mayor a 0 (ej. 2 para 1:2).');
+  if(Number.isNaN(rrPlanned)) return fail(t('El R:R planeado tiene que ser un número (ej. 2).'));
+  if(rrPlanned !== null && rrPlanned <= 0) return fail(t('El R:R planeado tiene que ser mayor a 0 (ej. 2 para 1:2).'));
   const durationMin = parseNum(document.getElementById('durationInput').value);
-  if(Number.isNaN(durationMin)) return fail('La duración tiene que ser un número de minutos (ej. 12).');
-  if(durationMin !== null && durationMin < 0) return fail('La duración no puede ser negativa.');
+  if(Number.isNaN(durationMin)) return fail(t('La duración tiene que ser un número de minutos (ej. 12).'));
+  if(durationMin !== null && durationMin < 0) return fail(t('La duración no puede ser negativa.'));
   const result = tradeForm.result;
-  if(!result) return fail('Elegí un resultado (Ganador, Perdedor o Break even) antes de registrar.');
+  if(!result) return fail(t('Elegí un resultado (Ganador, Perdedor o Break even) antes de registrar.'));
   const resultPct = parseNum(document.getElementById('resultPctInput').value);
-  if(Number.isNaN(resultPct)) return fail('El resultado tiene que ser un número (ej. 1.2 o -0.5).');
-  if(resultPct !== null && Math.abs(resultPct) > 100) return fail('Revisá el resultado: no puede ser mayor a 100% ni menor a -100%.');
-  if(result === 'win' && resultPct !== null && resultPct < 0) return fail('Marcaste Ganador pero el resultado es negativo. Revisá el resultado o elegí Perdedor.');
-  if(result === 'loss' && resultPct !== null && resultPct > 0) return fail('Marcaste Perdedor pero el resultado es positivo. Revisá el resultado o elegí Ganador.');
+  if(Number.isNaN(resultPct)) return fail(t('El resultado tiene que ser un número (ej. 1.2 o -0.5).'));
+  if(resultPct !== null && Math.abs(resultPct) > 100) return fail(t('Revisá el resultado: no puede ser mayor a 100% ni menor a -100%.'));
+  if(result === 'win' && resultPct !== null && resultPct < 0) return fail(t('Marcaste Ganador pero el resultado es negativo. Revisá el resultado o elegí Perdedor.'));
+  if(result === 'loss' && resultPct !== null && resultPct > 0) return fail(t('Marcaste Perdedor pero el resultado es positivo. Revisá el resultado o elegí Ganador.'));
   const timeVal = document.getElementById('entryTimeInput').value;
   let ts = timeVal ? fromInputValue(timeVal) : Date.now();
   // Si no tocó la hora, se usa la del momento en que guarda (el formulario pudo quedar abierto).
   if(!editingTradeId && !entryTimeTouched) ts = Date.now();
-  if(isNaN(ts)) return fail('Revisá la fecha y hora de entrada.');
-  if(ts > Date.now() + 5 * 60 * 1000) return fail('La fecha de entrada no puede ser futura.');
+  if(isNaN(ts)) return fail(t('Revisá la fecha y hora de entrada.'));
+  if(ts > Date.now() + 5 * 60 * 1000) return fail(t('La fecha de entrada no puede ser futura.'));
 
   if(editingTradeId && !state.history.some(x=> x.id === editingTradeId)){
     resetForm();
-    return fail('Ese trade ya no existe (se eliminó). No se guardaron los cambios.');
+    return fail(t('Ese trade ya no existe (se eliminó). No se guardaron los cambios.'));
   }
   // Sin reglas tildadas el trade queda como plan roto: se confirma para que no sea un olvido.
   const keepPlan = editingTradeId && editOriginalPlan && !planEditedInForm;
   if(!keepPlan && state.items.length && !state.items.some(it=> state.checked[it.id])
-    && !confirm('No marcaste ninguna regla de tu Trading Plan. Si guardás así, el trade queda como "Plan roto". ¿Guardar igual?')) return;
+    && !confirm(t('No marcaste ninguna regla de tu Trading Plan. Si guardás así, el trade queda como "Plan roto". ¿Guardar igual?'))) return;
 
   const missingItems = state.items.filter(it=>!state.checked[it.id]);
   const plan = keepPlan ? editOriginalPlan : {
@@ -757,7 +757,7 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     undo();
     sortHistory();
     if(data.imageId && data.imageId !== (prev && prev.imageId)) ImageStore.cache.delete(data.imageId);
-    return fail('No se pudo guardar el trade porque el almacenamiento del navegador está lleno. Exportá un backup y liberá espacio.');
+    return fail(t('No se pudo guardar el trade porque el almacenamiento del navegador está lleno. Exportá un backup y liberá espacio.'));
   }
   if(data.imageId && data.imageId !== (prev && prev.imageId)) ImageStore.put(data.imageId, currentImageData).catch(()=>{});
   if(imageToRemove) ImageStore.remove(imageToRemove);
@@ -809,18 +809,18 @@ function computeRiskMgmtPct(list){
 function renderDailyRisk(){
   const box = document.getElementById('dailyRiskStatus');
   const max = getMaxDailyRisk();
-  if(max === null){ box.innerHTML = '<div class="risk-gauge empty">Elegí tu riesgo máximo diario para ver cuánto te queda cada día.</div>'; return; }
+  if(max === null){ box.innerHTML = `<div class="risk-gauge empty">${t('Elegí tu riesgo máximo diario para ver cuánto te queda cada día.')}</div>`; return; }
   const used = todayRiskUsed();
   const ratio = used / max;
   const cls = ratio >= 1 ? 'bad' : ratio >= 0.5 ? 'warn' : 'good';
-  const label = ratio > 1 ? 'Límite superado' : ratio >= 1 ? 'Límite alcanzado' : ratio >= 0.5 ? 'Cerca del límite' : 'Dentro del límite';
+  const label = ratio > 1 ? t('Límite superado') : ratio >= 1 ? t('Límite alcanzado') : ratio >= 0.5 ? t('Cerca del límite') : t('Dentro del límite');
   const msg = ratio > 1
-    ? 'Arriesgaste ' + fix1(used) + '% y tu máximo es ' + max + '%. Hoy rompiste tu risk management.'
-    : ratio >= 1 ? 'Ya usaste todo tu riesgo de hoy. Lo que sigue es fuera de plan.'
-    : 'Te quedan ' + fix1(max - used) + '% de riesgo para hoy.';
+    ? t('Arriesgaste {used}% y tu máximo es {max}%. Hoy rompiste tu risk management.', {used: fix1(used), max})
+    : ratio >= 1 ? t('Ya usaste todo tu riesgo de hoy. Lo que sigue es fuera de plan.')
+    : t('Te quedan {n}% de riesgo para hoy.', {n: fix1(max - used)});
   box.innerHTML = `<div class="risk-gauge ${cls}">
     <div class="rg-top">
-      <div><div class="rg-l">Riesgo tomado hoy</div><div class="rg-v">${fix1(used)}% <span>/ ${max}%</span></div></div>
+      <div><div class="rg-l">${t('Riesgo tomado hoy')}</div><div class="rg-v">${fix1(used)}% <span>/ ${max}%</span></div></div>
       <span class="rg-pill">${label}</span>
     </div>
     <div class="rg-bar"><div style="width:${Math.min(ratio, 1) * 100}%"></div><i style="left:50%"></i></div>
@@ -863,7 +863,7 @@ function updateBestStreak(){
 
 
 function monthLabelOf(ts){
-  return keyDate(dayKeyFromTs(ts)).toLocaleDateString('es-AR', {month:'long', year:'numeric'});
+  return keyDate(dayKeyFromTs(ts)).toLocaleDateString(LOCALE, {month:'long', year:'numeric'});
 }
 
 function monthLabel(){
@@ -903,10 +903,10 @@ function attachResetHandler(){
 function showResetConfirm(){
   const area = document.getElementById('resetArea');
   area.innerHTML = `
-    <p style="font-size:13px; color:var(--danger); margin:0 0 8px;">¿Seguro? Se borran todos tus trades y no se puede deshacer.</p>
+    <p style="font-size:13px; color:var(--danger); margin:0 0 8px;">${t('¿Seguro? Se borran todos tus trades y no se puede deshacer.')}</p>
     <div class="row">
-      <button class="danger-o" id="resetConfirmBtn">Sí, borrar todo</button>
-      <button class="ghost" id="resetCancelBtn">Cancelar</button>
+      <button class="danger-o" id="resetConfirmBtn">${t('Sí, borrar todo')}</button>
+      <button class="ghost" id="resetCancelBtn">${t('Cancelar')}</button>
     </div>
   `;
   document.getElementById('resetConfirmBtn').addEventListener('click', ()=>{
@@ -921,7 +921,7 @@ function showResetConfirm(){
 }
 
 function restoreResetButton(){
-  document.getElementById('resetArea').innerHTML = '<button class="danger-o" id="resetBtn">Borrar todo el historial</button>';
+  document.getElementById('resetArea').innerHTML = `<button class="danger-o" id="resetBtn">${t('Borrar todo el historial')}</button>`;
   attachResetHandler();
 }
 
