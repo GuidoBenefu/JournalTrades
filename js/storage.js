@@ -164,6 +164,12 @@ function sanitizeImport(data){
     bestStreak: 0,
     maxDailyRisk: (typeof data.maxDailyRisk === 'string' || typeof data.maxDailyRisk === 'number') ? String(data.maxDailyRisk).slice(0, 10) : '',
     accounts,
+    playbook: (Array.isArray(data.playbook) ? data.playbook : []).filter(p=> isObj(p) && typeof p.name === 'string' && p.name.trim()).slice(0, 100).map((p, i)=>({
+      id: safeId(p.id) || 'pb_' + i, name: p.name.trim().slice(0, 60), description: optStr(p.description, 2000) || '',
+      criteria: Array.isArray(p.criteria) ? p.criteria.filter(c=> typeof c === 'string' && c.trim()).slice(0, 15).map(c=> c.trim().slice(0, 200)) : [],
+      createdAt: optNum(p.createdAt) || Date.now(), archived: !!p.archived,
+      image: typeof p.image === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(p.image) ? p.image : null,
+    })),
     viewAccount: data.viewAccount === 'all' || ids.has(data.viewAccount) ? data.viewAccount : 'all',
     goals: {planPct: isObj(data.goals) && optNum(data.goals.planPct) ? data.goals.planPct : 80},
     ...(Array.isArray(data.sessions) ? {sessions: data.sessions.filter(s=> isObj(s) && typeof s.name === 'string' && s.name.trim()

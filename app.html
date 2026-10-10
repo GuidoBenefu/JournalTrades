@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=38"></script>
-<script src="js/i18n.js?v=38"></script>
+<script src="js/lang-en.js?v=40"></script>
+<script src="js/i18n.js?v=40"></script>
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=38"></script>
+<script src="js/theme.js?v=40"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=38">
-<script src="js/auth.js?v=38"></script>
+<link rel="stylesheet" href="css/styles.css?v=40">
+<script src="js/auth.js?v=40"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -27,6 +27,7 @@
       <button class="tabbtn active" data-tab="home" data-title="Inicio"><span class="ic"><i data-icon="dashboard" data-size="20"></i></span><span>Inicio</span></button>
       <button class="tabbtn" data-tab="register" data-title="Registrar trade"><span class="ic"><i data-icon="circle-plus" data-size="20"></i></span><span>Trade</span></button>
       <button class="tabbtn" data-tab="stats" data-title="Estadísticas"><span class="ic"><i data-icon="chart-line" data-size="20"></i></span><span>Stats</span></button>
+      <button class="tabbtn" data-tab="playbook" data-title="Playbook"><span class="ic"><i data-icon="book" data-size="20"></i></span><span>Playbook</span></button>
       <button class="tabbtn" data-tab="calendar" data-title="Calendario"><span class="ic"><i data-icon="calendar" data-size="20"></i></span><span>Calendario</span></button>
       <button class="tabbtn" data-tab="history" data-title="Historial"><span class="ic"><i data-icon="history" data-size="20"></i></span><span>Historial</span></button>
       <button class="tabbtn" data-tab="review" data-title="Revisión semanal"><span class="ic"><i data-icon="notebook-pen" data-size="20"></i></span><span>Revisión</span></button>
@@ -184,6 +185,7 @@
               <label for="setupInput">Setup</label>
               <input type="text" id="setupInput" list="setupList" placeholder="Ej. Sweep + IFVG" autocomplete="off">
               <datalist id="setupList"></datalist>
+              <div class="setup-hint" id="setupHint" style="display:none;"></div>
             </div>
             <div class="field">
               <label for="riskInput">Riesgo (%)</label>
@@ -270,8 +272,15 @@
           <button type="button" data-p="month">Este mes</button>
           <button type="button" data-p="90">3 meses</button>
           <button type="button" data-p="all">Todo</button>
+          <button type="button" data-p="custom">Rango</button>
         </div>
       </div>
+      <div class="span-2 st-range" id="statsRangeBox" style="display:none;">
+        <label>Desde <input type="date" id="statsFrom"></label>
+        <label>Hasta <input type="date" id="statsTo"></label>
+        <span class="field-error" id="statsRangeError"></span>
+      </div>
+      <div class="span-2 st-filters" id="statsFilters"></div>
 
       <div class="span-2 st-kpis" id="statsKpis"></div>
       <div class="span-2 st-kpis-sec" id="statsSecondary"></div>
@@ -419,6 +428,19 @@
         <div class="hx-more" id="hxMore"></div>
       </section>
     </div><!-- /tab history -->
+
+    <div class="tabpage" data-tab="playbook">
+      <section class="card span-2 pb-head">
+        <div class="set-head">
+          <span class="set-ic"><i data-icon="book" data-size="18"></i></span>
+          <div><h2>Tu Playbook</h2><p>Tus setups con sus criterios, un ejemplo y sus números reales. Los trades se vinculan por el nombre del setup.</p></div>
+          <button type="button" class="primary small" id="pbNewBtn">+ Nuevo setup</button>
+        </div>
+      </section>
+      <div class="span-2 pb-grid" id="pbGrid"></div>
+      <section class="card span-2" id="pbLoose" style="display:none;"></section>
+      <div class="span-2 pb-archived" id="pbArchived" style="display:none;"></div>
+    </div><!-- /tab playbook -->
 
     <div class="tabpage" data-tab="review">
       <section class="card span-2 rv-week">
@@ -850,6 +872,61 @@
   </div>
 </div>
 
+<div class="day-panel trade-panel" id="setupPanel" aria-hidden="true">
+  <div class="day-backdrop" data-close-setup></div>
+  <aside class="day-sheet" role="dialog" aria-modal="true" aria-labelledby="spTitle">
+    <div class="day-head">
+      <div>
+        <div class="day-kicker" id="spKicker"></div>
+        <h2 id="spTitle"></h2>
+      </div>
+      <button type="button" class="icon-btn" data-close-setup aria-label="Cerrar"><i data-icon="x" data-size="18"></i></button>
+    </div>
+    <div class="day-body" id="spBody"></div>
+    <div class="day-foot tp-foot" id="spFoot"></div>
+  </aside>
+</div>
+
+<div id="pbEditor" class="onboarding" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="pbEdTitle">
+  <div class="ob-box">
+    <div class="ob-head">
+      <h2 id="pbEdTitle" class="pb-ed-title">Nuevo setup</h2>
+      <button type="button" class="icon-btn" id="pbClose" aria-label="Cerrar"><i data-icon="x" data-size="18"></i></button>
+    </div>
+    <div class="field">
+      <label for="pbName">Nombre del setup</label>
+      <input type="text" id="pbName" maxlength="60" placeholder="Ej. Sweep + IFVG">
+      <div class="field-hint">Es el mismo nombre que escribís en el campo Setup de cada trade.</div>
+    </div>
+    <div class="field">
+      <label for="pbDesc">Descripción <span class="label-sub">(opcional)</span></label>
+      <textarea id="pbDesc" rows="3" maxlength="2000" placeholder="Ej. Barrida de un máximo o mínimo previo y entrada en el FVG que queda después."></textarea>
+    </div>
+    <div class="field">
+      <label for="pbNewCrit">Criterios para entrar</label>
+      <div class="ob-items" id="pbCrit"></div>
+      <div class="pb-crit-add">
+        <input type="text" id="pbNewCrit" maxlength="200" placeholder="Escribí un criterio">
+        <button type="button" id="pbAddCrit">Agregar</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Captura de ejemplo <span class="label-sub">(opcional)</span></label>
+      <div id="pbImgBox"></div>
+      <input type="file" id="pbImgInput" accept="image/*" style="display:none;">
+    </div>
+    <div class="field-error" id="pbError"></div>
+    <div class="ob-foot">
+      <button type="button" class="danger-o" id="pbDelete">Eliminar</button>
+      <span></span>
+      <div class="row">
+        <button type="button" class="ghost" id="pbCancel">Cancelar</button>
+        <button type="button" class="primary" id="pbSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="chart-tip" id="chartTip" role="tooltip"></div>
 <div class="saved-pill" id="savedPill" aria-live="polite"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -859,24 +936,25 @@
 </div>
 
 <script>translateDom();</script>
-<script src="js/icons.js?v=38"></script>
-<script src="js/storage.js?v=38"></script>
-<script src="js/time.js?v=38"></script>
-<script src="js/images.js?v=38"></script>
-<script src="js/session.js?v=38"></script>
-<script src="js/app.js?v=38"></script>
-<script src="js/accounts.js?v=38"></script>
-<script src="js/analytics.js?v=38"></script>
-<script src="js/charts.js?v=38"></script>
-<script src="js/achievements.js?v=38"></script>
-<script src="js/dashboard.js?v=38"></script>
-<script src="js/analysis.js?v=38"></script>
-<script src="js/review.js?v=38"></script>
-<script src="js/calendar.js?v=38"></script>
-<script src="js/onboarding.js?v=38"></script>
-<script src="js/settings.js?v=38"></script>
-<script src="js/history.js?v=38"></script>
-<script src="js/importer.js?v=38"></script>
+<script src="js/icons.js?v=40"></script>
+<script src="js/storage.js?v=40"></script>
+<script src="js/time.js?v=40"></script>
+<script src="js/images.js?v=40"></script>
+<script src="js/session.js?v=40"></script>
+<script src="js/app.js?v=40"></script>
+<script src="js/accounts.js?v=40"></script>
+<script src="js/analytics.js?v=40"></script>
+<script src="js/charts.js?v=40"></script>
+<script src="js/achievements.js?v=40"></script>
+<script src="js/dashboard.js?v=40"></script>
+<script src="js/analysis.js?v=40"></script>
+<script src="js/review.js?v=40"></script>
+<script src="js/calendar.js?v=40"></script>
+<script src="js/onboarding.js?v=40"></script>
+<script src="js/settings.js?v=40"></script>
+<script src="js/history.js?v=40"></script>
+<script src="js/playbook.js?v=40"></script>
+<script src="js/importer.js?v=40"></script>
 
 </body>
 </html>
