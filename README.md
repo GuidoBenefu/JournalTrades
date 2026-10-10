@@ -24,7 +24,7 @@ index.html       Pantalla de inicio: funciones y planes (prueba gratis 7 días /
 auth.html        Login y registro, con elección de plan
 terminos.html    Términos y condiciones (en preparación)
 privacidad.html  Política de privacidad (en preparación)
-app.html         El journal (pestañas Inicio, Trade, Stats, Playbook, Calendario,
+app.html         El journal (pestañas Inicio, Trade, Stats, Plan, Calendario,
                  Historial, Revisión, Ajustes)
 css/styles.css   Tokens de color (claro/oscuro) y estilos de la app
 css/site.css     Estilos de inicio y login
@@ -39,8 +39,10 @@ js/lang-en.js    Diccionario al inglés (clave = texto original en español)
 js/time.js       Horarios: todo se calcula en hora de Nueva York (día de trading,
                  sesiones, mapa de calor); las horas se muestran en NY o en la local
 js/app.js        Lógica y renderizado del journal
-js/playbook.js   Playbook: ficha de cada setup (criterios, captura de ejemplo) y
-                 sus números; los trades se vinculan por el nombre del setup
+js/playbook.js   Setups del Trading Plan (pestaña Plan, junto a las reglas generales):
+                 ficha de cada setup (criterios, captura de ejemplo) y sus números;
+                 los trades se vinculan por el nombre del setup y sus criterios se
+                 tildan en el formulario junto con las reglas
 js/share.js      Tarjetas para compartir un trade o el mes (imagen PNG en canvas)
 js/report.js     Reporte mensual para imprimir o guardar como PDF
 js/importer.js   Importador de trades desde CSV de cualquier plataforma (mapeo

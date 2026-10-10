@@ -216,16 +216,16 @@ function flashSaved(){
   savedTimer = setTimeout(()=> pill.classList.remove('show'), 1600);
 }
 
-// Cualquier guardado mientras se está en Ajustes muestra el aviso.
+// Cualquier guardado mientras se está en Ajustes o en Plan muestra el aviso.
 const saveStateBase = saveState;
 saveState = function(){
   const ok = saveStateBase.apply(this, arguments);
-  if(document.querySelector('.tabpage[data-tab="settings"].active')) flashSaved();
+  if(document.querySelector('.tabpage[data-tab="settings"].active, .tabpage[data-tab="playbook"].active')) flashSaved();
   return ok;
 };
 
 function renderSettingsData(){ renderGoalPreview(); renderRiskQuick(); }
-renderSettingsData.tab = 'settings';
+renderSettingsData.tab = 'playbook';
 onDataChange.push(renderSettingsData);
 renderProfile();
 renderGoalPreview();

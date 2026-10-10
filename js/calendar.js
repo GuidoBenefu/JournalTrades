@@ -324,7 +324,7 @@ function renderDayPanel(){
         ${r !== null ? `<span class="tag">${r > 0 ? '+' : ''}${r.toFixed(1)}R</span>` : ''}
         ${(h.errors || []).map(id=> errorById(id)).filter(Boolean).map(e=> `<span class="tag bad">${e.label}</span>`).join('')}
       </div>
-      ${h.missing && h.missing.length ? `<div class="dt-miss">${t('Faltó del plan: {rules}', {rules: h.missing.map(escapeHtml).join(', ')})}</div>` : ''}
+      ${missedPlan(h).length ? `<div class="dt-miss">${t('Faltó del plan: {rules}', {rules: missedPlan(h).map(escapeHtml).join(', ')})}</div>` : ''}
       ${h.note ? `<p class="dt-note">${escapeHtml(h.note)}</p>` : ''}
       ${hasImage(h) ? `<img src="${tradeImage(h)}" class="tradeThumb dayThumb" alt="${t('Captura del trade')}">` : ''}
       <div class="dt-actions"><button type="button" class="small" data-open-trade="${h.id}">${t('Ver detalle')}</button></div>

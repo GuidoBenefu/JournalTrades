@@ -434,7 +434,7 @@ function renderCompare(cur){
 
 function renderItemStats(cur){
   const box = document.getElementById('itemStats');
-  if(!state.items.length){ box.innerHTML = `<div class="empty">${t('Armá tu Trading Plan en Ajustes para ver qué reglas cumplís más.')}</div>`; return; }
+  if(!state.items.length){ box.innerHTML = `<div class="empty">${t('Armá tu Trading Plan en la pestaña Plan para ver qué reglas cumplís más.')}</div>`; return; }
   if(!cur.length){ box.innerHTML = `<div class="empty">${t('Todavía no hay trades en el período.')}</div>`; return; }
   // Cada regla se mide solo en los trades registrados después de crearla.
   const rows = state.items.map(it=>{

@@ -1,6 +1,8 @@
-// Playbook: la ficha de cada setup (descripción, criterios y una captura de
-// ejemplo) y sus números reales. Un trade pertenece a un setup por el nombre que
-// se carga en el campo Setup, así los trades viejos quedan vinculados solos.
+// Setups del Trading Plan (pestaña Plan): la ficha de cada setup (descripción,
+// criterios de entrada y una captura de ejemplo) y sus números reales. Un trade
+// pertenece a un setup por el nombre que se carga en el campo Setup, así los
+// trades viejos quedan vinculados solos. Los criterios se tildan en el formulario
+// junto con las reglas generales y cuentan para "Plan respetado".
 //
 // state.playbook: [{id, name, description, criteria: [texto], imageId | image,
 //                   createdAt, archived}]
@@ -95,6 +97,18 @@ function renderPlaybook(){
 
 // ---------- Detalle ----------
 
+// Cada criterio con cuántas veces lo cumpliste (solo trades donde se tildó ese criterio).
+function criteriaStats(p, trades){
+  return `<div class="crit-stats">${p.criteria.map(c=>{
+    const list = trades.filter(h=> (h.criteria || []).includes(c));
+    const ok = list.filter(h=> !(h.criteriaMissing || []).includes(c)).length;
+    const pct = list.length ? Math.round(ok / list.length * 100) : null;
+    return `<div class="itemstat ${pct === null ? '' : pct >= 80 ? 'good' : pct >= 50 ? 'warn' : 'bad'}">
+      <div class="top"><span>${escapeHtml(c)}</span><span>${pct === null ? '—' : `<b>${pct}%</b> · ${ok}/${list.length}`}</span></div>
+      <div class="bar"><div class="fill" style="width:${pct || 0}%"></div></div></div>`;
+  }).join('')}</div>`;
+}
+
 let openSetupId = null;
 function openSetup(id){
   openSetupId = id;
@@ -124,8 +138,8 @@ function renderSetupPanel(){
   document.getElementById('spBody').innerHTML = `
     ${img ? `<img class="tp-img" src="${img}" alt="${t('Ejemplo del setup')}">` : ''}
     ${p.description ? `<p class="sp-desc">${escapeHtml(p.description).replace(/\n/g, '<br>')}</p>` : ''}
-    <div class="tp-sec"><div class="tp-sec-t">${t('Criterios para entrar')}</div>
-      ${p.criteria.length ? `<ul class="tp-rules">${p.criteria.map(c=> `<li class="ok">${Icons.svg('check', 14)}<span>${escapeHtml(c)}</span></li>`).join('')}</ul>` : `<p class="tp-muted">${t('Todavía no cargaste criterios.')}</p>`}
+    <div class="tp-sec"><div class="tp-sec-t">${t('Criterios para entrar')} <small class="tp-muted">${t('· cuántas veces los cumpliste')}</small></div>
+      ${p.criteria.length ? criteriaStats(p, trades) : `<p class="tp-muted">${t('Todavía no cargaste criterios.')}</p>`}
     </div>
     <div class="tp-sec"><div class="tp-sec-t">${t('Tus números con este setup')}</div>
       ${s.n ? `<div class="day-summary sp-stats">
@@ -281,20 +295,45 @@ document.getElementById('pbNewBtn').addEventListener('click', ()=> openSetupEdit
 
 // ---------- Formulario de trade ----------
 
-// Debajo del campo Setup: los criterios del setup elegido y su ejemplo.
+// Paso 1 del formulario: los criterios del setup elegido, para tildar junto con las reglas.
 function renderSetupHint(){
   const box = document.getElementById('setupHint');
-  const p = setupByName(document.getElementById('setupInput').value);
-  if(!p){ box.innerHTML = ''; box.style.display = 'none'; return; }
+  const typed = document.getElementById('setupInput').value.trim();
+  const p = setupByName(typed);
+  if(!p){
+    box.style.display = typed ? '' : 'none';
+    box.innerHTML = typed ? `<div class="sh-none">${t('"{name}" no tiene ficha en tu plan, así que no suma criterios.', {name: escapeHtml(typed)})}
+      <button type="button" class="link-btn" id="setupHintNew">${t('Crear setup')}</button></div>` : '';
+    const nb = document.getElementById('setupHintNew');
+    if(nb) nb.addEventListener('click', ()=> openSetupEditor(null, typed));
+    return;
+  }
   const img = setupImage(p);
   box.style.display = '';
-  box.innerHTML = `<div class="sh-top"><b>${Icons.svg('book', 14)} ${escapeHtml(p.name)}</b>${img ? `<button type="button" class="link-btn" id="setupHintImg">${t('Ver ejemplo')}</button>` : ''}</div>
-    ${p.criteria.length ? `<ul>${p.criteria.map(c=> `<li>${escapeHtml(c)}</li>`).join('')}</ul>` : `<span class="sh-none">${t('Este setup no tiene criterios cargados.')}</span>`}`;
+  box.innerHTML = `<div class="sh-top"><span class="set-sub">${t('Criterios de {name}', {name: escapeHtml(p.name)})}</span>${img ? `<button type="button" class="link-btn" id="setupHintImg">${t('Ver ejemplo')}</button>` : ''}</div>
+    ${p.criteria.length ? `<div class="rule-grid">${p.criteria.map((c, i)=> `
+      <button type="button" class="rule-tile ${tradeForm.critChecked.has(c) ? 'on' : ''}" data-crit="${i}" aria-pressed="${tradeForm.critChecked.has(c)}">
+        <span class="rule-check">${Icons.svg('circle-check', 20)}</span>
+        <span class="rule-txt"><span class="label">${escapeHtml(c)}</span></span>
+      </button>`).join('')}</div>` : `<span class="sh-none">${t('Este setup no tiene criterios cargados.')}</span>`}`;
   const b = document.getElementById('setupHintImg');
   if(b) b.addEventListener('click', ()=> openLightbox(img));
+  box.querySelectorAll('[data-crit]').forEach(tile=> tile.addEventListener('click', ()=>{
+    const c = p.criteria[Number(tile.dataset.crit)];
+    if(tradeForm.critChecked.has(c)) tradeForm.critChecked.delete(c); else tradeForm.critChecked.add(c);
+    tradeForm.planTouched = planProgress().done > 0;
+    planEditedInForm = true;
+    renderSetupHint();
+    renderTradeFormStatus();
+  }));
 }
-document.getElementById('setupInput').addEventListener('input', renderSetupHint);
+document.getElementById('setupInput').addEventListener('input', ()=>{
+  // Al editar, cambiar de setup cambia los criterios: el plan del trade se vuelve a calcular.
+  if(editingTradeId && setupKey(document.getElementById('setupInput').value) !== setupKey(editOriginalSetup)) planEditedInForm = true;
+  renderSetupHint();
+  renderTradeFormStatus();
+});
 
 renderPlaybook.tab = 'playbook';
-onDataChange.push(renderPlaybook, renderSetupHint);
+onDataChange.push(renderPlaybook, ()=>{ renderSetupHint(); renderTradeFormStatus(); });
 renderOrDefer(renderPlaybook);

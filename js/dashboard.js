@@ -96,7 +96,7 @@ function renderRule(){
 function renderStarter(){
   const box = document.getElementById('homeStarter');
   const steps = [
-    {done: state.items.length >= 2, t: t('Armá tu Trading Plan'), s: t('Las reglas que tiene que cumplir cada trade.'), go: 'settings', btn: t('Ir a Ajustes')},
+    {done: state.items.length >= 2, t: t('Armá tu Trading Plan'), s: t('Las reglas generales y los setups que operás.'), go: 'playbook', btn: t('Ir a Plan')},
     {done: state.history.length > 0, t: t('Registrá tu primer trade'), s: t('Resultado, plan, emoción y lo que pasó.'), go: 'register', btn: t('Registrar trade')},
     {done: Object.keys(state.reviews).length > 0, t: t('Hacé tu primera revisión'), s: t('Cinco minutos al final de la semana.'), go: 'review', btn: t('Ir a Revisión')},
   ];
