@@ -35,7 +35,7 @@ function writeJSON(key, value){
   try{
     localStorage.setItem(key, JSON.stringify(value));
   }catch(e){
-    throw new Error('No se pudo guardar: el almacenamiento del navegador está lleno. Liberá espacio e intentá de nuevo.');
+    throw new Error(t('No se pudo guardar: el almacenamiento del navegador está lleno. Liberá espacio e intentá de nuevo.'));
   }
 }
 
@@ -87,11 +87,11 @@ const JournalAuth = {
   async register({name, email, password, plan, billing}){
     email = String(email || '').trim().toLowerCase();
     name = String(name || '').trim().slice(0, 40);
-    if(!name) throw fieldError('name', 'Ingresá tu nombre.');
-    if(!EMAIL_RE.test(email)) throw fieldError('email', 'Ingresá un email válido.');
-    if(!password || password.length < MIN_PASSWORD) throw fieldError('password', 'La contraseña tiene que tener al menos ' + MIN_PASSWORD + ' caracteres.');
+    if(!name) throw fieldError('name', t('Ingresá tu nombre.'));
+    if(!EMAIL_RE.test(email)) throw fieldError('email', t('Ingresá un email válido.'));
+    if(!password || password.length < MIN_PASSWORD) throw fieldError('password', t('La contraseña tiene que tener al menos {n} caracteres.', {n: MIN_PASSWORD}));
     const users = readJSON(USERS_KEY, []);
-    if(users.some(u=>u.email === email)) throw fieldError('email', 'Ya existe una cuenta con ese email. Iniciá sesión.');
+    if(users.some(u=>u.email === email)) throw fieldError('email', t('Ya existe una cuenta con ese email. Iniciá sesión.'));
     const now = Date.now();
     const user = {
       id: 'u_' + now + '_' + Math.floor(Math.random()*10000),
@@ -116,7 +116,7 @@ const JournalAuth = {
     const users = readJSON(USERS_KEY, []);
     const user = users.find(u=>u.email === email);
     if(!user || user.passwordHash !== await hashPassword(password || '')){
-      throw new Error('Email o contraseña incorrectos.');
+      throw new Error(t('Email o contraseña incorrectos.'));
     }
     writeJSON(SESSION_KEY, {userId: user.id, at: Date.now()});
     return publicUser(user);
@@ -162,7 +162,7 @@ const JournalAuth = {
     const changes = {};
     if(name !== undefined){
       name = String(name).trim();
-      if(!name) throw fieldError('name', 'Ingresá tu nombre.');
+      if(!name) throw fieldError('name', t('Ingresá tu nombre.'));
       changes.name = name.slice(0, 40);
     }
     if(avatarColor !== undefined) changes.avatarColor = avatarColor;

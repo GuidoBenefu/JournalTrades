@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=37"></script>
-<script src="js/i18n.js?v=37"></script>
+<script src="js/lang-en.js?v=38"></script>
+<script src="js/i18n.js?v=38"></script>
 <title>Journal Trading · Primero la mente, después los resultados</title>
 <meta name="description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade hasta operar como una máquina. Los resultados llegan después.">
 <meta property="og:type" content="website">
@@ -21,11 +21,11 @@
 <meta name="twitter:description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade.">
 <meta name="twitter:image" content="https://guidobenefu.github.io/JournalTrades/img/og-image.png">
 <meta name="theme-color" content="#161615">
-<script src="js/theme.js?v=37"></script>
+<script src="js/theme.js?v=38"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=37">
-<link rel="stylesheet" href="css/site.css?v=37">
+<link rel="stylesheet" href="css/styles.css?v=38">
+<link rel="stylesheet" href="css/site.css?v=38">
 </head>
 <body>
 <div class="site">
@@ -33,6 +33,7 @@
   <header class="site-nav">
     <a class="brand" href="index.html"><img class="brand-logo" src="img/logo.png" alt="Journal Trading"></a>
     <div class="nav-right">
+      <button type="button" class="theme-toggle lang-toggle" data-lang-toggle data-no-i18n></button>
       <button type="button" class="theme-toggle" data-theme-toggle></button>
       <div class="links">
         <a class="btn-link ghost desktop-link" href="#metodo">El método</a>
@@ -268,22 +269,23 @@
   <footer class="site-footer">Journal Trading</footer>
 </div>
 
-<script src="js/icons.js?v=37"></script>
-<script src="js/auth.js?v=37"></script>
+<script>translateDom();</script>
+<script src="js/icons.js?v=38"></script>
+<script src="js/auth.js?v=38"></script>
 <script>
   const pricing = JournalAuth.PRO_PRICING;
   function renderBilling(billing){
     document.querySelectorAll('.billing-toggle button').forEach(b=> b.classList.toggle('active', b.dataset.billing === billing));
     const annual = billing === 'annual';
     document.getElementById('proPrice').textContent = JournalAuth.formatUSD(annual ? pricing.annual.price : pricing.monthly.price);
-    document.getElementById('proPeriod').textContent = annual ? '/ año' : '/ mes';
+    document.getElementById('proPeriod').textContent = annual ? t('/ año') : t('/ mes');
     const old = document.getElementById('proOld');
     // Se oculta sin sacarlo del flujo para que el precio no salte al cambiar.
     old.classList.toggle('is-hidden', !annual);
     old.textContent = JournalAuth.formatUSD(pricing.annual.fullYear);
     document.getElementById('proNote').innerHTML = annual
-      ? '<strong>20% de descuento pagando anual.</strong> Equivale a ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes: ahorrás ' + JournalAuth.formatUSD(pricing.annual.savings) + ' al año.'
-      : 'O pagá anual con un 20% de descuento.';
+      ? t('<strong>20% de descuento pagando anual.</strong> Equivale a {perMonth}/mes: ahorrás {savings} al año.', {perMonth: JournalAuth.formatUSD(pricing.annual.perMonth), savings: JournalAuth.formatUSD(pricing.annual.savings)})
+      : t('O pagá anual con un 20% de descuento.');
     document.getElementById('proCta').href = 'auth.html?mode=register&plan=pro&billing=' + billing;
   }
   document.querySelectorAll('.billing-toggle button').forEach(b=> b.addEventListener('click', ()=> renderBilling(b.dataset.billing)));
@@ -291,7 +293,7 @@
 
   if(JournalAuth.currentUser()){
     const cta = document.getElementById('navCta');
-    cta.textContent = 'Ir a mi journal';
+    cta.textContent = t('Ir a mi journal');
     cta.href = 'app.html';
     cta.classList.add('primary');
   }
@@ -302,7 +304,7 @@
   function setMenu(open){
     menu.hidden = !open;
     menuToggle.setAttribute('aria-expanded', open);
-    menuToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    menuToggle.setAttribute('aria-label', open ? t('Cerrar menú') : t('Abrir menú'));
   }
   menuToggle.addEventListener('click', ()=> setMenu(menu.hidden));
   menu.querySelectorAll('a').forEach(a=> a.addEventListener('click', ()=> setMenu(false)));
@@ -325,7 +327,7 @@
     rulesTiles.forEach(t=> t.classList.toggle('on', demo.rules.has(t.dataset.rule)));
     emoBtns.forEach(b=> b.classList.toggle('active', demo.emo === b.dataset.emo));
     resBtns.forEach(b=> b.classList.toggle('active', demo.res === b.dataset.res));
-    $('demoStreak').textContent = 'Racha: ' + demo.streak + (demo.streak === 1 ? ' trade' : ' trades');
+    $('demoStreak').textContent = tp(demo.streak, 'Racha: 1 trade', 'Racha: {n} trades');
     $('demoStreak').className = 'badge ' + (demo.streak > 0 ? 'ok' : 'muted');
   }
 
@@ -341,7 +343,7 @@
     const y = v=> pad + (max - v) * (H - 2 * pad) / (max - min || 1);
     const pts = arr=> arr.map((v, i)=> x(i).toFixed(1) + ',' + y(v).toFixed(1));
     const upper = P.map((v, i)=> Math.max(v, R[i]));
-    $('demoCurve').innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="dm-svg" preserveAspectRatio="none" role="img" aria-label="Curva real contra curva con el plan">
+    $('demoCurve').innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="dm-svg" preserveAspectRatio="none" role="img" aria-label="${t('Curva real contra curva con el plan')}">
       <line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" class="ch-zero"/>
       <polygon points="${pts(upper).join(' ')} ${pts(R).reverse().join(' ')}" class="dm-band"/>
       <polyline points="${pts(P).join(' ')}" class="dm-plan"/>
@@ -350,20 +352,20 @@
     </svg>`;
     const diff = plan - real;
     $('demoCost').innerHTML = diff > 0.05
-      ? `Romper el plan te costó <b>${fmtPct(diff).replace('+', '')}</b> · real ${fmtPct(real)}, con tu plan ${fmtPct(plan)}`
+      ? t('Romper el plan te costó <b>{cost}</b> · real {real}, con tu plan {plan}', {cost: fmtPct(diff).replace('+', ''), real: fmtPct(real), plan: fmtPct(plan)})
       : diff < -0.05
-        ? `Los trades fuera de plan sumaron <b>${fmtPct(-diff)}</b>, pero no son repetibles: un sistema que se rompe no se puede medir.`
-        : `Romper el plan no cambió el resultado: real ${fmtPct(real)}, con tu plan ${fmtPct(plan)}`;
+        ? t('Los trades fuera de plan sumaron <b>{v}</b>, pero no son repetibles: un sistema que se rompe no se puede medir.', {v: fmtPct(-diff)})
+        : t('Romper el plan no cambió el resultado: real {real}, con tu plan {plan}', {real: fmtPct(real), plan: fmtPct(plan)});
   }
 
   function register(){
     $('demoError').textContent = '';
     if(!demo.emo || !demo.res){
-      $('demoError').textContent = !demo.emo ? 'Elegí cómo te sentías al entrar.' : 'Elegí el resultado del trade.';
+      $('demoError').textContent = !demo.emo ? t('Elegí cómo te sentías al entrar.') : t('Elegí el resultado del trade.');
       return;
     }
     const all = rulesTiles.map(t=> t.dataset.rule);
-    const missing = all.filter(r=> !demo.rules.has(r));
+    const missing = all.filter(r=> !demo.rules.has(r)).map(r=> t(r));
     const planOk = missing.length === 0;
     const risky = emoBtns.find(b=> b.dataset.emo === demo.emo).dataset.tone === 'risk';
     const emoLabel = emoBtns.find(b=> b.dataset.emo === demo.emo).textContent;
@@ -374,10 +376,11 @@
     demo.hist.push([pct, planOk]);
     demo.streak = planOk ? demo.streak + 1 : 0;
     let tone, title, text;
-    if(planOk && !risky){ tone = 'good'; title = win ? 'Trade de manual' : 'Perdiste, pero bien'; text = win ? `Plan cumplido y cabeza tranquila. Tu racha sube a ${demo.streak}.` : `Ejecutaste tu plan con la cabeza fría: las pérdidas dentro del plan son parte del sistema. Racha: ${demo.streak}.`; }
-    else if(planOk){ tone = 'warn'; title = 'Plan cumplido, cabeza en riesgo'; text = `Respetaste las reglas, pero entraste con ${emoLabel}. Ese estado suele terminar rompiendo el plan en el próximo trade.`; }
-    else if(win){ tone = 'bad'; title = 'Ganaste, pero rompiste el plan'; text = `Faltó: ${missing.join(', ')}${risky ? ` y entraste con ${emoLabel}` : ''}. Ese trade no es repetible: la racha vuelve a 0.`; }
-    else { tone = 'bad'; title = 'Este es el trade que vacía cuentas'; text = `Rompiste el plan (${missing.join(', ')})${risky ? ` con ${emoLabel}` : ''} y perdiste. La racha vuelve a 0.`; }
+    const n = demo.streak, miss = missing.join(', ');
+    if(planOk && !risky){ tone = 'good'; title = win ? t('Trade de manual') : t('Perdiste, pero bien'); text = win ? t('Plan cumplido y cabeza tranquila. Tu racha sube a {n}.', {n}) : t('Ejecutaste tu plan con la cabeza fría: las pérdidas dentro del plan son parte del sistema. Racha: {n}.', {n}); }
+    else if(planOk){ tone = 'warn'; title = t('Plan cumplido, cabeza en riesgo'); text = t('Respetaste las reglas, pero entraste con {emo}. Ese estado suele terminar rompiendo el plan en el próximo trade.', {emo: emoLabel}); }
+    else if(win){ tone = 'bad'; title = t('Ganaste, pero rompiste el plan'); text = (risky ? t('Faltó: {miss} y entraste con {emo}.', {miss, emo: emoLabel}) : t('Faltó: {miss}.', {miss})) + ' ' + t('Ese trade no es repetible: la racha vuelve a 0.'); }
+    else { tone = 'bad'; title = t('Este es el trade que vacía cuentas'); text = (risky ? t('Rompiste el plan ({miss}) con {emo} y perdiste.', {miss, emo: emoLabel}) : t('Rompiste el plan ({miss}) y perdiste.', {miss})) + ' ' + t('La racha vuelve a 0.'); }
     const fb = $('demoResult');
     fb.hidden = false;
     fb.className = 'dm-feedback tp-score ' + tone;
