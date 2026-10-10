@@ -8,12 +8,12 @@
 //   así que una versión nueva nunca se confunde con la vieja.
 //
 // Al publicar cambios, subir VERSION junto con el ?v= de los .html (ver README).
-const VERSION = 40;
+const VERSION = 41;
 const CACHE = 'jt-v' + VERSION;
 const v = '?v=' + VERSION;
 const JS = ['lang-en', 'i18n', 'theme', 'auth', 'icons', 'storage', 'time', 'images', 'session', 'app', 'accounts',
   'analytics', 'charts', 'achievements', 'dashboard', 'analysis', 'review', 'calendar', 'onboarding', 'settings',
-  'history', 'playbook', 'importer'];
+  'history', 'playbook', 'share', 'report', 'importer', 'pwa'];
 const PRECACHE = [
   './', 'index.html', 'app.html', 'auth.html', 'terminos.html', 'privacidad.html', 'manifest.webmanifest',
   'css/styles.css' + v, 'css/site.css' + v,

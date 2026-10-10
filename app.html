@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=40"></script>
-<script src="js/i18n.js?v=40"></script>
+<script src="js/lang-en.js?v=41"></script>
+<script src="js/i18n.js?v=41"></script>
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=40"></script>
+<script src="js/theme.js?v=41"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#161615">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Journal">
-<script src="js/pwa.js?v=40" defer></script>
+<script src="js/pwa.js?v=41" defer></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=40">
-<script src="js/auth.js?v=40"></script>
+<link rel="stylesheet" href="css/styles.css?v=41">
+<script src="js/auth.js?v=41"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -942,6 +942,32 @@
   </div>
 </div>
 
+<div id="shareModal" class="onboarding" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="ob-box share-box">
+    <div class="ob-head">
+      <h2 id="shareTitle" class="pb-ed-title">Compartir</h2>
+      <button type="button" class="icon-btn" data-close-share aria-label="Cerrar"><i data-icon="x" data-size="18"></i></button>
+    </div>
+    <canvas id="shareCanvas" class="share-canvas" width="1080" height="1350"></canvas>
+    <div class="field">
+      <label>Resultado en la imagen</label>
+      <div class="seg" id="shareResult">
+        <button type="button" data-v="pct">En %</button>
+        <button type="button" data-v="r">En R</button>
+        <button type="button" data-v="none">Ocultar</button>
+      </div>
+      <div class="field-hint">Nunca se muestran montos en dinero.</div>
+    </div>
+    <div class="field-error" id="shareMsg"></div>
+    <div class="share-actions">
+      <button type="button" class="ghost" id="shareDownload">Descargar imagen</button>
+      <button type="button" class="primary" id="shareNative">Compartir</button>
+    </div>
+  </div>
+</div>
+
+<div id="printReport" class="print-report" aria-hidden="true"></div>
+
 <div class="chart-tip" id="chartTip" role="tooltip"></div>
 <div class="saved-pill" id="savedPill" aria-live="polite"></div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -951,25 +977,27 @@
 </div>
 
 <script>translateDom();</script>
-<script src="js/icons.js?v=40"></script>
-<script src="js/storage.js?v=40"></script>
-<script src="js/time.js?v=40"></script>
-<script src="js/images.js?v=40"></script>
-<script src="js/session.js?v=40"></script>
-<script src="js/app.js?v=40"></script>
-<script src="js/accounts.js?v=40"></script>
-<script src="js/analytics.js?v=40"></script>
-<script src="js/charts.js?v=40"></script>
-<script src="js/achievements.js?v=40"></script>
-<script src="js/dashboard.js?v=40"></script>
-<script src="js/analysis.js?v=40"></script>
-<script src="js/review.js?v=40"></script>
-<script src="js/calendar.js?v=40"></script>
-<script src="js/onboarding.js?v=40"></script>
-<script src="js/settings.js?v=40"></script>
-<script src="js/history.js?v=40"></script>
-<script src="js/playbook.js?v=40"></script>
-<script src="js/importer.js?v=40"></script>
+<script src="js/icons.js?v=41"></script>
+<script src="js/storage.js?v=41"></script>
+<script src="js/time.js?v=41"></script>
+<script src="js/images.js?v=41"></script>
+<script src="js/session.js?v=41"></script>
+<script src="js/app.js?v=41"></script>
+<script src="js/accounts.js?v=41"></script>
+<script src="js/analytics.js?v=41"></script>
+<script src="js/charts.js?v=41"></script>
+<script src="js/achievements.js?v=41"></script>
+<script src="js/dashboard.js?v=41"></script>
+<script src="js/analysis.js?v=41"></script>
+<script src="js/review.js?v=41"></script>
+<script src="js/calendar.js?v=41"></script>
+<script src="js/onboarding.js?v=41"></script>
+<script src="js/settings.js?v=41"></script>
+<script src="js/history.js?v=41"></script>
+<script src="js/playbook.js?v=41"></script>
+<script src="js/share.js?v=41"></script>
+<script src="js/report.js?v=41"></script>
+<script src="js/importer.js?v=41"></script>
 
 </body>
 </html>

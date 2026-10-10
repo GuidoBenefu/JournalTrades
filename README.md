@@ -41,6 +41,8 @@ js/time.js       Horarios: todo se calcula en hora de Nueva York (día de tradin
 js/app.js        Lógica y renderizado del journal
 js/playbook.js   Playbook: ficha de cada setup (criterios, captura de ejemplo) y
                  sus números; los trades se vinculan por el nombre del setup
+js/share.js      Tarjetas para compartir un trade o el mes (imagen PNG en canvas)
+js/report.js     Reporte mensual para imprimir o guardar como PDF
 js/importer.js   Importador de trades desde CSV de cualquier plataforma (mapeo
                  manual de columnas); los importados quedan "por completar"
 js/accounts.js   Cuentas (personal, challenge, fondeada): reglas de prop firm por

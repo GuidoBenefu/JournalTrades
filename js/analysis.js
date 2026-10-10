@@ -456,7 +456,7 @@ function renderMonths(){
   const curKey = monthKeyOf(Date.now());
   const cur = viewTrades().filter(h=> monthKeyOf(h.ts) === curKey);
   const s = summarizePeriod(cur);
-  const months = [{label: monthLabel(), count: s.total, sum: s.sum, followedPct: s.pct, followedPctRaw: s.pctRaw, avgPerDay: s.avgPerDay, riskMgmtPct: s.riskMgmtPct, current: true}]
+  const months = [{monthKey: curKey, label: monthLabel(), count: s.total, sum: s.sum, followedPct: s.pct, followedPctRaw: s.pctRaw, avgPerDay: s.avgPerDay, riskMgmtPct: s.riskMgmtPct, current: true}]
     .concat(closedMonthsList());
   const goal = goalPct();
   box.innerHTML = months.map(m=>{
@@ -472,6 +472,10 @@ function renderMonths(){
         <span>${t('<b>{n}</b> por día operado', {n: m.avgPerDay === null || m.avgPerDay === undefined ? '—' : m.avgPerDay.toFixed(1)})}</span>
         <span>${t('<b>{n}</b> risk mgmt', {n: m.riskMgmtPct === null || m.riskMgmtPct === undefined ? '—' : m.riskMgmtPct + '%'})}</span>
       </div>
+      ${m.count ? `<div class="month-actions">
+        <button type="button" class="small ghost" data-share-month="${m.monthKey}">${Icons.svg('upload', 14)} ${t('Compartir')}</button>
+        <button type="button" class="small ghost" data-report-month="${m.monthKey}">${Icons.svg('file-down', 14)} ${t('Reporte PDF')}</button>
+      </div>` : ''}
     </div>`;
   }).join('');
 }

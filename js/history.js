@@ -262,6 +262,7 @@ function renderTradePanel(){
 
   document.getElementById('tpFoot').innerHTML = `
     <button type="button" class="danger-o" id="tpDelete">${Icons.svg('trash', 15)} ${t('Eliminar')}</button>
+    <button type="button" class="ghost" data-share-trade="${h.id}">${Icons.svg('upload', 15)} ${t('Compartir')}</button>
     <button type="button" class="primary" id="tpEdit">${Icons.svg('pencil', 15)} ${t('Editar trade')}</button>`;
   document.getElementById('tpEdit').addEventListener('click', ()=>{
     const id = h.id;
