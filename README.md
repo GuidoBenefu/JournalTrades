@@ -94,10 +94,22 @@ español y queda anotada en `I18N_MISSING` (consola del navegador).
 
 ## Publicar cambios
 
-Las páginas cargan CSS y JS con un número de versión (`styles.css?v=12`). Al
-publicar cambios en `css/` o `js/`, subí ese número en todos los `.html` para que
-los navegadores no mezclen una página nueva con archivos viejos guardados:
+Las páginas cargan CSS y JS con un número de versión (`styles.css?v=40`) y la
+app se guarda en el celular con un service worker (`sw.js`) que usa ese mismo
+número. Al publicar cambios en `css/` o `js/`, subí el número en los `.html` y
+en `sw.js`, así los navegadores bajan la versión nueva y los que tienen la app
+instalada ven el aviso "Hay una versión nueva":
 
 ```bash
-sed -i 's/?v=[0-9]*"/?v=13"/g' *.html
+N=41
+sed -i "s/?v=[0-9]*\"/?v=$N\"/g" *.html && sed -i "s/^const VERSION = [0-9]*;/const VERSION = $N;/" sw.js
 ```
+
+Si se agrega un archivo JS nuevo, sumalo también a la lista `JS` de `sw.js`.
+
+## App instalable (PWA)
+
+`manifest.webmanifest`, `sw.js` y `js/pwa.js`: la app se puede instalar en el
+celular o la compu (Ajustes → App en tu dispositivo) y funciona sin conexión,
+porque los datos ya viven en el navegador. El service worker solo funciona en
+https o localhost.

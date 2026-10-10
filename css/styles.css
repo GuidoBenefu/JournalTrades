@@ -316,6 +316,18 @@ textarea,select,input[type=text]{
 .flt-chip:hover{filter:brightness(1.1);}
 .bd-row{cursor:pointer;}
 .bd-row:hover td{background:var(--bg);}
+.pwa-note{display:flex; align-items:flex-start; gap:6px; font-size:13px; color:var(--text-2); line-height:1.5; margin:10px 0 0;}
+.pwa-note .icon{margin-top:3px; color:var(--accent);}
+.pwa-state{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600;}
+.pwa-state.good{color:var(--success);}
+.pwa-steps{margin:0; padding-left:20px; font-size:14px; line-height:1.7;}
+.pwa-install-link{margin-top:10px; font-size:13px;}
+.pwa-notice{position:fixed; left:50%; transform:translateX(-50%); top:calc(12px + env(safe-area-inset-top,0px)); z-index:960; display:flex; align-items:center; justify-content:space-between; gap:12px; width:max-content; max-width:calc(100% - 32px); padding:10px 12px 10px 16px; border-radius:12px; font-size:13px; box-shadow:0 10px 30px rgba(0,0,0,.35); background:var(--card); border:1px solid var(--border-strong); color:var(--text);}
+.pwa-notice.info{border-color:var(--accent);}
+.pwa-notice.warn{background:var(--amber-bg); color:var(--amber-text); border-color:transparent;}
+.pwa-notice button{flex-shrink:0;}
+#pwaOffline + #pwaUpdate, #pwaUpdate + #pwaOffline{top:calc(68px + env(safe-area-inset-top,0px));}
+@media (max-width: 600px){ .pwa-notice{left:16px; right:16px; transform:none; width:auto; max-width:none;} }
 .ses-list{display:flex; flex-direction:column; gap:6px; margin-bottom:8px;}
 .ses-row{display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) 30px; grid-template-areas:"name name name del" "start sep end ."; gap:6px; align-items:center;
   padding:10px; border-radius:10px; background:var(--bg); border:1px solid var(--border);}

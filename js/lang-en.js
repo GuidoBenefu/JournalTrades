@@ -1109,4 +1109,19 @@ const I18N_EN = {
   '{n} filtros': '{n} filters',
   'Día': 'Day',
   'Tocá para filtrar por esto': 'Tap to filter by this',
+
+  // ---- App instalable ----
+  'App en tu dispositivo': 'App on your device',
+  'Instalá Journal Trading como una app: abre desde el inicio de tu celular o tu compu, en pantalla completa y sin conexión.': 'Install Journal Trading as an app: open it from your phone or computer home screen, full screen and offline.',
+  'Instalar la app': 'Install the app',
+  'Instalar la app en este dispositivo': 'Install the app on this device',
+  'Ya estás usando la app instalada.': "You're using the installed app.",
+  'Funciona sin conexión: tus datos se guardan en este dispositivo.': 'Works offline: your data is stored on this device.',
+  'Abrí esta página en Safari.': 'Open this page in Safari.',
+  'Tocá el botón Compartir (el cuadrado con la flecha).': 'Tap the Share button (the square with the arrow).',
+  'Elegí "Agregar a inicio".': 'Choose "Add to Home Screen".',
+  'Tu navegador no ofrece instalarla desde acá. En Chrome o Edge buscá "Instalar app" en el menú o en la barra de direcciones; en iPhone, usá Safari → Compartir → Agregar a inicio.': 'Your browser doesn\'t offer installing it from here. In Chrome or Edge look for "Install app" in the menu or the address bar; on iPhone, use Safari → Share → Add to Home Screen.',
+  'Hay una versión nueva de la app.': 'A new version of the app is available.',
+  'Actualizar': 'Update',
+  'Sin conexión. Podés seguir usando el journal: tus datos se guardan en este dispositivo.': "You're offline. You can keep using the journal: your data is stored on this device.",
 };

@@ -58,6 +58,19 @@ document.getElementById('profileNameInput').addEventListener('keydown', e=>{
   if(e.key === 'Enter') e.target.blur();
 });
 
+// ---- App instalable ----
+function renderPwaCard(){
+  const box = document.getElementById('pwaBox');
+  const st = typeof JournalPWA === 'object' ? JournalPWA.state() : 'none';
+  const offline = `<p class="pwa-note">${Icons.svg('check', 14)} ${t('Funciona sin conexión: tus datos se guardan en este dispositivo.')}</p>`;
+  if(st === 'installed') box.innerHTML = `<div class="pwa-state good">${Icons.svg('circle-check', 18)} ${t('Ya estás usando la app instalada.')}</div>` + offline;
+  else if(st === 'prompt') box.innerHTML = `<button type="button" class="primary" data-pwa-install>${Icons.svg('download', 16)} ${t('Instalar la app')}</button>` + offline;
+  else if(st === 'ios') box.innerHTML = `<ol class="pwa-steps"><li>${t('Abrí esta página en Safari.')}</li><li>${t('Tocá el botón Compartir (el cuadrado con la flecha).')}</li><li>${t('Elegí "Agregar a inicio".')}</li></ol>` + offline;
+  else box.innerHTML = `<p class="pwa-note">${t('Tu navegador no ofrece instalarla desde acá. En Chrome o Edge buscá "Instalar app" en el menú o en la barra de direcciones; en iPhone, usá Safari → Compartir → Agregar a inicio.')}</p>` + offline;
+}
+document.addEventListener('pwa-change', renderPwaCard);
+window.addEventListener('DOMContentLoaded', renderPwaCard);
+
 // ---- Idioma ----
 document.querySelectorAll('#langPills button').forEach(b=>{
   b.classList.toggle('active', b.dataset.v === LANG);
