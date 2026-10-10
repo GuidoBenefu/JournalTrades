@@ -31,7 +31,7 @@ function equityChart(el, height, list){
       {values: plan, color: 'var(--text-3)', dashed: true, width: 1.75},
     ],
     points: trades.map((h, i)=> h.followedPlan ? null : {i: i + 1, color: 'var(--danger)'}).filter(Boolean),
-    format: v=> (v > 0 ? '+' : '') + v.toFixed(1) + '%',
+    format: fmtSignedPct,
   });
 }
 
@@ -147,7 +147,7 @@ function renderToday(){
   const d = new Date().toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long'});
   document.getElementById('todayDate').textContent = d.charAt(0).toUpperCase() + d.slice(1);
   let alert;
-  if(maxRisk !== null && used >= maxRisk) alert = ['bad', 'alert-triangle', used > maxRisk ? `Superaste tu riesgo máximo (${used.toFixed(1)}% de ${maxRisk}%). Hoy no operes más.` : 'Llegaste a tu límite de riesgo. Hoy no operes más.'];
+  if(maxRisk !== null && used >= maxRisk) alert = ['bad', 'alert-triangle', used > maxRisk ? `Superaste tu riesgo máximo (${fix1(used)}% de ${maxRisk}%). Hoy no operes más.` : 'Llegaste a tu límite de riesgo. Hoy no operes más.'];
   else if(broken >= 2) alert = ['bad', 'alert-triangle', `Hoy rompiste el plan ${broken} veces. ¿Te tomás una pausa?`];
   else if(broken === 1) alert = ['warn', 'alert-triangle', 'Rompiste el plan una vez hoy. Bajá el ritmo y revisá tus reglas antes del próximo.'];
   else if(!today.length) alert = ['info', 'shield-check', 'Todavía no operaste hoy. Leé tu regla del día antes de entrar.'];
@@ -161,9 +161,9 @@ function renderToday(){
       <div><span>En plan</span><b class="${!s.n ? '' : broken ? 'neg' : 'pos'}">${s.n ? `${s.n - broken}/${s.n}` : '—'}</b></div>
     </div>
     <div class="today-risk ${rTone}">
-      <div class="tr-top"><span>Riesgo usado hoy</span><b>${maxRisk === null ? 'Definí tu máximo en Ajustes' : `${used.toFixed(1)}% / ${maxRisk}%`}</b></div>
+      <div class="tr-top"><span>Riesgo usado hoy</span><b>${maxRisk === null ? 'Definí tu máximo en Ajustes' : `${fix1(used)}% / ${maxRisk}%`}</b></div>
       <div class="tr-bar"><div style="width:${ratio * 100}%"></div></div>
-      ${maxRisk !== null ? `<div class="tr-sub">${used >= maxRisk ? 'Sin riesgo disponible' : `Te quedan <b>${(maxRisk - used).toFixed(1)}%</b> de riesgo`}</div>` : ''}
+      ${maxRisk !== null ? `<div class="tr-sub">${used >= maxRisk ? 'Sin riesgo disponible' : `Te quedan <b>${fix1(maxRisk - used)}%</b> de riesgo`}</div>` : ''}
     </div>
     <div class="today-alert ${alert[0]}">${Icons.svg(alert[1], 16)}<span>${alert[2]}</span></div>`;
 }

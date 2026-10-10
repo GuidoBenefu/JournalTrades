@@ -90,7 +90,7 @@ function renderReviewSummary(){
     const d = cur - prev;
     if(Math.abs(d) < 0.05) return '<div class="rk-d">= que la semana pasada</div>';
     const good = inverse ? d < 0 : d > 0;
-    const txt = unit === 'pts' ? Math.round(Math.abs(d)) + ' pts' : unit === '%' ? Math.abs(d).toFixed(1) + '%' : Math.abs(d);
+    const txt = unit === 'pts' ? Math.round(Math.abs(d)) + ' pts' : unit === '%' ? fix1(Math.abs(d)) + '%' : Math.abs(d);
     return `<div class="rk-d ${good ? 'pos' : 'neg'}">${d > 0 ? '↑' : '↓'} ${txt} vs semana pasada</div>`;
   };
   const kpi = (label, value, cls, extra)=> `<div class="rk ${cls || ''}"><div class="rk-l">${label}</div><div class="rk-v">${value}</div>${extra}</div>`;

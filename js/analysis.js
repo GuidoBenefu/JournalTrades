@@ -71,7 +71,7 @@ function renderKpis(cur, prev){
   const delta = (d, unit, label)=>{
     if(!p || !s.n) return `<div class="sk-d">${statsPeriod === 'all' ? 'Todo el historial' : 'Sin período anterior'}</div>`;
     if(Math.abs(d) < 0.05) return `<div class="sk-d">= que ${label}</div>`;
-    const txt = unit === 'pts' ? Math.round(Math.abs(d)) + ' pts' : unit === '%' ? Math.abs(d).toFixed(1) + '%' : Math.abs(Math.round(d));
+    const txt = unit === 'pts' ? Math.round(Math.abs(d)) + ' pts' : unit === '%' ? fix1(Math.abs(d)) + '%' : Math.abs(Math.round(d));
     return `<div class="sk-d ${d > 0 ? 'pos' : 'neg'}">${d > 0 ? '↑' : '↓'} ${txt} vs ${label}</div>`;
   };
   const prevLbl = PREV_LABELS[statsPeriod] || 'período anterior';
@@ -94,7 +94,7 @@ function renderKpis(cur, prev){
   const mini = (label, value)=> `<div class="sk2"><span>${label}</span><b>${value}</b></div>`;
   document.getElementById('statsSecondary').innerHTML = [
     mini('Resultado prom./trade', s.n ? `<span class="${signClass(s.avg)}">${fmtSignedPct(s.avg)}</span>` : '—'),
-    mini('Riesgo promedio', s.avgRisk === null ? '—' : s.avgRisk.toFixed(1) + '%'),
+    mini('Riesgo promedio', s.avgRisk === null ? '—' : fix1(s.avgRisk) + '%'),
     mini('Duración promedio', s.avgDur === null ? '—' : Math.round(s.avgDur) + ' min'),
     mini('R real promedio', s.avgR === null ? '—' : `<span class="${signClass(s.avgR)}">${(s.avgR > 0 ? '+' : '') + s.avgR.toFixed(1)}R</span>`),
   ].join('');

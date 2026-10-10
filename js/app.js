@@ -44,8 +44,15 @@ function realR(h){
   return h.resultPct / h.riskPct;
 }
 
+// Redondeo a un decimal sin depender del orden de la suma: 79.15 y 79.1499999…
+// (el mismo total sumado en otro orden) tienen que mostrarse igual.
+function fix1(v){
+  return (Math.round(v * 1e6) / 1e6).toFixed(1);
+}
+
 function fmtSignedPct(v){
-  return (v > 0 ? '+' : '') + v.toFixed(1) + '%';
+  const r = Math.round(v * 1e6) / 1e6;
+  return (r > 0 ? '+' : '') + r.toFixed(1) + '%';
 }
 
 // Clase de color por signo, la misma en toda la app. Lo que se ve como "+0.0%" queda neutro.
@@ -282,7 +289,7 @@ function renderFundedProgress(){
   const todayK = dayKeyFromTs(Date.now());
   const todayPnl = withPct.filter(h=>dayKeyFromTs(h.ts) === todayK).reduce((a,h)=>a+h.resultPct,0);
   const cum = withPct.reduce((a,h)=>a+h.resultPct,0);
-  const fmt = v => (v>0?'+':'') + v.toFixed(1) + '%';
+  const fmt = fmtSignedPct;
 
   function colorFor(ratio){
     if(ratio >= 0.8) return 'var(--danger)';
@@ -295,9 +302,9 @@ function renderFundedProgress(){
     const left = Math.max(0, limit - used);
     const breached = used >= limit;
     return `<div class="fp-row">
-      <div class="top"><span>${title}</span><span>${used.toFixed(1)}% / ${limit}%</span></div>
+      <div class="top"><span>${title}</span><span>${fix1(used)}% / ${limit}%</span></div>
       <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:${colorFor(ratio)};"></div></div>
-      <div class="sub">${breached ? 'Límite alcanzado o superado' : 'Te quedan ' + left.toFixed(1) + '%'} · ${extra}</div>
+      <div class="sub">${breached ? 'Límite alcanzado o superado' : 'Te quedan ' + fix1(left) + '%'} · ${extra}</div>
     </div>`;
   }
 
@@ -323,9 +330,9 @@ function renderFundedProgress(){
     const ratio = Math.min(prog/target, 1);
     const reached = prog >= target;
     html += `<div class="fp-row">
-      <div class="top"><span>Profit target</span><span>${prog.toFixed(1)}% / ${target}%</span></div>
+      <div class="top"><span>Profit target</span><span>${fix1(prog)}% / ${target}%</span></div>
       <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:var(--brand);"></div></div>
-      <div class="sub">${reached ? 'Objetivo alcanzado' : 'Te falta ' + (target-prog).toFixed(1) + '%'} · Acumulado: ${fmt(cum)}</div>
+      <div class="sub">${reached ? 'Objetivo alcanzado' : 'Te falta ' + fix1(target-prog) + '%'} · Acumulado: ${fmt(cum)}</div>
     </div>`;
   }
   box.innerHTML = html || '<p style="font-size:13px; color:var(--text-2);">Cargá al menos una regla en "Tipo de cuenta".</p>';
@@ -916,12 +923,12 @@ function renderDailyRisk(){
   const cls = ratio >= 1 ? 'bad' : ratio >= 0.5 ? 'warn' : 'good';
   const label = ratio > 1 ? 'Límite superado' : ratio >= 1 ? 'Límite alcanzado' : ratio >= 0.5 ? 'Cerca del límite' : 'Dentro del límite';
   const msg = ratio > 1
-    ? 'Arriesgaste ' + used.toFixed(1) + '% y tu máximo es ' + max + '%. Hoy rompiste tu risk management.'
+    ? 'Arriesgaste ' + fix1(used) + '% y tu máximo es ' + max + '%. Hoy rompiste tu risk management.'
     : ratio >= 1 ? 'Ya usaste todo tu riesgo de hoy. Lo que sigue es fuera de plan.'
-    : 'Te quedan ' + (max - used).toFixed(1) + '% de riesgo para hoy.';
+    : 'Te quedan ' + fix1(max - used) + '% de riesgo para hoy.';
   box.innerHTML = `<div class="risk-gauge ${cls}">
     <div class="rg-top">
-      <div><div class="rg-l">Riesgo tomado hoy</div><div class="rg-v">${used.toFixed(1)}% <span>/ ${max}%</span></div></div>
+      <div><div class="rg-l">Riesgo tomado hoy</div><div class="rg-v">${fix1(used)}% <span>/ ${max}%</span></div></div>
       <span class="rg-pill">${label}</span>
     </div>
     <div class="rg-bar"><div style="width:${Math.min(ratio, 1) * 100}%"></div><i style="left:50%"></i></div>
