@@ -151,6 +151,7 @@ const state = {
   maxDailyRisk: '',
   accounts: [],
   viewAccount: 'all',
+  playbook: [],
   goals: {planPct: 80},
   reviews: {},
   achievements: {},
@@ -165,6 +166,7 @@ function loadState(){
   if(!state.goals) state.goals = {planPct: 80};
   if(!state.reviews) state.reviews = {};
   if(!state.achievements) state.achievements = {};
+  if(!Array.isArray(state.playbook)) state.playbook = [];
   state.timePrefs = timePrefs();
   // Siempre hay al menos una cuenta, y cada trade pertenece a una que existe.
   if(!Array.isArray(state.accounts) || !state.accounts.length) state.accounts = [newAccount({id: 'acc_main', name: t('Mi cuenta')})];
@@ -219,11 +221,13 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
 
 // El backup lleva las capturas adentro (en la app viven aparte, en IndexedDB).
 function stateForExport(){
-  return {...state, history: state.history.map(h=>{
-    const {imageId, ...rest} = h;
-    const img = tradeImage(h);
+  const withImage = (x, img)=>{
+    const {imageId, ...rest} = x;
     return img ? {...rest, image: img} : rest;
-  })};
+  };
+  return {...state,
+    history: state.history.map(h=> withImage(h, tradeImage(h))),
+    playbook: state.playbook.map(p=> withImage(p, ImageStore.get(p.imageId) || p.image))};
 }
 document.getElementById('importBtn').addEventListener('click', ()=>{
   document.getElementById('importInput').click();
@@ -241,7 +245,7 @@ document.getElementById('importInput').addEventListener('change', async e=>{
     if(!confirm(t('Esto reemplaza todos los datos actuales por los del backup ({n} trades{extra}). ¿Continuar?', {n: data.history.length, extra: dropped ? t('; {n} registros dañados se van a descartar', {n: dropped}) : ''}))) return;
     await ImageStore.clearUser();
     if(ImageStore.available){
-      for(const h of data.history){
+      for(const h of data.history.concat(data.playbook || [])){
         if(!h.image) continue;
         h.imageId = newImageId();
         await ImageStore.put(h.imageId, h.image);
@@ -576,7 +580,11 @@ document.getElementById('entryTimeInput').addEventListener('input', ()=>{ entryT
 function renderDatalists(){
   const uniq = key => [...new Set(state.history.map(h=> h[key]).filter(Boolean))];
   document.getElementById('assetList').innerHTML = uniq('asset').map(v=> `<option value="${escapeHtml(v)}">`).join('');
-  document.getElementById('setupList').innerHTML = uniq('setup').map(v=> `<option value="${escapeHtml(v)}">`).join('');
+  // Primero los setups del Playbook, después los que solo aparecen en trades.
+  const pb = state.playbook.filter(p=> !p.archived).map(p=> p.name);
+  const seen = new Set(pb.map(s=> s.toLowerCase()));
+  const setups = pb.concat(uniq('setup').filter(s=> !seen.has(s.trim().toLowerCase())));
+  document.getElementById('setupList').innerHTML = setups.map(v=> `<option value="${escapeHtml(v)}">`).join('');
 }
 
 function resetForm(){
@@ -599,8 +607,9 @@ function resetForm(){
   renderChips();
   renderFormHints();
   updateAddButton();
-  // accounts.js carga después: en el primer reset todavía no existe.
+  // accounts.js y playbook.js cargan después: en el primer reset todavía no existen.
   if(typeof renderFormAccount === 'function') renderFormAccount();
+  if(typeof renderSetupHint === 'function') renderSetupHint();
 }
 
 function startEditTrade(id){
@@ -619,6 +628,7 @@ function startEditTrade(id){
   document.getElementById('entryTimeInput').value = toLocalInputValue(h.ts);
   document.getElementById('assetInput').value = h.asset || '';
   document.getElementById('setupInput').value = h.setup || '';
+  renderSetupHint();
   document.getElementById('riskInput').value = h.riskPct ?? '';
   document.getElementById('rrPlanInput').value = h.rrPlanned ?? '';
   document.getElementById('resultPctInput').value = h.resultPct ?? '';
@@ -963,7 +973,7 @@ renderAll();
 // estaban dentro del journal (formato viejo).
 ImageStore.init(JournalStore.adapter.userId).then(async ()=>{
   if(ImageStore.available){
-    const legacy = state.history.filter(h=> h.image);
+    const legacy = state.history.concat(state.playbook).filter(h=> h.image);
     for(const h of legacy){
       try{
         const id = newImageId();
