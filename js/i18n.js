@@ -18,9 +18,9 @@ const LANGS = {
   en: {label: 'English', locale: 'en-US'},
 };
 const LANG_KEY = 'jt_lang';
-// Mientras la traducción no esté completa, el inglés se elige a mano:
-// no se activa solo por el idioma del navegador.
-const LANG_AUTO_DETECT = false;
+// Sin una elección guardada, se usa el idioma del navegador: español si está en
+// español, inglés para cualquier otro.
+const LANG_AUTO_DETECT = true;
 
 function detectLang(){
   try{
@@ -65,6 +65,17 @@ function setLang(lang){
   location.reload();
 }
 
+// Botón ES/EN de la landing, el login y las páginas legales: muestra el otro idioma.
+document.addEventListener('DOMContentLoaded', ()=>{
+  const other = LANG === 'es' ? 'en' : 'es';
+  document.querySelectorAll('[data-lang-toggle]').forEach(b=>{
+    b.textContent = other.toUpperCase();
+    b.title = other === 'en' ? 'Switch to English' : 'Cambiar a español';
+    b.setAttribute('aria-label', b.title);
+    b.addEventListener('click', ()=> setLang(other));
+  });
+});
+
 // Traduce el HTML fijo de la página. Las frases con formato adentro (<b>, <a>)
 // se marcan con data-i18n-html y se traducen enteras.
 const I18N_ATTRS = ['placeholder', 'title', 'aria-label', 'data-title', 'alt'];
@@ -106,6 +117,7 @@ function translateDom(root = document){
     if(tt !== null) document.title = tt;
     document.querySelectorAll('head meta[content]').forEach(m=>{
       if(!/description|og:title|og:description|twitter/.test(m.getAttribute('name') || m.getAttribute('property') || '')) return;
+      if(!/\s/.test(m.getAttribute('content'))) return;
       const tr = lookup(m.getAttribute('content'));
       if(tr !== null) m.setAttribute('content', tr);
     });

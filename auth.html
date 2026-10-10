@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=37"></script>
-<script src="js/i18n.js?v=37"></script>
+<script src="js/lang-en.js?v=38"></script>
+<script src="js/i18n.js?v=38"></script>
 <title>Ingresar · Journal Trading</title>
-<script src="js/theme.js?v=37"></script>
+<script src="js/theme.js?v=38"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=37">
-<link rel="stylesheet" href="css/site.css?v=37">
+<link rel="stylesheet" href="css/styles.css?v=38">
+<link rel="stylesheet" href="css/site.css?v=38">
 </head>
 <body>
 <div class="site">
@@ -18,6 +18,7 @@
   <header class="site-nav">
     <a class="brand" href="index.html"><img class="brand-logo" src="img/logo.png" alt="Journal Trading"></a>
     <div class="nav-right">
+      <button type="button" class="theme-toggle lang-toggle" data-lang-toggle data-no-i18n></button>
       <button type="button" class="theme-toggle" data-theme-toggle></button>
       <div class="links"><a class="btn-link ghost" href="index.html">Volver al inicio</a></div>
     </div>
@@ -82,7 +83,7 @@
         <div class="field-error" id="passwordError"></div>
       </div>
 
-      <p class="legal" id="legalText">Al crear tu cuenta aceptás los <a href="terminos.html" target="_blank">Términos y condiciones</a> y la <a href="privacidad.html" target="_blank">Política de privacidad</a>.</p>
+      <p class="legal" id="legalText" data-i18n-html>Al crear tu cuenta aceptás los <a href="terminos.html" target="_blank">Términos y condiciones</a> y la <a href="privacidad.html" target="_blank">Política de privacidad</a>.</p>
 
       <button type="submit" class="primary submit" id="submitBtn"></button>
       <div class="form-error" id="formError" role="alert"></div>
@@ -107,7 +108,8 @@
   </div>
 </div>
 
-<script src="js/auth.js?v=37"></script>
+<script>translateDom();</script>
+<script src="js/auth.js?v=38"></script>
 <script>
   if(JournalAuth.currentUser()) location.replace('app.html');
 
@@ -121,8 +123,8 @@
   let billing = params.get('billing') === 'annual' ? 'annual' : 'monthly';
   const pricing = JournalAuth.PRO_PRICING;
   const $ = id => document.getElementById(id);
-  $('monthlyPrice').textContent = JournalAuth.formatUSD(pricing.monthly.price) + ' / mes';
-  $('annualPrice').textContent = JournalAuth.formatUSD(pricing.annual.price) + ' / año';
+  $('monthlyPrice').textContent = JournalAuth.formatUSD(pricing.monthly.price) + ' ' + t('/ mes');
+  $('annualPrice').textContent = JournalAuth.formatUSD(pricing.annual.price) + ' ' + t('/ año');
 
   const ICON_SHOW = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   const ICON_HIDE = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a18.6 18.6 0 0 1 4.1-5.1M9.9 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a18.7 18.7 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2M2 2l20 20"/></svg>';
@@ -144,11 +146,11 @@
 
   function render(){
     const reg = mode === 'register', reset = mode === 'reset';
-    $('authTitle').textContent = reg ? 'Creá tu cuenta' : reset ? 'Recuperá tu contraseña' : 'Qué bueno verte de nuevo';
+    $('authTitle').textContent = reg ? t('Creá tu cuenta') : reset ? t('Recuperá tu contraseña') : t('Qué bueno verte de nuevo');
     $('authSubtitle').textContent = reg
-      ? (plan === 'pro' ? 'Empezá con el plan Pro.' : 'Empezá tu prueba gratis de 7 días.')
-      : reset ? 'Ingresá tu email y te mandamos un link para crear una contraseña nueva.'
-      : 'Ingresá para ir a tu journal.';
+      ? (plan === 'pro' ? t('Empezá con el plan Pro.') : t('Empezá tu prueba gratis de 7 días.'))
+      : reset ? t('Ingresá tu email y te mandamos un link para crear una contraseña nueva.')
+      : t('Ingresá para ir a tu journal.');
     document.querySelectorAll('.auth-tabs button').forEach(b=> b.classList.toggle('active', b.dataset.mode === mode));
     document.querySelectorAll('.plan-opt[data-plan]').forEach(b=> b.classList.toggle('active', b.dataset.plan === plan));
     document.querySelectorAll('.billing-opt').forEach(b=> b.classList.toggle('active', b.dataset.billing === billing));
@@ -157,8 +159,8 @@
     show('planField', reg);
     show('billingField', reg && plan === 'pro');
     $('billingNote').innerHTML = billing === 'annual'
-      ? '<strong>20% de descuento pagando anual.</strong> Equivale a ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes: ahorrás ' + JournalAuth.formatUSD(pricing.annual.savings) + ' al año.'
-      : 'Pagando anual tenés un 20% de descuento: ' + JournalAuth.formatUSD(pricing.annual.price) + ' / año.';
+      ? t('<strong>20% de descuento pagando anual.</strong> Equivale a {perMonth}/mes: ahorrás {savings} al año.', {perMonth: JournalAuth.formatUSD(pricing.annual.perMonth), savings: JournalAuth.formatUSD(pricing.annual.savings)})
+      : t('Pagando anual tenés un 20% de descuento: {price} / año.', {price: JournalAuth.formatUSD(pricing.annual.price)});
     show('nameField', reg);
     show('passwordField', !reset);
     show('forgotBtn', mode === 'login');
@@ -167,8 +169,8 @@
     show('backToLogin', reset);
     $('passwordInput').autocomplete = reg ? 'new-password' : 'current-password';
     $('submitBtn').textContent = reg
-      ? (plan === 'pro' ? 'Crear cuenta Pro ' + (billing === 'annual' ? 'anual' : 'mensual') : 'Empezar prueba gratis')
-      : reset ? 'Enviar link' : 'Iniciar sesión';
+      ? (plan === 'pro' ? (billing === 'annual' ? t('Crear cuenta Pro anual') : t('Crear cuenta Pro mensual')) : t('Empezar prueba gratis'))
+      : reset ? t('Enviar link') : t('Iniciar sesión');
     clearMessages();
   }
 
@@ -184,7 +186,7 @@
   function renderPwToggle(){
     const visible = $('passwordInput').type === 'text';
     $('pwToggle').innerHTML = visible ? ICON_HIDE : ICON_SHOW;
-    const label = visible ? 'Ocultar contraseña' : 'Mostrar contraseña';
+    const label = visible ? t('Ocultar contraseña') : t('Mostrar contraseña');
     $('pwToggle').setAttribute('aria-label', label);
     $('pwToggle').title = label;
   }
@@ -205,18 +207,18 @@
 
   $('googleBtn').addEventListener('click', ()=>{
     clearMessages();
-    if(BACKEND_PENDING) $('formNote').textContent = 'El ingreso con Google se activa cuando conectemos el servidor. Por ahora usá tu email.';
+    if(BACKEND_PENDING) $('formNote').textContent = t('El ingreso con Google se activa cuando conectemos el servidor. Por ahora usá tu email.');
   });
 
   function validate(){
     const errors = {};
     const email = $('emailInput').value.trim();
     const password = $('passwordInput').value;
-    if(mode === 'register' && !$('nameInput').value.trim()) errors.name = 'Ingresá tu nombre.';
-    if(!email) errors.email = 'Ingresá tu email.';
-    else if(!JournalAuth.EMAIL_RE.test(email)) errors.email = 'Ese email no parece válido.';
-    if(mode === 'register' && password.length < JournalAuth.MIN_PASSWORD) errors.password = 'La contraseña tiene que tener al menos ' + JournalAuth.MIN_PASSWORD + ' caracteres.';
-    if(mode === 'login' && !password) errors.password = 'Ingresá tu contraseña.';
+    if(mode === 'register' && !$('nameInput').value.trim()) errors.name = t('Ingresá tu nombre.');
+    if(!email) errors.email = t('Ingresá tu email.');
+    else if(!JournalAuth.EMAIL_RE.test(email)) errors.email = t('Ese email no parece válido.');
+    if(mode === 'register' && password.length < JournalAuth.MIN_PASSWORD) errors.password = t('La contraseña tiene que tener al menos {n} caracteres.', {n: JournalAuth.MIN_PASSWORD});
+    if(mode === 'login' && !password) errors.password = t('Ingresá tu contraseña.');
     return errors;
   }
 
@@ -233,8 +235,8 @@
     const email = $('emailInput').value;
     const password = $('passwordInput').value;
     if(mode === 'reset'){
-      $('formSuccess').textContent = 'Si hay una cuenta con ese email, te vamos a mandar un link para crear una contraseña nueva.';
-      if(BACKEND_PENDING) $('formNote').textContent = 'El envío de emails se activa cuando conectemos el servidor.';
+      $('formSuccess').textContent = t('Si hay una cuenta con ese email, te vamos a mandar un link para crear una contraseña nueva.');
+      if(BACKEND_PENDING) $('formNote').textContent = t('El envío de emails se activa cuando conectemos el servidor.');
       return;
     }
     try{
