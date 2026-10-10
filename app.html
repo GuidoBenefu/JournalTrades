@@ -7,6 +7,13 @@
 <script src="js/i18n.js?v=40"></script>
 <title>Mi journal · Journal Trading</title>
 <script src="js/theme.js?v=40"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#161615">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Journal">
+<script src="js/pwa.js?v=40" defer></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="stylesheet" href="css/styles.css?v=40">
@@ -609,6 +616,14 @@
             </div>
             <div class="field-hint">Cada trade toma la sesión de su hora de entrada. Si dos se superponen, cuenta la más corta (la killzone gana sobre la sesión entera). Los cambios se aplican también a los trades que ya cargaste.</div>
           </div>
+        </section>
+
+        <section class="card set-card" id="pwaCard">
+          <div class="set-head">
+            <span class="set-ic"><i data-icon="download" data-size="18"></i></span>
+            <div><h2>App en tu dispositivo</h2><p>Instalá Journal Trading como una app: abre desde el inicio de tu celular o tu compu, en pantalla completa y sin conexión.</p></div>
+          </div>
+          <div id="pwaBox"></div>
         </section>
 
         <section class="card set-card">

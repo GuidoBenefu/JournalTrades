@@ -20,8 +20,14 @@
 <meta name="twitter:title" content="Journal Trading · Dominá tu mente. Dominá tu trading.">
 <meta name="twitter:description" content="El journal de trading enfocado en la psicología: entrená tu disciplina trade por trade.">
 <meta name="twitter:image" content="https://guidobenefu.github.io/JournalTrades/img/og-image.png">
-<meta name="theme-color" content="#161615">
 <script src="js/theme.js?v=40"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#161615">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Journal">
+<script src="js/pwa.js?v=40" defer></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="stylesheet" href="css/styles.css?v=40">
@@ -62,6 +68,7 @@
         <a class="btn-link lg" href="auth.html?mode=register&plan=pro">Ir directo a Pro</a>
       </div>
       <div class="note">Sin tarjeta para la prueba gratis.</div>
+      <button type="button" class="link-btn pwa-install-link" data-pwa-install hidden>Instalar la app en este dispositivo</button>
     </div>
 
     <div class="preview demo" id="demo" aria-label="Demo: registrá un trade">
