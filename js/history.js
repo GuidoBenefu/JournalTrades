@@ -122,7 +122,7 @@ function tradeRow(h, showDate){
 
 function dayHeader(key, trades){
   const d = new Date(key + 'T00:00:00');
-  const txt = d.toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined});
+  const txt = d.toLocaleDateString(LOCALE, {weekday: 'long', day: 'numeric', month: 'long', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined});
   const sum = trades.reduce((a, h)=> a + Analytics.pct(h), 0);
   const broken = trades.filter(h=> !h.followedPlan).length;
   return `<div class="hx-day">
@@ -207,7 +207,7 @@ function closeTrade(){
 function renderTradePanel(){
   const h = state.history.find(x=> x.id === openTradeId);
   if(!h){ closeTrade(); return; }
-  const date = keyDate(dayKeyFromTs(h.ts)).toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
+  const date = keyDate(dayKeyFromTs(h.ts)).toLocaleDateString(LOCALE, {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'});
   document.getElementById('tpKicker').textContent = date.charAt(0).toUpperCase() + date.slice(1) + ' · ' + fmtTimeBoth(h.ts);
   document.getElementById('tpTitle').innerHTML = `${h.asset ? escapeHtml(h.asset) : 'Trade'} ${h.direction ? `<span class="tp-dir ${h.direction}">${Icons.svg(h.direction === 'long' ? 'arrow-up' : 'arrow-down', 13)}${h.direction === 'long' ? 'Long' : 'Short'}</span>` : ''}`;
 

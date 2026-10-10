@@ -19,7 +19,7 @@ function shiftWeek(key, n){ return addDaysKey(key, n * 7); }
 function weekLabel(key){
   const start = new Date(key + 'T00:00:00');
   const end = new Date(start); end.setDate(end.getDate() + 6);
-  const f = d=> d.toLocaleDateString('es-AR', {day: 'numeric', month: 'short'});
+  const f = d=> d.toLocaleDateString(LOCALE, {day: 'numeric', month: 'short'});
   return `${f(start)} – ${f(end)}`;
 }
 
@@ -165,7 +165,7 @@ function renderReviewTrades(){
   const box = document.getElementById('reviewTrades');
   box.innerHTML = trades.map(h=>{
     const d = keyDate(dayKeyFromTs(h.ts));
-    const day = d.toLocaleDateString('es-AR', {weekday: 'short', day: 'numeric'});
+    const day = d.toLocaleDateString(LOCALE, {weekday: 'short', day: 'numeric'});
     const time = fmtTime(h.ts);
     const v = Analytics.pct(h);
     const emo = emotionById(h.emotion);

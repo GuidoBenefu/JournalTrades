@@ -11,9 +11,9 @@ function renderProfile(){
 
   const current = AVATAR_COLORS[user.avatarColor] ? user.avatarColor : null;
   document.getElementById('avatarSwatches').innerHTML =
-    `<button type="button" class="swatch swatch-default ${current ? '' : 'active'}" data-c="" aria-label="Color por defecto"></button>` +
+    `<button type="button" class="swatch swatch-default ${current ? '' : 'active'}" data-c="" aria-label="${t('Color por defecto')}"></button>` +
     Object.entries(AVATAR_COLORS).map(([k, c])=>
-      `<button type="button" class="swatch ${current === k ? 'active' : ''}" data-c="${k}" style="background:${c[0]}" aria-label="Color ${k}"></button>`).join('');
+      `<button type="button" class="swatch ${current === k ? 'active' : ''}" data-c="${k}" style="background:${c[0]}" aria-label="${t('Color {c}', {c: k})}"></button>`).join('');
   document.querySelectorAll('#avatarSwatches .swatch').forEach(b=> b.addEventListener('click', ()=>{
     const u = JournalAuth.updateProfile({avatarColor: b.dataset.c || null});
     renderSession(u);
@@ -22,23 +22,23 @@ function renderProfile(){
     flashSaved();
   }));
 
-  const since = user.createdAt ? new Date(user.createdAt).toLocaleDateString('es-AR', {month: 'long', year: 'numeric'}) : null;
+  const since = user.createdAt ? new Date(user.createdAt).toLocaleDateString(LOCALE, {month: 'long', year: 'numeric'}) : null;
   const box = document.getElementById('profilePlan');
   if(user.plan === 'pro'){
     const annual = user.billing === 'annual';
     const price = JournalAuth.formatUSD(annual ? JournalAuth.PRO_PRICING.annual.price : JournalAuth.PRO_PRICING.monthly.price);
     box.className = 'plan-box pro';
-    box.innerHTML = `<div class="pb-top"><div><div class="pb-l">Tu plan</div><div class="pb-v">${Icons.svg('sparkles', 16)} Pro · ${annual ? 'anual' : 'mensual'}</div></div>
-      <span class="pb-price">${price}${annual ? '/año' : '/mes'}</span></div>
-      ${since ? `<div class="pb-sub">Miembro desde ${since}.</div>` : ''}`;
+    box.innerHTML = `<div class="pb-top"><div><div class="pb-l">${t('Tu plan')}</div><div class="pb-v">${Icons.svg('sparkles', 16)} Pro · ${annual ? t('anual') : t('mensual')}</div></div>
+      <span class="pb-price">${price}${annual ? t('/año') : t('/mes')}</span></div>
+      ${since ? `<div class="pb-sub">${t('Miembro desde {since}.', {since})}</div>` : ''}`;
   } else {
     const days = JournalAuth.trialDaysLeft(user);
     const pct = Math.min(100, days / JournalAuth.TRIAL_DAYS * 100);
     box.className = 'plan-box ' + (days > 2 ? 'trial' : 'ending');
-    box.innerHTML = `<div class="pb-top"><div><div class="pb-l">Tu plan</div><div class="pb-v">Prueba gratis</div></div>
-      <button type="button" class="primary small" id="profileUpgradeBtn">Pasar a Pro</button></div>
+    box.innerHTML = `<div class="pb-top"><div><div class="pb-l">${t('Tu plan')}</div><div class="pb-v">${t('Prueba gratis')}</div></div>
+      <button type="button" class="primary small" id="profileUpgradeBtn">${t('Pasar a Pro')}</button></div>
       <div class="pb-bar"><div style="width:${pct}%"></div></div>
-      <div class="pb-sub">${days > 0 ? (days === 1 ? 'Te queda 1 día de prueba.' : `Te quedan ${days} días de prueba.`) : 'Tu prueba terminó.'}${since ? ` Miembro desde ${since}.` : ''}</div>`;
+      <div class="pb-sub">${days > 0 ? tp(days, 'Te queda 1 día de prueba.', 'Te quedan {n} días de prueba.') : t('Tu prueba terminó.')}${since ? ' ' + t('Miembro desde {since}.', {since}) : ''}</div>`;
     document.getElementById('profileUpgradeBtn').addEventListener('click', ()=> openUpgrade(false));
   }
 }
@@ -58,6 +58,12 @@ document.getElementById('profileNameInput').addEventListener('keydown', e=>{
   if(e.key === 'Enter') e.target.blur();
 });
 
+// ---- Idioma ----
+document.querySelectorAll('#langPills button').forEach(b=>{
+  b.classList.toggle('active', b.dataset.v === LANG);
+  b.addEventListener('click', ()=> setLang(b.dataset.v));
+});
+
 // ---- Meta del mes ----
 function renderGoalPreview(){
   const goal = goalPct();
@@ -65,19 +71,19 @@ function renderGoalPreview(){
   document.querySelectorAll('#goalQuick button').forEach(b=> b.classList.toggle('active', Number(b.dataset.v) === goal));
   const r = monthPlanPct(monthKeyOf(Date.now()));
   const box = document.getElementById('goalPreview');
-  if(!r.n){ box.className = 'goal-preview'; box.innerHTML = `Todavía no registraste trades este mes. La meta es que el <b>${goal}%</b> respete tu plan.`; return; }
+  if(!r.n){ box.className = 'goal-preview'; box.innerHTML = t('Todavía no registraste trades este mes. La meta es que el <b>{goal}%</b> respete tu plan.', {goal}); return; }
   const inPlan = Math.round(r.pct / 100 * r.n);
   const g = goal / 100;
   let msg, cls;
-  if(r.pct >= goal){ cls = 'good'; msg = 'Vas cumpliendo la meta. Mantenela hasta fin de mes.'; }
-  else if(g >= 1){ cls = 'bad'; msg = 'Este mes ya no se puede llegar al 100%.'; }
+  if(r.pct >= goal){ cls = 'good'; msg = t('Vas cumpliendo la meta. Mantenela hasta fin de mes.'); }
+  else if(g >= 1){ cls = 'bad'; msg = t('Este mes ya no se puede llegar al 100%.'); }
   else {
     const k = Math.ceil((g * r.n - inPlan) / (1 - g) - 1e-9);
-    cls = 'warn'; msg = `Te faltan <b>${k}</b> ${k === 1 ? 'trade seguido' : 'trades seguidos'} respetando el plan para llegar.`;
+    cls = 'warn'; msg = tp(k, 'Te falta <b>1</b> trade seguido respetando el plan para llegar.', 'Te faltan <b>{n}</b> trades seguidos respetando el plan para llegar.');
   }
   box.className = 'goal-preview ' + cls;
   box.innerHTML = `<div class="gp-bar"><div style="width:${Math.min(100, r.pct)}%"></div><i style="left:${goal}%"></i></div>
-    <div class="gp-txt">Este mes vas <b>${Math.round(r.pct)}%</b> (${inPlan}/${r.n}) · ${msg}</div>`;
+    <div class="gp-txt">${t('Este mes vas <b>{pct}%</b> ({done}/{n})', {pct: Math.round(r.pct), done: inPlan, n: r.n})} · ${msg}</div>`;
 }
 
 document.querySelectorAll('#goalQuick button').forEach(b=> b.addEventListener('click', ()=>{
@@ -104,11 +110,11 @@ function renderTimePrefs(){
   document.querySelectorAll('#dayEndPills button').forEach(b=> b.classList.toggle('active', Number(b.dataset.v) === p.dayEnd));
   const now = Date.now();
   document.getElementById('tzDisplayHint').textContent = localIsNy(now)
-    ? 'Tu hora local coincide con la de Nueva York.'
-    : `Ahora son las ${fmtTime(now, NY_TZ)} en Nueva York y las ${fmtTime(now, LOCAL_TZ)} en tu zona (${LOCAL_TZ.replace(/_/g, ' ')}).`;
+    ? t('Tu hora local coincide con la de Nueva York.')
+    : t('Ahora son las {ny} en Nueva York y las {local} en tu zona ({zone}).', {ny: fmtTime(now, NY_TZ), local: fmtTime(now, LOCAL_TZ), zone: LOCAL_TZ.replace(/_/g, ' ')});
   document.getElementById('dayEndHint').textContent = p.dayEnd
-    ? 'Lo que operes desde las 17:00 de NY cuenta para el día siguiente, como el cierre de forex y futuros.'
-    : 'Cada día va de 00:00 a 23:59 en hora de Nueva York.';
+    ? t('Lo que operes desde las 17:00 de NY cuenta para el día siguiente, como el cierre de forex y futuros.')
+    : t('Cada día va de 00:00 a 23:59 en hora de Nueva York.');
 }
 // Cambiar los horarios no toca los trades: solo cómo se agrupan y se muestran.
 function setTimePref(key, value){
@@ -140,13 +146,13 @@ function renderSessions(){
   const list = sessionList();
   const showLocal = !localIsNy();
   document.getElementById('sessionList').innerHTML = list.length ? list.map((s, i)=> `<div class="ses-row" data-i="${i}">
-      <input type="text" data-k="name" value="${escapeHtml(s.name)}" maxlength="30" aria-label="Nombre de la sesión">
-      <input type="time" data-k="start" value="${s.start}" aria-label="Empieza (hora NY)">
-      <span class="ses-sep">a</span>
-      <input type="time" data-k="end" value="${s.end}" aria-label="Termina (hora NY)">
-      <button type="button" class="ob-icon danger" data-del aria-label="Eliminar sesión" title="Eliminar">${Icons.svg('x', 15)}</button>
-      ${showLocal ? `<span class="ses-local">${nyHhmmToLocal(s.start)} a ${nyHhmmToLocal(s.end)} en tu hora</span>` : ''}
-    </div>`).join('') : '<div class="ses-empty">Sin sesiones: todos los trades quedan "Fuera de sesión".</div>';
+      <input type="text" data-k="name" value="${escapeHtml(s.name)}" maxlength="30" aria-label="${t('Nombre de la sesión')}">
+      <input type="time" data-k="start" value="${s.start}" aria-label="${t('Empieza (hora NY)')}">
+      <span class="ses-sep">${t('a')}</span>
+      <input type="time" data-k="end" value="${s.end}" aria-label="${t('Termina (hora NY)')}">
+      <button type="button" class="ob-icon danger" data-del aria-label="${t('Eliminar sesión')}" title="${t('Eliminar')}">${Icons.svg('x', 15)}</button>
+      ${showLocal ? `<span class="ses-local">${t('{from} a {to} en tu hora', {from: nyHhmmToLocal(s.start), to: nyHhmmToLocal(s.end)})}</span>` : ''}
+    </div>`).join('') : `<div class="ses-empty">${t('Sin sesiones: todos los trades quedan "Fuera de sesión".')}</div>`;
   document.querySelectorAll('#sessionList .ses-row').forEach(row=>{
     const i = Number(row.dataset.i);
     row.querySelectorAll('input').forEach(inp=> inp.addEventListener('change', ()=> updateSession(i, inp.dataset.k, inp.value.trim())));
@@ -158,9 +164,9 @@ function updateSession(i, key, value){
   const next = sessionList().map(s=> ({...s}));
   next[i][key] = value;
   const s = next[i];
-  const bad = !s.name ? 'Poné un nombre a la sesión.'
-    : !HHMM.test(s.start) || !HHMM.test(s.end) ? 'Completá la hora de inicio y de fin.'
-    : s.start === s.end ? 'La sesión tiene que empezar y terminar a horas distintas.' : '';
+  const bad = !s.name ? t('Poné un nombre a la sesión.')
+    : !HHMM.test(s.start) || !HHMM.test(s.end) ? t('Completá la hora de inicio y de fin.')
+    : s.start === s.end ? t('La sesión tiene que empezar y terminar a horas distintas.') : '';
   if(bad){ err.textContent = bad; renderSessions(); return; }
   setSessions(next);
 }
@@ -173,8 +179,8 @@ function setSessions(list){
   renderAll();
 }
 document.getElementById('addSessionBtn').addEventListener('click', ()=>{
-  if(sessionList().length >= 12){ document.getElementById('sessionError').textContent = 'Podés tener hasta 12 sesiones.'; return; }
-  setSessions(sessionList().concat({id: 'ses_' + Date.now(), name: 'Nueva sesión', start: '09:30', end: '11:00'}));
+  if(sessionList().length >= 12){ document.getElementById('sessionError').textContent = t('Podés tener hasta 12 sesiones.'); return; }
+  setSessions(sessionList().concat({id: 'ses_' + Date.now(), name: t('Nueva sesión'), start: '09:30', end: '11:00'}));
   const rows = document.querySelectorAll('#sessionList .ses-row input[data-k="name"]');
   rows[rows.length - 1].select();
 });
@@ -184,14 +190,14 @@ document.getElementById('addKillzonesBtn').addEventListener('click', ()=>{
   if(add.length) setSessions(sessionList().concat(add));
 });
 document.getElementById('resetSessionsBtn').addEventListener('click', ()=>{
-  if(confirm('¿Volver a las sesiones de siempre (Asia, Londres y Nueva York)? Se borran las que agregaste.')) setSessions(DEFAULT_SESSIONS.map(s=> ({...s})));
+  if(confirm(t('¿Volver a las sesiones de siempre (Asia, Londres y Nueva York)? Se borran las que agregaste.'))) setSessions(DEFAULT_SESSIONS.map(s=> ({...s})));
 });
 
 // ---- Aviso de guardado ----
 let savedTimer = null;
 function flashSaved(){
   const pill = document.getElementById('savedPill');
-  pill.innerHTML = Icons.svg('check', 14) + ' Guardado';
+  pill.innerHTML = Icons.svg('check', 14) + ' ' + t('Guardado');
   pill.classList.add('show');
   clearTimeout(savedTimer);
   savedTimer = setTimeout(()=> pill.classList.remove('show'), 1600);

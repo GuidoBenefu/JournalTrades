@@ -95,9 +95,9 @@ const weekdayOf = ts=> weekdayOfKey(dayKeyFromTs(ts));
 // ---- Sesiones (editables, en hora de Nueva York) ----
 // Cada una: {id, name, start: 'HH:MM', end: 'HH:MM'}. Si end < start cruza la medianoche.
 const DEFAULT_SESSIONS = [
-  {id: 'asia', name: 'Asia', start: '19:00', end: '03:00'},
-  {id: 'london', name: 'Londres', start: '03:00', end: '08:00'},
-  {id: 'ny', name: 'Nueva York', start: '08:00', end: '17:00'},
+  {id: 'asia', name: t('Asia'), start: '19:00', end: '03:00'},
+  {id: 'london', name: t('Londres'), start: '03:00', end: '08:00'},
+  {id: 'ny', name: t('Nueva York'), start: '08:00', end: '17:00'},
 ];
 // Killzones de ICT, para sumar de un toque.
 const KILLZONE_SESSIONS = [
@@ -105,7 +105,7 @@ const KILLZONE_SESSIONS = [
   {name: 'NY AM KZ', start: '07:00', end: '10:00'},
   {name: 'NY PM KZ', start: '13:30', end: '16:00'},
 ];
-const NO_SESSION = 'Fuera de sesión';
+const NO_SESSION = t('Fuera de sesión');
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function sessionList(){
@@ -131,24 +131,24 @@ function sessionOf(ts){
 // ---- Mostrar ----
 const TIME_FMTS = {};
 function fmtTime(ts, tz = displayTz()){
-  const f = TIME_FMTS[tz] || (TIME_FMTS[tz] = new Intl.DateTimeFormat('es-AR', {timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}));
+  const f = TIME_FMTS[tz] || (TIME_FMTS[tz] = new Intl.DateTimeFormat(LOCALE, {timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}));
   return f.format(new Date(ts));
 }
 // La fecha que se muestra es la del día de trading, la misma del calendario.
-const DATE_FMT = new Intl.DateTimeFormat('es-AR', {day: '2-digit', month: '2-digit', year: '2-digit'});
+const DATE_FMT = new Intl.DateTimeFormat(LOCALE, {day: '2-digit', month: '2-digit', year: '2-digit'});
 function fmtDate(ts){
   return DATE_FMT.format(keyDate(dayKeyFromTs(ts)));
 }
 // Nombre corto de la zona en que se muestran las horas ("NY" o la abreviatura local).
 function displayTzLabel(){
   if(timePrefs().display === 'ny') return 'NY';
-  const p = new Intl.DateTimeFormat('es-AR', {timeZone: LOCAL_TZ, timeZoneName: 'short'}).formatToParts(new Date());
+  const p = new Intl.DateTimeFormat(LOCALE, {timeZone: LOCAL_TZ, timeZoneName: 'short'}).formatToParts(new Date());
   return (p.find(x=> x.type === 'timeZoneName') || {}).value || 'local';
 }
 // "09:42 NY · 10:42 tu hora": la otra zona, solo si es distinta.
 function fmtTimeBoth(ts){
   if(localIsNy(ts)) return fmtTime(ts, NY_TZ) + ' NY';
-  return fmtTime(ts, NY_TZ) + ' NY · ' + fmtTime(ts, LOCAL_TZ) + ' tu hora';
+  return fmtTime(ts, NY_TZ) + ' NY · ' + t('{time} tu hora', {time: fmtTime(ts, LOCAL_TZ)});
 }
 
 // ---- Campo datetime-local: se carga y se lee en la zona de visualización ----

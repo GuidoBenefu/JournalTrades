@@ -86,7 +86,7 @@ function renderSummary(dayList, periodLabel, extra){
 function bestWorstDays(dayList){
   if(!dayList.length) return [];
   const sorted = dayList.slice().sort((a, b)=> b[1].sum - a[1].sum);
-  const fmtDay = k=> new Date(k + 'T00:00:00').toLocaleDateString('es-AR', {weekday: 'short', day: 'numeric'});
+  const fmtDay = k=> new Date(k + 'T00:00:00').toLocaleDateString(LOCALE, {weekday: 'short', day: 'numeric'});
   const [bk, bd] = sorted[0], [wk, wd] = sorted[sorted.length - 1];
   // Racha de días operados en verde dentro del período.
   let run = 0, best = 0;
@@ -285,7 +285,7 @@ function renderDayPanel(){
   const key = cal.openDay;
   const date = new Date(key + 'T00:00:00');
   const d = dayStats()[key];
-  const title = date.toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long'});
+  const title = date.toLocaleDateString(LOCALE, {weekday: 'long', day: 'numeric', month: 'long'});
   document.getElementById('dayKicker').textContent = date.getFullYear();
   document.getElementById('dayTitle').textContent = title.charAt(0).toUpperCase() + title.slice(1);
   const body = document.getElementById('dayBody');

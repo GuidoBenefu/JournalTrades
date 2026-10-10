@@ -3,12 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="js/lang-en.js?v=36"></script>
+<script src="js/i18n.js?v=36"></script>
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=35"></script>
+<script src="js/theme.js?v=36"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=35">
-<script src="js/auth.js?v=35"></script>
+<link rel="stylesheet" href="css/styles.css?v=36">
+<script src="js/auth.js?v=36"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -506,6 +508,13 @@
             <label>Color del avatar</label>
             <div class="swatches" id="avatarSwatches"></div>
           </div>
+          <div class="field">
+            <label>Idioma · Language</label>
+            <div class="seg" id="langPills" data-no-i18n>
+              <button type="button" data-v="es">Español</button>
+              <button type="button" data-v="en">English (beta)</button>
+            </div>
+          </div>
           <div class="plan-box" id="profilePlan"></div>
         </section>
 
@@ -829,7 +838,7 @@
           <button type="button" class="type-card" data-v="yes"><span class="t">Sí, todos</span><span class="s">Cuentan como plan seguido.</span><span class="type-check"><i data-icon="circle-check" data-size="18"></i></span></button>
           <button type="button" class="type-card" data-v="no"><span class="t">No, o no sé</span><span class="s">Cuentan como plan roto hasta que los revises.</span><span class="type-check"><i data-icon="circle-check" data-size="18"></i></span></button>
         </div>
-        <p class="imp-note">Quedan marcados <b>por completar</b>: editalos para sumar las reglas, la emoción, los errores y notas.</p>
+        <p class="imp-note" data-i18n-html>Quedan marcados <b>por completar</b>: editalos para sumar las reglas, la emoción, los errores y notas.</p>
       </div>
     </section>
 
@@ -849,24 +858,25 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=35"></script>
-<script src="js/storage.js?v=35"></script>
-<script src="js/time.js?v=35"></script>
-<script src="js/images.js?v=35"></script>
-<script src="js/session.js?v=35"></script>
-<script src="js/app.js?v=35"></script>
-<script src="js/accounts.js?v=35"></script>
-<script src="js/analytics.js?v=35"></script>
-<script src="js/charts.js?v=35"></script>
-<script src="js/achievements.js?v=35"></script>
-<script src="js/dashboard.js?v=35"></script>
-<script src="js/analysis.js?v=35"></script>
-<script src="js/review.js?v=35"></script>
-<script src="js/calendar.js?v=35"></script>
-<script src="js/onboarding.js?v=35"></script>
-<script src="js/settings.js?v=35"></script>
-<script src="js/history.js?v=35"></script>
-<script src="js/importer.js?v=35"></script>
+<script>translateDom();</script>
+<script src="js/icons.js?v=36"></script>
+<script src="js/storage.js?v=36"></script>
+<script src="js/time.js?v=36"></script>
+<script src="js/images.js?v=36"></script>
+<script src="js/session.js?v=36"></script>
+<script src="js/app.js?v=36"></script>
+<script src="js/accounts.js?v=36"></script>
+<script src="js/analytics.js?v=36"></script>
+<script src="js/charts.js?v=36"></script>
+<script src="js/achievements.js?v=36"></script>
+<script src="js/dashboard.js?v=36"></script>
+<script src="js/analysis.js?v=36"></script>
+<script src="js/review.js?v=36"></script>
+<script src="js/calendar.js?v=36"></script>
+<script src="js/onboarding.js?v=36"></script>
+<script src="js/settings.js?v=36"></script>
+<script src="js/history.js?v=36"></script>
+<script src="js/importer.js?v=36"></script>
 
 </body>
 </html>

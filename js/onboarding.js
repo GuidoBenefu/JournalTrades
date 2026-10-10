@@ -23,18 +23,18 @@
   function renderItems(){
     renderRuleCount();
     if(!draft.items.length){
-      $('obItems').innerHTML = '<div class="ob-empty">Todavía no agregaste reglas. Empezá por la más importante de tu estrategia.</div>';
+      $('obItems').innerHTML = `<div class="ob-empty">${t('Todavía no agregaste reglas. Empezá por la más importante de tu estrategia.')}</div>`;
       return;
     }
     $('obItems').innerHTML = draft.items.map((it, i)=> editing === i ? `
       <div class="ob-item editing">
         <span class="ob-num">${i + 1}</span>
         <div class="ob-edit">
-          <input type="text" class="ob-edit-label" value="${escapeHtml(it.label)}" aria-label="Regla">
-          <input type="text" class="ob-edit-hint" value="${escapeHtml(it.hint || '')}" placeholder="Aclaración (opcional)" aria-label="Aclaración">
+          <input type="text" class="ob-edit-label" value="${escapeHtml(it.label)}" aria-label="${t('Regla')}">
+          <input type="text" class="ob-edit-hint" value="${escapeHtml(it.hint || '')}" placeholder="${t('Aclaración (opcional)')}" aria-label="${t('Aclaración')}">
           <div class="ob-edit-actions">
-            <button type="button" class="primary small" data-save="${i}">Guardar</button>
-            <button type="button" class="ghost small" data-cancel>Cancelar</button>
+            <button type="button" class="primary small" data-save="${i}">${t('Guardar')}</button>
+            <button type="button" class="ghost small" data-cancel>${t('Cancelar')}</button>
           </div>
         </div>
       </div>` : `
@@ -42,8 +42,8 @@
         <span class="ob-num">${i + 1}</span>
         <div class="ob-text"><span class="t">${escapeHtml(it.label)}</span>${it.hint ? `<span class="h">${escapeHtml(it.hint)}</span>` : ''}</div>
         <div class="ob-actions">
-          <button type="button" class="ob-icon" data-edit="${i}" aria-label="Editar regla" title="Editar">${Icons.svg('pencil', 15)}</button>
-          <button type="button" class="ob-icon danger" data-del="${i}" aria-label="Eliminar regla" title="Eliminar">${Icons.svg('x', 15)}</button>
+          <button type="button" class="ob-icon" data-edit="${i}" aria-label="${t('Editar regla')}" title="${t('Editar')}">${Icons.svg('pencil', 15)}</button>
+          <button type="button" class="ob-icon danger" data-del="${i}" aria-label="${t('Eliminar regla')}" title="${t('Eliminar')}">${Icons.svg('x', 15)}</button>
         </div>
       </div>`).join('');
     $('obItems').querySelectorAll('[data-edit]').forEach(b=> b.addEventListener('click', ()=>{ editing = Number(b.dataset.edit); renderItems(); $('obItems').querySelector('.ob-edit-label').focus(); }));
@@ -63,8 +63,8 @@
     const n = draft.items.length;
     const box = $('obRuleCount');
     box.textContent = n >= MIN_RULES
-      ? `✓ ${n} reglas cargadas`
-      : `${n} de ${MIN_RULES} reglas mínimas`;
+      ? '✓ ' + t('{n} reglas cargadas', {n})
+      : t('{n} de {min} reglas mínimas', {n, min: MIN_RULES});
     box.classList.toggle('ok', n >= MIN_RULES);
     if(n >= MIN_RULES) $('obItemsError').textContent = '';
   }
@@ -78,7 +78,7 @@
     const risk = num($('obRisk').value);
     document.querySelectorAll('#obRiskQuick .pill').forEach(b=> b.classList.toggle('active', risk !== null && Number(b.dataset.risk) === risk));
     $('obBack').style.visibility = step === 1 ? 'hidden' : 'visible';
-    $('obNext').textContent = step === 3 ? 'Empezar a operar' : 'Siguiente';
+    $('obNext').textContent = step === 3 ? t('Empezar a operar') : t('Siguiente');
     $('obError').textContent = '';
   }
 
@@ -108,13 +108,13 @@
   function finish(){
     const risk = $('obRisk').value.trim();
     if(risk !== '' && (num(risk) === null || num(risk) <= 0 || num(risk) > 100)){
-      $('obError').textContent = 'Ingresá un número mayor a 0 y hasta 100 (ej. 1).';
+      $('obError').textContent = t('Ingresá un número mayor a 0 y hasta 100 (ej. 1).');
       return;
     }
     if(draft.accountType === 'funded'){
       const bad = ['obDaily', 'obTotal', 'obTarget'].find(id=>{ const v = $(id).value.trim(); return v !== '' && (num(v) === null || num(v) <= 0 || num(v) > 100); });
       if(bad){
-        $('obError').textContent = 'Revisá las reglas de tu prop firm (paso 1): tienen que ser números entre 0 y 100 (ej. 5).';
+        $('obError').textContent = t('Revisá las reglas de tu prop firm (paso 1): tienen que ser números entre 0 y 100 (ej. 5).');
         return;
       }
     }
@@ -123,7 +123,7 @@
     const acc = state.accounts[0];
     if(draft.accountType === 'funded'){
       const target = $('obTarget').value.trim();
-      Object.assign(acc, {type: target ? 'challenge' : 'funded', name: acc.name === 'Mi cuenta' ? 'Cuenta de fondeo' : acc.name});
+      Object.assign(acc, {type: target ? 'challenge' : 'funded', name: acc.name === t('Mi cuenta') ? t('Cuenta de fondeo') : acc.name});
       Object.assign(acc.rules, {dailyDrawdown: $('obDaily').value.trim(), totalDrawdown: $('obTotal').value.trim(), profitTarget: target, ddType: draft.ddType});
     } else {
       acc.type = 'personal';
@@ -144,7 +144,7 @@
     // Si escribió una regla y no tocó "Agregar", la sumamos igual.
     if(step === 2 && $('obNewItem').value.trim()) addItem();
     if(step === 2 && draft.items.length < MIN_RULES){
-      $('obItemsError').textContent = `Agregá al menos ${MIN_RULES} reglas a tu Trading Plan para seguir.`;
+      $('obItemsError').textContent = t('Agregá al menos {n} reglas a tu Trading Plan para seguir.', {n: MIN_RULES});
       $('obNewItem').focus();
       return;
     }
