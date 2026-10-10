@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=44"></script>
-<script src="js/i18n.js?v=44"></script>
+<script src="js/lang-en.js?v=45"></script>
+<script src="js/i18n.js?v=45"></script>
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=44"></script>
+<script src="js/theme.js?v=45"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#161615">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Journal">
-<script src="js/pwa.js?v=44" defer></script>
+<script src="js/pwa.js?v=45" defer></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=44">
-<script src="js/auth.js?v=44"></script>
+<link rel="stylesheet" href="css/styles.css?v=45">
+<script src="js/auth.js?v=45"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -715,11 +715,11 @@
 <div id="onboarding" class="onboarding" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="obTitle">
   <div class="ob-box">
     <div class="ob-head">
-      <div class="ob-steps" id="obSteps"><span></span><span></span><span></span></div>
+      <div class="ob-steps" id="obSteps"><span></span><span></span><span></span><span></span></div>
     </div>
 
     <section class="ob-step" data-step="1">
-      <div class="ob-kicker">Paso 1 de 3</div>
+      <div class="ob-kicker">Paso 1 de 4</div>
       <h2 id="obTitle">¿Cómo operás?</h2>
       <p class="ob-sub">Así adaptamos tu journal a tu tipo de cuenta.</p>
       <div class="ob-choices">
@@ -742,9 +742,9 @@
     </section>
 
     <section class="ob-step" data-step="2">
-      <div class="ob-kicker">Paso 2 de 3</div>
-      <h2>Tu Trading Plan</h2>
-      <p class="ob-sub">Escribí las reglas que tiene que cumplir cada trade para ser válido. En cada operación vas a confirmar si las respetaste.</p>
+      <div class="ob-kicker">Paso 2 de 4 · Trading Plan</div>
+      <h2>Tus reglas generales</h2>
+      <p class="ob-sub">Tu Trading Plan tiene dos partes: las reglas generales, que cumplís en todos los trades, y tus setups. Empezá por las reglas: en cada operación vas a confirmar si las respetaste.</p>
       <div class="ob-rules-head"><span class="ob-rule-count" id="obRuleCount"></span><span class="ob-rule-min">Mínimo 2 reglas</span></div>
       <div class="ob-items" id="obItems"></div>
       <div class="ob-add">
@@ -762,7 +762,31 @@
     </section>
 
     <section class="ob-step" data-step="3">
-      <div class="ob-kicker">Paso 3 de 3</div>
+      <div class="ob-kicker">Paso 3 de 4 · Trading Plan</div>
+      <h2>Tu setup</h2>
+      <p class="ob-sub">El setup que operás, con los criterios que tienen que darse para entrar. Al registrar un trade lo elegís y tildás sus criterios junto con las reglas generales. Después podés sumar más en la pestaña Plan.</p>
+      <div class="field">
+        <label for="obSetupName">Nombre del setup</label>
+        <input type="text" id="obSetupName" maxlength="60" placeholder="Ej. Sweep + IFVG">
+        <div class="field-hint">Es el mismo nombre que escribís en el campo Setup de cada trade.</div>
+      </div>
+      <div class="field">
+        <label for="obSetupDesc">Descripción <span class="label-sub">(opcional)</span></label>
+        <textarea id="obSetupDesc" rows="2" maxlength="2000" placeholder="Ej. Barrida de un máximo o mínimo previo y entrada en el FVG que queda después."></textarea>
+      </div>
+      <div class="field">
+        <label for="obNewCrit">Criterios para entrar</label>
+        <div class="ob-items" id="obCrit"></div>
+        <div class="pb-crit-add">
+          <input type="text" id="obNewCrit" maxlength="200" placeholder="Escribí un criterio">
+          <button type="button" id="obAddCrit">Agregar</button>
+        </div>
+      </div>
+      <div class="field-error" id="obSetupError"></div>
+    </section>
+
+    <section class="ob-step" data-step="4">
+      <div class="ob-kicker">Paso 4 de 4</div>
       <h2>Tu riesgo máximo por día</h2>
       <p class="ob-sub">Cuánto estás dispuesto a arriesgar como máximo en un día. Te avisamos cuando te acerques y marcamos los días en que te pasaste.</p>
       <div class="pillrow ob-quick" id="obRiskQuick">
@@ -985,27 +1009,27 @@
 </div>
 
 <script>translateDom();</script>
-<script src="js/icons.js?v=44"></script>
-<script src="js/storage.js?v=44"></script>
-<script src="js/time.js?v=44"></script>
-<script src="js/images.js?v=44"></script>
-<script src="js/session.js?v=44"></script>
-<script src="js/app.js?v=44"></script>
-<script src="js/accounts.js?v=44"></script>
-<script src="js/analytics.js?v=44"></script>
-<script src="js/charts.js?v=44"></script>
-<script src="js/achievements.js?v=44"></script>
-<script src="js/dashboard.js?v=44"></script>
-<script src="js/analysis.js?v=44"></script>
-<script src="js/review.js?v=44"></script>
-<script src="js/calendar.js?v=44"></script>
-<script src="js/onboarding.js?v=44"></script>
-<script src="js/settings.js?v=44"></script>
-<script src="js/history.js?v=44"></script>
-<script src="js/playbook.js?v=44"></script>
-<script src="js/share.js?v=44"></script>
-<script src="js/report.js?v=44"></script>
-<script src="js/importer.js?v=44"></script>
+<script src="js/icons.js?v=45"></script>
+<script src="js/storage.js?v=45"></script>
+<script src="js/time.js?v=45"></script>
+<script src="js/images.js?v=45"></script>
+<script src="js/session.js?v=45"></script>
+<script src="js/app.js?v=45"></script>
+<script src="js/accounts.js?v=45"></script>
+<script src="js/analytics.js?v=45"></script>
+<script src="js/charts.js?v=45"></script>
+<script src="js/achievements.js?v=45"></script>
+<script src="js/dashboard.js?v=45"></script>
+<script src="js/analysis.js?v=45"></script>
+<script src="js/review.js?v=45"></script>
+<script src="js/calendar.js?v=45"></script>
+<script src="js/onboarding.js?v=45"></script>
+<script src="js/settings.js?v=45"></script>
+<script src="js/history.js?v=45"></script>
+<script src="js/playbook.js?v=45"></script>
+<script src="js/share.js?v=45"></script>
+<script src="js/report.js?v=45"></script>
+<script src="js/importer.js?v=45"></script>
 
 </body>
 </html>
