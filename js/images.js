@@ -84,8 +84,10 @@ const ImageStore = {
 function tradeImage(h){
   return (h && (ImageStore.get(h.imageId) || h.image)) || null;
 }
+// Solo si la imagen ya está en memoria: antes de que termine ImageStore.init (o si
+// se perdió de IndexedDB) el trade tiene imageId pero no hay qué mostrar.
 function hasImage(h){
-  return !!(h && (h.imageId || h.image));
+  return !!tradeImage(h);
 }
 function newImageId(){
   return 'img_' + Date.now() + '_' + Math.floor(Math.random() * 100000);

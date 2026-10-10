@@ -204,7 +204,12 @@ document.getElementById('shareNative').addEventListener('click', async ()=>{
 });
 document.querySelectorAll('#shareResult button').forEach(b=> b.addEventListener('click', ()=>{ share.result = b.dataset.v; renderShare(); }));
 document.querySelectorAll('[data-close-share]').forEach(b=> b.addEventListener('click', closeShare));
-document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && document.getElementById('shareModal').style.display === 'flex') closeShare(); });
+// Se escucha antes que los paneles de atrás (detalle del trade) para que Escape cierre solo el modal.
+window.addEventListener('keydown', e=>{
+  if(e.key !== 'Escape' || document.getElementById('shareModal').style.display !== 'flex') return;
+  e.stopPropagation();
+  closeShare();
+}, true);
 // Botones "Compartir" de otras pantallas (detalle del trade, cierre mensual).
 document.addEventListener('click', e=>{
   const b = e.target.closest('[data-share-trade], [data-share-month]');

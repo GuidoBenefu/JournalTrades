@@ -66,7 +66,7 @@ function renderPlaybook(){
     </button>`;
   }).join('') : `<div class="pb-empty">
       <span class="pb-empty-ic">${Icons.svg('book', 28)}</span>
-      <b>${t('Armá tu Playbook')}</b>
+      <b>${t('Cargá tu primer setup')}</b>
       <p>${t('Cada setup que operás, con sus criterios y una captura de ejemplo. Así ves cuál te da plata y cuál no, y lo repasás antes de entrar.')}</p>
     </div>`;
   grid.querySelectorAll('[data-pb]').forEach(b=> b.addEventListener('click', ()=> openSetup(b.dataset.pb)));
@@ -83,7 +83,7 @@ function renderPlaybook(){
   const box = document.getElementById('pbLoose');
   box.style.display = loose.length ? '' : 'none';
   box.innerHTML = loose.length ? `<div class="set-sub">${t('Setups sin ficha')}</div>
-    <p class="pb-loose-p">${t('Los cargaste en tus trades pero todavía no están en tu Playbook.')}</p>
+    <p class="pb-loose-p">${t('Los cargaste en tus trades pero todavía no tienen ficha en tu Trading Plan.')}</p>
     <div class="pb-loose">${loose.map(l=> `<button type="button" class="chip" data-new-setup="${escapeHtml(l.name)}">${Icons.svg('plus', 13)} ${escapeHtml(l.name)} <small>${tp(l.n, '{n} trade', '{n} trades')}</small></button>`).join('')}</div>` : '';
   box.querySelectorAll('[data-new-setup]').forEach(b=> b.addEventListener('click', ()=> openSetupEditor(null, b.dataset.newSetup)));
 

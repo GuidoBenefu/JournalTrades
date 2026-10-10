@@ -952,7 +952,8 @@ function showResetConfirm(){
     </div>
   `;
   document.getElementById('resetConfirmBtn').addEventListener('click', ()=>{
-    ImageStore.clearUser();
+    // Solo las capturas de los trades: los setups del Trading Plan se quedan con su ejemplo.
+    state.history.forEach(h=>{ if(h.imageId) ImageStore.remove(h.imageId); });
     state.history = [];
     state.bestStreak = 0;
     saveState();
