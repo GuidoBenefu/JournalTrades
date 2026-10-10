@@ -320,7 +320,7 @@ function renderDayPanel(){
       </div>
       ${h.missing && h.missing.length ? `<div class="dt-miss">Faltó del plan: ${h.missing.map(escapeHtml).join(', ')}</div>` : ''}
       ${h.note ? `<p class="dt-note">${escapeHtml(h.note)}</p>` : ''}
-      ${h.image ? `<img src="${h.image}" class="tradeThumb dayThumb" data-full="${h.image}" alt="Captura del trade">` : ''}
+      ${hasImage(h) ? `<img src="${tradeImage(h)}" class="tradeThumb dayThumb" alt="Captura del trade">` : ''}
       <div class="dt-actions"><button type="button" class="small" data-edit-trade="${h.id}">Editar</button></div>
     </div>`;
   }).join('');
@@ -330,7 +330,7 @@ function renderDayPanel(){
     startEditTrade(b.dataset.editTrade);
   }));
   body.querySelectorAll('.dayThumb').forEach(img=> img.addEventListener('click', ()=>{
-    document.getElementById('lightboxImg').src = img.dataset.full;
+    document.getElementById('lightboxImg').src = img.src;
     document.getElementById('lightbox').style.display = 'flex';
   }));
 }
@@ -353,5 +353,6 @@ document.getElementById('dayAddTrade').addEventListener('click', ()=>{
   showTab('register');
 });
 
+renderCalendarTab.tab = 'calendar';
 onDataChange.push(renderCalendarTab);
-renderCalendarTab();
+renderOrDefer(renderCalendarTab);

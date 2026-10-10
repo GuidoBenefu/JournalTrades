@@ -18,6 +18,7 @@ function renderProfile(){
     const u = JournalAuth.updateProfile({avatarColor: b.dataset.c || null});
     renderSession(u);
     renderProfile();
+    if(typeof renderHome === 'function') renderOrDefer(renderHome);
     flashSaved();
   }));
 
@@ -47,6 +48,7 @@ document.getElementById('profileNameInput').addEventListener('change', e=>{
     const u = JournalAuth.updateProfile({name: e.target.value});
     renderSession(u);
     renderProfile();
+    if(typeof renderHome === 'function') renderOrDefer(renderHome);
     flashSaved();
   }catch(err){
     e.target.value = JournalAuth.currentUser().name;
@@ -113,7 +115,9 @@ saveState = function(){
   return ok;
 };
 
-onDataChange.push(()=>{ renderGoalPreview(); renderRiskQuick(); });
+function renderSettingsData(){ renderGoalPreview(); renderRiskQuick(); }
+renderSettingsData.tab = 'settings';
+onDataChange.push(renderSettingsData);
 renderProfile();
 renderGoalPreview();
 renderRiskQuick();

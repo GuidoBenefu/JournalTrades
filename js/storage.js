@@ -15,10 +15,19 @@ const LocalStorageAdapter = {
     return STORAGE_KEY + ':' + this.userId;
   },
   load(){
+    if(!this.userId) return null;
     const raw = localStorage.getItem(this.key());
-    return raw ? JSON.parse(raw) : null;
+    if(!raw) return null;
+    try{
+      return JSON.parse(raw);
+    }catch(e){
+      // Si el journal está dañado, se guarda una copia antes de que se pise.
+      try{ localStorage.setItem(this.key() + ':corrupt', raw); }catch(_){}
+      throw e;
+    }
   },
   save(data){
+    if(!this.userId) return;
     localStorage.setItem(this.key(), JSON.stringify(data));
   },
   clear(){
@@ -47,9 +56,75 @@ function isQuotaError(e){
   return e && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
 }
 
+// Fecha local AAAA-MM-DD (para nombres de archivo).
+function localDateStamp(){
+  const d = new Date(), z = n=> String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+}
+
+const VALID_RESULTS = ['win', 'loss', 'be'];
+const safeId = v=> String(v == null ? '' : v).replace(/[^\w-]/g, '').slice(0, 60);
+const isObj = v=> v && typeof v === 'object' && !Array.isArray(v);
+const optNum = v=> (typeof v === 'number' && isFinite(v)) ? v : null;
+const optStr = (v, max = 500)=> (typeof v === 'string' && v.trim()) ? v.slice(0, max) : null;
+
+// Normaliza un backup importado: tipos correctos y nada que pueda romper la app.
+function sanitizeImport(data){
+  const items = (Array.isArray(data.items) ? data.items : [])
+    .filter(it=> isObj(it) && typeof it.label === 'string' && it.label.trim())
+    .map(it=> ({id: safeId(it.id) || ('item_' + Date.now() + '_' + Math.floor(Math.random() * 1e4)), label: it.label.slice(0, 200), hint: optStr(it.hint, 200) || '', ...(optNum(it.createdAt) ? {createdAt: it.createdAt} : {})}));
+  let dropped = 0;
+  const history = data.history.filter(h=>{
+    const ok = isObj(h) && typeof h.ts === 'number' && isFinite(h.ts);
+    if(!ok) dropped++;
+    return ok;
+  }).map((h, i)=>{
+    const img = typeof h.image === 'string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(h.image) ? h.image : null;
+    return {
+      id: safeId(h.id) || ('item_' + h.ts + '_' + i),
+      ts: h.ts, loggedAt: optNum(h.loggedAt) || h.ts,
+      followedPlan: !!h.followedPlan,
+      missing: Array.isArray(h.missing) ? h.missing.filter(x=> typeof x === 'string').map(x=> x.slice(0, 200)) : [],
+      ...(Array.isArray(h.missingIds) ? {missingIds: h.missingIds.map(safeId).filter(Boolean)} : {}),
+      ...(optNum(h.rulesTotal) ? {rulesTotal: h.rulesTotal} : {}),
+      result: VALID_RESULTS.includes(h.result) ? h.result : (optNum(h.resultPct) > 0 ? 'win' : optNum(h.resultPct) < 0 ? 'loss' : 'be'),
+      resultPct: optNum(h.resultPct), riskPct: optNum(h.riskPct), rrPlanned: optNum(h.rrPlanned), durationMin: optNum(h.durationMin),
+      asset: optStr(h.asset, 40), setup: optStr(h.setup, 200),
+      direction: ['long', 'short'].includes(h.direction) ? h.direction : null,
+      emotion: typeof emotionById === 'function' && emotionById(h.emotion) ? h.emotion : null,
+      confidence: [1, 2, 3, 4, 5].includes(h.confidence) ? h.confidence : null,
+      errors: Array.isArray(h.errors) ? h.errors.filter(e=> typeof errorById !== 'function' || errorById(e)) : [],
+      note: typeof h.note === 'string' ? h.note.slice(0, 5000) : '',
+      image: img,
+      ...(optNum(h.editedAt) ? {editedAt: h.editedAt} : {}),
+    };
+  });
+  const reviews = {};
+  if(isObj(data.reviews)) Object.entries(data.reviews).forEach(([k, r])=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(k) || !isObj(r)) return;
+    reviews[k] = {good: optStr(r.good, 5000) || '', error: optStr(r.error, 5000) || '', change: optStr(r.change, 5000) || '',
+      score: [1,2,3,4,5,6,7,8,9,10].includes(r.score) ? r.score : null, savedAt: optNum(r.savedAt) || Date.now()};
+  });
+  const fr = isObj(data.fundedRules) ? data.fundedRules : {};
+  return {
+    schemaVersion: data.schemaVersion,
+    history, items, reviews,
+    checked: {},
+    bestStreak: 0,
+    accountType: ['retail', 'funded'].includes(data.accountType) ? data.accountType : null,
+    maxDailyRisk: (typeof data.maxDailyRisk === 'string' || typeof data.maxDailyRisk === 'number') ? String(data.maxDailyRisk).slice(0, 10) : '',
+    fundedRules: {dailyDrawdown: String(fr.dailyDrawdown ?? '').slice(0, 10), totalDrawdown: String(fr.totalDrawdown ?? '').slice(0, 10),
+      profitTarget: String(fr.profitTarget ?? '').slice(0, 10), ddType: fr.ddType === 'trailing' ? 'trailing' : 'static', ddLock: !!fr.ddLock},
+    goals: {planPct: isObj(data.goals) && optNum(data.goals.planPct) ? data.goals.planPct : 80},
+    achievements: {},
+    _dropped: dropped,
+  };
+}
+
 const JournalStore = {
   adapter: LocalStorageAdapter,
   onSaveError: null,
+  onLoadError: null,
 
   setUser(userId){
     this.adapter.userId = userId;
@@ -61,6 +136,7 @@ const JournalStore = {
       return data ? migrate(data) : null;
     }catch(e){
       console.error('load error', e);
+      if(this.onLoadError) this.onLoadError(e);
       return null;
     }
   },
@@ -82,15 +158,17 @@ const JournalStore = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'journal-trades-' + new Date().toISOString().slice(0,10) + '.json';
+    a.download = 'journal-trading-' + localDateStamp() + '.json';
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
+    setTimeout(()=> URL.revokeObjectURL(url), 1500);
   },
 
   parseImport(text){
-    const data = JSON.parse(text);
+    let data;
+    try{ data = JSON.parse(text); }
+    catch(e){ throw new Error('El archivo no es un backup válido (no se pudo leer).'); }
     if(!data || typeof data !== 'object' || !Array.isArray(data.history)){
       throw new Error('El archivo no parece un backup del journal.');
     }
@@ -98,6 +176,6 @@ const JournalStore = {
       throw new Error('El backup es de una versión más nueva de la app.');
     }
     delete data.exportedAt;
-    return migrate(data);
+    return sanitizeImport(migrate(data));
   },
 };

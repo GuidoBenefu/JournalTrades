@@ -67,6 +67,7 @@ function showToast(html){
 // desbloquearon, el logro vuelve a quedar bloqueado (sin aviso).
 function checkAchievements(silent){
   let changed = false;
+  const unlocked = [];
   ACHIEVEMENTS.forEach(a=>{
     let ok = false;
     try{ ok = a.test(); }catch(e){ ok = false; }
@@ -77,8 +78,13 @@ function checkAchievements(silent){
     if(!ok) return;
     state.achievements[a.id] = Date.now();
     changed = true;
-    if(!silent) showToast(`<span class="toast-ic">${Icons.svg(a.icon, 22)}</span><div><b>¡Logro desbloqueado!</b><br>${a.title}: ${a.desc}</div>`);
+    unlocked.push(a);
   });
+  if(!silent && unlocked.length){
+    // Si se desbloquean varios a la vez, un solo aviso para no tapar la pantalla.
+    if(unlocked.length <= 2) unlocked.forEach(a=> showToast(`<span class="toast-ic">${Icons.svg(a.icon, 22)}</span><div><b>¡Logro desbloqueado!</b><br>${a.title}: ${a.desc}</div>`));
+    else showToast(`<span class="toast-ic">${Icons.svg('trophy', 22)}</span><div><b>¡Desbloqueaste ${unlocked.length} logros!</b><br>${unlocked.map(a=> a.title).join(', ')}.</div>`);
+  }
   if(changed) saveState();
 }
 

@@ -4,6 +4,7 @@
 const PAGE_SIZE = 20;
 const hx = {q: '', period: 'all', sort: 'date', result: null, plan: null, dir: null, errors: false, image: false, limit: PAGE_SIZE};
 let openTradeId = null;
+let hxObserver = null;
 
 const hxCls = v=> v > 0 ? 'pos' : v < 0 ? 'neg' : '';
 const hxTime = ts=> new Date(ts).toLocaleTimeString('es-AR', {hour: '2-digit', minute: '2-digit'});
@@ -35,7 +36,7 @@ function filteredTrades(){
     if(hx.plan === 'bad' && h.followedPlan) return false;
     if(hx.dir && h.direction !== hx.dir) return false;
     if(hx.errors && !(h.errors && h.errors.length)) return false;
-    if(hx.image && !h.image) return false;
+    if(hx.image && !hasImage(h)) return false;
     if(q && ![h.asset, h.setup, h.note].some(t=> t && t.toLowerCase().includes(q))) return false;
     return true;
   });
@@ -105,7 +106,7 @@ function tradeRow(h, showDate){
       <span class="hx-meta">${meta}</span>
       <span class="hx-tags">${tags.join('')}</span>
     </span>
-    ${h.image ? `<img class="hx-thumb" src="${h.image}" alt="">` : ''}
+    ${hasImage(h) ? `<img class="hx-thumb" src="${tradeImage(h)}" alt="">` : ''}
     <span class="hx-res">
       <b class="${r.cls}">${r.txt}</b>
       <small>${rr !== null ? (rr > 0 ? '+' : '') + rr.toFixed(1) + 'R' : h.riskPct ? 'Riesgo ' + h.riskPct + '%' : ''}</small>
@@ -166,7 +167,8 @@ function renderHistoryTab(){
   if(btn){
     btn.addEventListener('click', ()=>{ hx.limit += PAGE_SIZE; renderHistoryTab(); });
     if('IntersectionObserver' in window){
-      const io = new IntersectionObserver(entries=>{
+      if(hxObserver) hxObserver.disconnect();
+      const io = hxObserver = new IntersectionObserver(entries=>{
         if(entries[0].isIntersecting && document.querySelector('.tabpage[data-tab="history"].active')){
           io.disconnect();
           hx.limit += PAGE_SIZE;
@@ -238,7 +240,7 @@ function renderTradePanel(){
       ${h.durationMin !== null && h.durationMin !== undefined ? `<span class="tag">${h.durationMin} min</span>` : ''}
       ${riskBroken ? '<span class="tag bad">Risk management roto ese día</span>' : ''}
     </div>
-    ${h.image ? `<img class="tp-img" src="${h.image}" alt="Captura del trade">` : ''}
+    ${hasImage(h) ? `<img class="tp-img" src="${tradeImage(h)}" alt="Captura del trade">` : ''}
     ${sec(`Trading Plan <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? 'Seguido' : 'Roto'}</span>`,
       rules ? `<ul class="tp-rules">${rules}</ul>` : '<p class="tp-muted">No tenías reglas cargadas.</p>')}
     ${sec('Tu cabeza', `<div class="tp-mind">
@@ -250,7 +252,7 @@ function renderTradePanel(){
   `;
   const img = document.querySelector('#tpBody .tp-img');
   if(img) img.addEventListener('click', ()=>{
-    document.getElementById('lightboxImg').src = h.image;
+    document.getElementById('lightboxImg').src = tradeImage(h);
     document.getElementById('lightbox').style.display = 'flex';
   });
 
@@ -265,6 +267,7 @@ function renderTradePanel(){
   document.getElementById('tpDelete').addEventListener('click', ()=>{
     if(!confirm('¿Eliminar este trade? No se puede deshacer.')) return;
     state.history = state.history.filter(x=> x.id !== h.id);
+    ImageStore.remove(h.imageId);
     // Si ese trade estaba abierto para editar, el formulario vuelve a cero.
     if(editingTradeId === h.id) resetForm();
     closeTrade();
@@ -298,7 +301,7 @@ function exportCsv(list){
   const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `journal-trading-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `journal-trading-${localDateStamp()}.csv`;
   document.body.appendChild(a);
   a.click();
   setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
@@ -320,5 +323,6 @@ document.querySelectorAll('#hxFilters .chip').forEach(c=> c.addEventListener('cl
   renderHistoryTab();
 }));
 
+renderHistoryTab.tab = 'history';
 onDataChange.push(renderHistoryTab);
-renderHistoryTab();
+renderOrDefer(renderHistoryTab);

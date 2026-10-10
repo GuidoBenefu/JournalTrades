@@ -108,11 +108,18 @@
 
   function finish(){
     const risk = $('obRisk').value.trim();
-    if(risk !== '' && (num(risk) === null || num(risk) <= 0)){
-      $('obError').textContent = 'Ingresá un número mayor a 0 (ej. 1).';
+    if(risk !== '' && (num(risk) === null || num(risk) <= 0 || num(risk) > 100)){
+      $('obError').textContent = 'Ingresá un número mayor a 0 y hasta 100 (ej. 1).';
       return;
     }
-    state.items = draft.items.map(it=> ({id: it.id, label: it.label, hint: it.hint || ''}));
+    if(draft.accountType === 'funded'){
+      const bad = ['obDaily', 'obTotal', 'obTarget'].find(id=>{ const v = $(id).value.trim(); return v !== '' && (num(v) === null || num(v) <= 0 || num(v) > 100); });
+      if(bad){
+        $('obError').textContent = 'Revisá las reglas de tu prop firm (paso 1): tienen que ser números entre 0 y 100 (ej. 5).';
+        return;
+      }
+    }
+    state.items = draft.items.map(it=> ({id: it.id, label: it.label, hint: it.hint || '', createdAt: Date.now()}));
     state.accountType = draft.accountType;
     if(draft.accountType === 'funded'){
       Object.assign(state.fundedRules, {
@@ -150,6 +157,7 @@
 
   renderItems();
   render();
+  window.openOnboarding = ()=>{ $('onboarding').style.display = 'flex'; };
   // Si la prueba ya venció manda el paywall; la configuración queda para después.
-  if(JournalAuth.hasAccess(user)) $('onboarding').style.display = 'flex';
+  if(JournalAuth.hasAccess(user)) openOnboarding();
 })();

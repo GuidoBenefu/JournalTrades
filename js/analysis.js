@@ -333,6 +333,7 @@ function renderAnalysis(){
   renderMonths();
 }
 
+renderAnalysis.tab = 'stats';
 onDataChange.push(renderAnalysis);
 Charts.register(drawCurve);
-renderAnalysis();
+renderOrDefer(renderAnalysis);

@@ -48,7 +48,7 @@ function renderSession(user){
     upgradeBtn.style.display = '';
   }
   if(!JournalAuth.hasAccess(user)) openUpgrade(true);
-  else document.getElementById('paywall').style.display = 'none';
+  else if(paywallExpired) closePaywall();
 }
 
 const pricing = JournalAuth.PRO_PRICING;
@@ -57,31 +57,68 @@ document.getElementById('pwAnnual').textContent = JournalAuth.formatUSD(pricing.
 document.getElementById('pwAnnualSub').textContent = 'por año · ' + JournalAuth.formatUSD(pricing.annual.perMonth) + '/mes';
 
 // expired: la prueba terminó y no se puede cerrar sin pasar a Pro.
+let paywallExpired = false;
 function openUpgrade(expired){
+  paywallExpired = !!expired;
   document.getElementById('paywallIcon').innerHTML = Icons.svg(expired ? 'hourglass' : 'rocket', 26);
   document.getElementById('paywallTitle').textContent = expired ? 'Tu prueba gratis terminó' : 'Pasate a Pro';
   document.getElementById('paywallText').textContent = expired
     ? 'Pasate a Pro para seguir registrando trades. Tus datos siguen guardados.'
     : 'Seguí entrenando tu disciplina sin límite de tiempo.';
   document.getElementById('paywallCloseBtn').style.display = expired ? 'none' : '';
+  document.getElementById('paywallExportBtn').style.display = expired ? '' : 'none';
   document.getElementById('paywall').style.display = 'flex';
+  // La app de atrás queda bloqueada también para el teclado.
+  document.querySelector('.appshell').inert = true;
+  const first = document.querySelector('#paywall .billing-card');
+  if(first) first.focus();
+}
+
+function closePaywall(){
+  paywallExpired = false;
+  document.getElementById('paywall').style.display = 'none';
+  document.querySelector('.appshell').inert = false;
 }
 
 document.querySelectorAll('.billing-card').forEach(btn=>{
-  btn.addEventListener('click', ()=> renderSession(JournalAuth.upgradeToPro(btn.dataset.billing)));
+  btn.addEventListener('click', ()=>{
+    const user = JournalAuth.upgradeToPro(btn.dataset.billing);
+    closePaywall();
+    renderSession(user);
+    if(typeof renderProfile === 'function') renderProfile();
+    if(typeof showToast === 'function') showToast(`<span class="toast-ic">${Icons.svg('sparkles', 22)}</span><div><b>¡Listo, ya sos Pro!</b><br>Seguí registrando tus trades sin límite.</div>`);
+    // Si la prueba venció antes de terminar la configuración guiada, se muestra ahora.
+    if(JournalAuth.needsOnboarding(user) && typeof openOnboarding === 'function') openOnboarding();
+  });
 });
-document.getElementById('paywallCloseBtn').addEventListener('click', ()=>{
-  document.getElementById('paywall').style.display = 'none';
+document.getElementById('paywallCloseBtn').addEventListener('click', closePaywall);
+document.getElementById('paywallExportBtn').addEventListener('click', ()=>{
+  if(typeof stateForExport === 'function') JournalStore.exportToFile(stateForExport());
 });
 
 function logout(){
   JournalAuth.logout();
-  location.href = 'index.html';
+  location.replace('index.html');
 }
+
+// Si la sesión cambió en otra pestaña (logout o login con otra cuenta), esta
+// pestaña se recarga para no mezclar datos de dos usuarios.
+function checkSessionStillValid(){
+  const u = JournalAuth.currentUser();
+  if(!u || !sessionUser || u.id !== sessionUser.id){ location.replace(u ? 'app.html' : 'auth.html?mode=login'); return; }
+  renderSession(u);
+}
+window.addEventListener('storage', e=>{ if(e.key === 'jt_session' || e.key === 'jt_users') checkSessionStillValid(); });
+// Al volver con "Atrás" después de cerrar sesión, el navegador puede mostrar la página guardada.
+window.addEventListener('pageshow', e=>{ if(e.persisted) checkSessionStillValid(); });
+// El vencimiento de la prueba se revisa también con la app abierta.
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkSessionStillValid(); });
+setInterval(checkSessionStillValid, 60000);
 
 document.getElementById('upgradeBtn').addEventListener('click', ()=> openUpgrade(false));
 document.getElementById('logoutBtn').addEventListener('click', logout);
 document.getElementById('logoutBtnMobile').addEventListener('click', logout);
 document.getElementById('paywallLogoutBtn').addEventListener('click', logout);
+document.getElementById('obLogout').addEventListener('click', logout);
 
 renderSession(sessionUser);

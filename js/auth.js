@@ -30,7 +30,11 @@ function readJSON(key, fallback){
 }
 
 function writeJSON(key, value){
-  localStorage.setItem(key, JSON.stringify(value));
+  try{
+    localStorage.setItem(key, JSON.stringify(value));
+  }catch(e){
+    throw new Error('No se pudo guardar: el almacenamiento del navegador está lleno. Liberá espacio e intentá de nuevo.');
+  }
 }
 
 async function hashPassword(password){
@@ -80,7 +84,7 @@ const JournalAuth = {
 
   async register({name, email, password, plan, billing}){
     email = String(email || '').trim().toLowerCase();
-    name = String(name || '').trim();
+    name = String(name || '').trim().slice(0, 40);
     if(!name) throw fieldError('name', 'Ingresá tu nombre.');
     if(!EMAIL_RE.test(email)) throw fieldError('email', 'Ingresá un email válido.');
     if(!password || password.length < MIN_PASSWORD) throw fieldError('password', 'La contraseña tiene que tener al menos ' + MIN_PASSWORD + ' caracteres.');

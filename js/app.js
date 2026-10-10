@@ -29,8 +29,9 @@ const emotionWord = e => e.id === 'fomo' ? 'FOMO' : e.label.toLowerCase();
 const errorById = id => ERROR_TAGS.find(e=>e.id === id);
 
 // Sesión según la hora de Nueva York del momento de entrada.
+const NY_HOUR = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', hour:'numeric', hourCycle:'h23'});
 function sessionOf(ts){
-  const h = Number(new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', hour:'numeric', hourCycle:'h23'}).format(new Date(ts)));
+  const h = Number(NY_HOUR.format(new Date(ts)));
   if(h >= 19 || h < 3) return 'Asia';
   if(h < 8) return 'Londres';
   if(h < 17) return 'Nueva York';
@@ -168,7 +169,9 @@ function loadState(){
   sortHistory();
 }
 function saveState(){
-  if(JournalStore.save(state)) hideStorageWarning();
+  const ok = JournalStore.save(state);
+  if(ok) hideStorageWarning();
+  return ok;
 }
 
 function showStorageWarning(msg){
@@ -180,6 +183,9 @@ function hideStorageWarning(){
   document.getElementById('storageWarning').style.display = 'none';
 }
 
+JournalStore.onLoadError = ()=>{
+  showStorageWarning('No se pudieron leer tus datos guardados (el archivo está dañado). Se guardó una copia aparte; si tenés un backup, importalo desde Ajustes.');
+};
 JournalStore.onSaveError = reason=>{
   showStorageWarning(reason === 'quota'
     ? 'No se pudo guardar: el almacenamiento del navegador está lleno. Exportá un backup y borrá trades viejos o imágenes.'
@@ -187,8 +193,17 @@ JournalStore.onSaveError = reason=>{
 };
 
 document.getElementById('exportBtn').addEventListener('click', ()=>{
-  JournalStore.exportToFile(state);
+  JournalStore.exportToFile(stateForExport());
 });
+
+// El backup lleva las capturas adentro (en la app viven aparte, en IndexedDB).
+function stateForExport(){
+  return {...state, history: state.history.map(h=>{
+    const {imageId, ...rest} = h;
+    const img = tradeImage(h);
+    return img ? {...rest, image: img} : rest;
+  })};
+}
 document.getElementById('importBtn').addEventListener('click', ()=>{
   document.getElementById('importInput').click();
 });
@@ -197,9 +212,21 @@ document.getElementById('importInput').addEventListener('change', async e=>{
   e.target.value = '';
   if(!file) return;
   const msg = document.getElementById('backupMsg');
+  msg.style.display = 'none';
   try{
     const data = JournalStore.parseImport(await file.text());
-    if(!confirm('Esto reemplaza todos los datos actuales por los del backup. ¿Continuar?')) return;
+    const dropped = data._dropped;
+    delete data._dropped;
+    if(!confirm(`Esto reemplaza todos los datos actuales por los del backup (${data.history.length} trades${dropped ? `; ${dropped} registros dañados se van a descartar` : ''}). ¿Continuar?`)) return;
+    await ImageStore.clearUser();
+    if(ImageStore.available){
+      for(const h of data.history){
+        if(!h.image) continue;
+        h.imageId = newImageId();
+        await ImageStore.put(h.imageId, h.image);
+        delete h.image;
+      }
+    }
     if(JournalStore.save(data)) location.reload();
   }catch(err){
     msg.textContent = err.message || 'No se pudo leer el archivo.';
@@ -694,7 +721,7 @@ function startEditTrade(id){
   document.getElementById('durationInput').value = h.durationMin ?? '';
   document.getElementById('resultNote').value = h.note || '';
   Object.assign(tradeForm, {result: h.result || null, planTouched: true, direction: h.direction || null, confidence: h.confidence || null, emotion: h.emotion || null, errors: [...(h.errors || [])]});
-  currentImageData = h.image || null;
+  currentImageData = tradeImage(h);
   renderImagePreview();
   renderChips();
   renderFormHints();
@@ -706,13 +733,24 @@ document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
 
 // Vuelve a dibujar todo lo que depende de los trades. Los módulos nuevos
 // (inicio, análisis, revisión) se suman con onDataChange.push(fn).
+// Las funciones con `tab` (ej. renderHome.tab = 'home') se dibujan solo si esa
+// pestaña está visible; si no, quedan pendientes hasta que se abra.
 const onDataChange = [];
+const pendingTabRenders = new Set();
+function activeTab(){
+  const el = document.querySelector('.tabpage.active');
+  return el ? el.dataset.tab : null;
+}
+function renderOrDefer(fn){
+  if(fn.tab && fn.tab !== activeTab()) pendingTabRenders.add(fn);
+  else{ pendingTabRenders.delete(fn); fn(); }
+}
 function renderAll(){
   renderHistory();
   renderStreak();
   renderFundedProgress();
   renderDatalists();
-  onDataChange.forEach(fn=> fn());
+  onDataChange.forEach(renderOrDefer);
 }
 
 document.getElementById('addTradeBtn').addEventListener('click', ()=>{
@@ -774,26 +812,55 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     confidence: tradeForm.confidence,
     errors: [...tradeForm.errors],
     note: document.getElementById('resultNote').value.trim(),
-    image: currentImageData,
   };
+  // La captura se guarda aparte (IndexedDB); el trade solo lleva su id.
+  const prev = editingTradeId ? state.history.find(x=> x.id === editingTradeId) : null;
+  const prevImage = prev ? tradeImage(prev) : null;
+  let imageToRemove = null;
+  if(!currentImageData){
+    data.imageId = null; data.image = null;
+    if(prev) imageToRemove = prev.imageId;
+  } else if(prev && currentImageData === prevImage){
+    data.imageId = prev.imageId || null; data.image = prev.imageId ? null : prev.image || null;
+  } else if(ImageStore.available){
+    data.imageId = newImageId(); data.image = null;
+    ImageStore.cache.set(data.imageId, currentImageData);
+    if(prev) imageToRemove = prev.imageId;
+  } else {
+    data.imageId = null; data.image = currentImageData;
+  }
 
+  let undo;
   if(editingTradeId){
     const h = state.history.find(x=> x.id === editingTradeId);
-    if(h) Object.assign(h, data, {editedAt: Date.now()});
+    const before = {...h};
+    Object.assign(h, data, {editedAt: Date.now()});
+    undo = ()=>{ Object.keys(h).forEach(k=> delete h[k]); Object.assign(h, before); };
   } else {
-    state.history.push({id: genItemId(), loggedAt: Date.now(), ...data});
+    const nuevo = {id: genItemId(), loggedAt: Date.now(), ...data};
+    state.history.push(nuevo);
+    undo = ()=>{ state.history = state.history.filter(x=> x !== nuevo); };
   }
   sortHistory();
-  saveState();
+  // Si no se pudo guardar (almacenamiento lleno), se deshace para no mostrar un trade que no existe.
+  if(!saveState()){
+    undo();
+    sortHistory();
+    if(data.imageId && data.imageId !== (prev && prev.imageId)) ImageStore.cache.delete(data.imageId);
+    return fail('No se pudo guardar el trade porque el almacenamiento del navegador está lleno. Exportá un backup y liberá espacio.');
+  }
+  if(data.imageId && data.imageId !== (prev && prev.imageId)) ImageStore.put(data.imageId, currentImageData).catch(()=>{});
+  if(imageToRemove) ImageStore.remove(imageToRemove);
   const wasEditing = !!editingTradeId;
   resetForm();
   renderAll();
   if(wasEditing) showTab('history');
 });
 
+// Formateador reutilizable: crear uno por llamada es lento con miles de trades.
+const DATE_FMT = new Intl.DateTimeFormat('es-AR', {day:'2-digit', month:'2-digit', year:'2-digit'});
 function fmtDate(ts){
-  const d = new Date(ts);
-  return d.toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  return DATE_FMT.format(new Date(ts));
 }
 
 function getMaxDailyRisk(){
@@ -848,10 +915,12 @@ function renderDailyRisk(){
   </div>`;
 }
 
+let riskInputTimer = null;
 document.getElementById('maxDailyRiskInput').addEventListener('input', e=>{
   state.maxDailyRisk = e.target.value;
-  saveState();
-  renderAll();
+  renderDailyRisk();
+  clearTimeout(riskInputTimer);
+  riskInputTimer = setTimeout(()=>{ saveState(); renderAll(); }, 400);
 });
 
 // La lista del Historial vive en history.js (se suma con onDataChange).
@@ -948,6 +1017,7 @@ function showResetConfirm(){
     </div>
   `;
   document.getElementById('resetConfirmBtn').addEventListener('click', ()=>{
+    ImageStore.clearUser();
     state.history = [];
     state.bestStreak = 0;
     saveState();
@@ -970,6 +1040,7 @@ function showTab(tab){
   document.querySelectorAll('.tabpage').forEach(p=> p.classList.toggle('active', p.dataset.tab === tab));
   document.querySelectorAll('.tabbtn').forEach(b=> b.classList.toggle('active', b === btn));
   document.getElementById('pageTitle').textContent = btn.dataset.title;
+  pendingTabRenders.forEach(fn=>{ if(fn.tab === tab){ pendingTabRenders.delete(fn); fn(); } });
   // La hora de entrada se mantiene al día mientras el usuario no la cambie.
   if(tab === 'register' && !editingTradeId && !entryTimeTouched){
     document.getElementById('entryTimeInput').value = toLocalInputValue(Date.now());
@@ -995,3 +1066,21 @@ document.getElementById('maxDailyRiskInput').value = state.maxDailyRisk || '';
 renderItemsManager();
 resetForm();
 renderAll();
+
+// Carga las capturas guardadas aparte y pasa a IndexedDB las que todavía
+// estaban dentro del journal (formato viejo).
+ImageStore.init(JournalStore.adapter.userId).then(async ()=>{
+  if(ImageStore.available){
+    const legacy = state.history.filter(h=> h.image);
+    for(const h of legacy){
+      try{
+        const id = newImageId();
+        await ImageStore.put(id, h.image);
+        h.imageId = id;
+        delete h.image;
+      }catch(e){ console.warn('No se pudo mover una captura', e); }
+    }
+    if(legacy.length) saveState();
+  }
+  renderAll();
+});
