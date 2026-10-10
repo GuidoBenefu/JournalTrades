@@ -210,6 +210,8 @@ function buildTrades(){
       pct = (val - fees) / size * 100;
     }
     pct = Math.round(pct * 1e4) / 1e4;
+    // Cerrado en 0 antes de comisiones es break even, aunque las comisiones lo dejen apenas negativo.
+    const result = val === 0 ? 'be' : pct > 0 ? 'win' : pct < 0 ? 'loss' : 'be';
     if(Math.abs(pct) > 100) return fail(t('el resultado da {n}%: revisá el tamaño de la cuenta o la columna', {n: fix1(pct)}));
     const asset = get(r, 'asset').toUpperCase().slice(0, 40) || null;
     let durationMin = null;
@@ -219,7 +221,7 @@ function buildTrades(){
     }
     const risk = parseLooseNum(get(r, 'risk'));
     const trade = {
-      ts, resultPct: pct, result: pct > 0 ? 'win' : pct < 0 ? 'loss' : 'be',
+      ts, resultPct: pct, result,
       riskPct: risk !== null && !isNaN(risk) && risk > 0 && risk <= 100 ? risk : null,
       asset, direction: parseDirection(get(r, 'dir')), durationMin,
       setup: get(r, 'setup').slice(0, 200) || null, note: get(r, 'note').slice(0, 5000), line,

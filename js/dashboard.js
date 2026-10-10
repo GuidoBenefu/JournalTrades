@@ -123,14 +123,14 @@ function renderHomeKpis(streak){
   let acc = 0; const weekS = [0].concat(week.map(h=> acc += Analytics.pct(h)));
   let p = 0; const planS = week.map((h, i)=> (p += h.followedPlan ? 1 : 0) / (i + 1) * 100);
   let w = 0; const winS = week.map((h, i)=> (w += h.result === 'win' ? 1 : 0) / (i + 1) * 100);
-  const streakS = Analytics.chronological().slice(-20).reduce((arr, h)=>{ arr.push(h.followedPlan ? (arr[arr.length - 1] || 0) + 1 : 0); return arr; }, []);
+  const streakS = Analytics.chronological(state.history).slice(-20).reduce((arr, h)=>{ arr.push(h.followedPlan ? (arr[arr.length - 1] || 0) + 1 : 0); return arr; }, []);
   const goal = goalPct();
   const card = (icon, tone, label, value, valCls, spark, sub)=> `<div class="sk sk-${tone}">
     <div class="sk-top"><span class="sk-ic">${Icons.svg(icon, 16)}</span><span class="sk-l">${label}</span></div>
     <div class="sk-v ${valCls}">${value}</div>${spark}<div class="sk-d">${sub}</div></div>`;
   const tradesTxt = tp(ws.n, '{n} trade esta semana', '{n} trades esta semana');
   document.getElementById('homeKpis').innerHTML = [
-    card('flame', streak > 0 ? 'good' : 'info', t('Racha actual'), streak, streak > 0 ? 'pos' : '', Charts.spark(streakS, 'pos'), t('Mejor racha: {n}', {n: state.bestStreak})),
+    card('flame', streak > 0 ? 'good' : 'info', t('Racha actual'), streak, streak > 0 ? 'pos' : '', Charts.spark(streakS, 'pos'), state.viewAccount === 'all' ? t('Mejor racha: {n}', {n: state.bestStreak}) : t('Mejor racha: {n} · todas las cuentas', {n: state.bestStreak})),
     card('trending-up', ws.sum >= 0 ? 'good' : 'bad', t('Resultado semana'), ws.n ? fmtSignedPct(ws.sum) : '—', signClass(ws.sum), Charts.spark(weekS, ws.sum >= 0 ? 'pos' : 'neg'), tradesTxt),
     card('shield-check', !ws.n ? 'info' : ws.planPct >= goal ? 'good' : 'warn', t('Plan semana'), ws.n ? Math.round(ws.planPct) + '%' : '—', !ws.n ? '' : ws.planPct >= goal ? 'pos' : 'warn', Charts.spark(planS, ws.planPct >= goal ? 'pos' : 'warn'), t('Meta: {goal}%', {goal})),
     card('target', 'info', t('Win rate semana'), ws.n ? Math.round(ws.winRate) + '%' : '—', '', Charts.spark(winS, 'info'), tradesTxt),
