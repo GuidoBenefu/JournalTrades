@@ -17,7 +17,7 @@ const cal = {
 
 function dayStats(){
   const days = {};
-  state.history.forEach(h=>{
+  viewTrades().forEach(h=>{
     const k = dayKeyFromTs(h.ts);
     if(!days[k]) days[k] = {trades: [], sum: 0, followed: 0};
     days[k].trades.push(h);
@@ -211,7 +211,7 @@ function renderYear(days){
 function renderControls(){
   const y = cal.date.getFullYear();
   const [nowY, nowM] = currentYM();
-  const firstYear = Math.min(nowY, ...state.history.map(h=> Number(dayKeyFromTs(h.ts).slice(0, 4))));
+  const firstYear = Math.min(nowY, ...viewTrades().map(h=> Number(dayKeyFromTs(h.ts).slice(0, 4))));
   const years = [];
   for(let yy = nowY; yy >= firstYear; yy--) years.push(yy);
   if(!years.includes(y)) years.push(y);

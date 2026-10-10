@@ -25,7 +25,7 @@ function filteredTrades(){
   const q = hx.q.trim().toLowerCase();
   const weekStart = Analytics.weekStart(Date.now()).getTime();
   const monthStart = dayStartTs(monthKeyOf(Date.now()) + '-01');
-  let list = state.history.filter(h=>{
+  let list = viewTrades().filter(h=>{
     if(hx.period === 'week' && h.ts < weekStart) return false;
     if(hx.period === 'month' && h.ts < monthStart) return false;
     if(hx.result && hxTone(h) !== hx.result) return false;
@@ -70,7 +70,7 @@ function renderHxSummary(list){
   const box = document.getElementById('hxSummary');
   const item = (label, value, cls = '')=> `<div class="hxs"><span>${label}</span><b class="${cls}">${value}</b></div>`;
   box.innerHTML = `<div class="hxs-items">
-      ${item(filtersActive() ? 'Trades filtrados' : 'Trades', `${s.n}${filtersActive() ? `<small>/${state.history.length}</small>` : ''}`)}
+      ${item(filtersActive() ? 'Trades filtrados' : 'Trades', `${s.n}${filtersActive() ? `<small>/${viewTrades().length}</small>` : ''}`)}
       ${item('Resultado', s.n ? fmtSignedPct(s.sum) : '—', signClass(s.sum))}
       ${item('Plan seguido', s.n ? Math.round(s.planPct) + '%' : '—', !s.n ? '' : s.planPct >= goalPct() ? 'pos' : 'warn')}
       ${item('Win rate', s.n ? Math.round(s.winRate) + '%' : '—')}
@@ -95,7 +95,9 @@ function tradeRow(h, showDate){
   if(emo) tags.push(`<span class="tag ${emo.tone === 'risk' ? 'warn' : ''}">${emo.label}</span>`);
   errs.slice(0, 2).forEach(e=> tags.push(`<span class="tag bad">${e.label}</span>`));
   if(errs.length > 2) tags.push(`<span class="tag bad">+${errs.length - 2}</span>`);
-  const meta = [h.setup && escapeHtml(h.setup), sessionOf(h.ts), (showDate ? fmtDate(h.ts) + ' ' : '') + fmtTime(h.ts)].filter(Boolean).join(' · ');
+  // Con todas las cuentas a la vista, cada trade dice de cuál es.
+  const acc = state.viewAccount === 'all' && state.accounts.length > 1 ? accountById(h.accountId) : null;
+  const meta = [acc && escapeHtml(acc.name), h.setup && escapeHtml(h.setup), sessionOf(h.ts), (showDate ? fmtDate(h.ts) + ' ' : '') + fmtTime(h.ts)].filter(Boolean).join(' · ');
   return `<button type="button" class="hx-row ${hxTone(h)}" data-id="${h.id}">
     <span class="hx-stripe"></span>
     <span class="hx-main">
@@ -131,7 +133,7 @@ function renderHistoryTab(){
   const box = document.getElementById('hist');
   const more = document.getElementById('hxMore');
   if(!all.length){
-    box.innerHTML = state.history.length
+    box.innerHTML = viewTrades().length
       ? `<div class="hx-empty"><span class="hx-empty-ic">${Icons.svg('search', 26)}</span><b>Ningún trade coincide con los filtros</b><p>Probá con otra búsqueda o sacá algún filtro.</p><button type="button" class="primary small" id="hxEmptyClear">Limpiar filtros</button></div>`
       : `<div class="hx-empty"><span class="hx-empty-ic">${Icons.svg('history', 26)}</span><b>Todavía no registraste ningún trade</b><p>Cada trade que cargues aparece acá con su resultado, tu plan, tu emoción y tus notas.</p><button type="button" class="primary small" data-goto="register">Registrar trade</button></div>`;
     const c = document.getElementById('hxEmptyClear');
@@ -220,7 +222,7 @@ function renderTradePanel(){
   const emo = emotionById(h.emotion);
   const errs = (h.errors || []).map(id=> errorById(id)).filter(Boolean);
   const maxRisk = getMaxDailyRisk();
-  const riskBroken = maxRisk !== null && (dayRiskMap()[dayKeyFromTs(h.ts)] || 0) > maxRisk;
+  const riskBroken = maxRisk !== null && (dayRiskMap(h.accountId)[dayKeyFromTs(h.ts)] || 0) > maxRisk;
   const sec = (title, body)=> `<div class="tp-sec"><div class="tp-sec-t">${title}</div>${body}</div>`;
 
   document.getElementById('tpBody').innerHTML = `
@@ -232,6 +234,7 @@ function renderTradePanel(){
     </div>
     <div class="tp-chips">
       ${typeof h.score === 'number' ? `<span class="tag ${h.score >= 80 ? 'good' : h.score >= 50 ? 'warn' : 'bad'}">Disciplina ${h.score}/100</span>` : ''}
+      ${state.accounts.length > 1 && accountById(h.accountId) ? `<span class="tag strong">${escapeHtml(accountById(h.accountId).name)}</span>` : ''}
       <span class="tag">${sessionOf(h.ts)}</span>
       ${h.setup ? `<span class="tag">${escapeHtml(h.setup)}</span>` : ''}
       ${h.durationMin !== null && h.durationMin !== undefined ? `<span class="tag">${h.durationMin} min</span>` : ''}
@@ -280,12 +283,12 @@ function exportCsv(list){
     const t = v === null || v === undefined ? '' : String(v);
     return /[";\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
   };
-  const head = ['Fecha', 'Hora (NY)', 'Activo', 'Dirección', 'Setup', 'Sesión', 'Resultado', 'Resultado %', 'Riesgo %', 'R:R planeado', 'R real', 'Duración (min)', 'Plan seguido', 'Reglas que faltaron', 'Emoción', 'Confianza', 'Errores', 'Nota'];
+  const head = ['Fecha', 'Hora (NY)', 'Cuenta', 'Activo', 'Dirección', 'Setup', 'Sesión', 'Resultado', 'Resultado %', 'Riesgo %', 'R:R planeado', 'R real', 'Duración (min)', 'Plan seguido', 'Reglas que faltaron', 'Emoción', 'Confianza', 'Errores', 'Nota'];
   const rows = list.map(h=>{
     const rr = realR(h);
     const emo = emotionById(h.emotion);
     return [
-      fmtDate(h.ts), fmtTime(h.ts, NY_TZ), h.asset || '', h.direction === 'long' ? 'Long' : h.direction === 'short' ? 'Short' : '',
+      fmtDate(h.ts), fmtTime(h.ts, NY_TZ), (accountById(h.accountId) || {}).name || '', h.asset || '', h.direction === 'long' ? 'Long' : h.direction === 'short' ? 'Short' : '',
       h.setup || '', sessionOf(h.ts), RESULT_LABELS[h.result] || '', num(h.resultPct), num(h.riskPct), num(h.rrPlanned),
       rr === null ? '' : num(rr.toFixed(2)), num(h.durationMin), h.followedPlan ? 'Sí' : 'No', (h.missing || []).join(' | '),
       emo ? emo.label : '', h.confidence || '', (h.errors || []).map(id=> (errorById(id) || {label: id}).label).join(' | '), h.note || '',

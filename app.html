@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=32"></script>
+<script src="js/theme.js?v=33"></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=32">
-<script src="js/auth.js?v=32"></script>
+<link rel="stylesheet" href="css/styles.css?v=33">
+<script src="js/auth.js?v=33"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -45,6 +45,7 @@
   <div class="mainpane">
     <header class="topbar">
       <h1 id="pageTitle">Inicio</h1>
+      <select id="accountSwitch" class="acct-switch" aria-label="Cuenta que estás viendo" style="display:none;"></select>
       <div class="topbar-right">
         <button type="button" class="theme-toggle" data-theme-toggle></button>
         <span class="planbadge" id="planBadge"></span>
@@ -94,7 +95,7 @@
       <section class="card span-2" id="fundedProgressCard" style="display:none;">
         <div class="set-head">
           <span class="set-ic"><i data-icon="landmark" data-size="18"></i></span>
-          <div><h2>Cuenta de fondeo</h2><p>Cuánto margen te queda según las reglas de tu prop firm.</p></div>
+          <div><h2 id="fundedProgressTitle">Cuenta de fondeo</h2><p>Cuánto margen te queda según las reglas de tu prop firm.</p></div>
         </div>
         <div id="fundedProgress"></div>
       </section>
@@ -146,6 +147,11 @@
             <div class="fstep-t"><span class="fstep-num">Paso 2 de 4</span><h3>El trade</h3><p>Qué operaste y cómo salió</p></div>
             <span class="fstep-status"></span>
           </div>
+          <div class="field" id="tradeAccountField" style="display:none;">
+            <label for="tradeAccountInput">Cuenta</label>
+            <select id="tradeAccountInput"></select>
+          </div>
+          <div class="field-hint" id="accountHint"></div>
           <div class="field">
             <label>Resultado</label>
             <div class="bigseg" id="resultSeg">
@@ -502,53 +508,14 @@
           <div class="plan-box" id="profilePlan"></div>
         </section>
 
-        <section class="card set-card">
+        <section class="card set-card" id="accountsCard">
           <div class="set-head">
             <span class="set-ic"><i data-icon="landmark" data-size="18"></i></span>
-            <div><h2>Cuenta</h2><p>Si operás tu propia cuenta o una de fondeo con reglas.</p></div>
+            <div><h2>Cuentas</h2><p>Tu cuenta personal, challenges y cuentas fondeadas, cada una con sus reglas.</p></div>
+            <span class="set-count" id="accountCount"></span>
           </div>
-          <div class="type-cards" id="accountTypePills">
-            <button type="button" class="type-card" data-type="retail">
-              <span class="type-ic"><i data-icon="user" data-size="20"></i></span>
-              <span class="t">Trader retail</span><span class="s">Opero mi propia cuenta.</span>
-              <span class="type-check"><i data-icon="circle-check" data-size="18"></i></span>
-            </button>
-            <button type="button" class="type-card" data-type="funded">
-              <span class="type-ic"><i data-icon="landmark" data-size="20"></i></span>
-              <span class="t">Cuenta de fondeo</span><span class="s">Opero con una prop firm y tengo reglas de drawdown.</span>
-              <span class="type-check"><i data-icon="circle-check" data-size="18"></i></span>
-            </button>
-          </div>
-          <div id="fundedRulesSection" class="funded-rules" style="display:none;">
-            <div class="set-sub">Reglas de tu prop firm</div>
-            <div class="form-grid">
-              <div class="field">
-                <label for="dailyDrawdownInput">Drawdown diario</label>
-                <div class="input-suffix"><input type="text" inputmode="decimal" id="dailyDrawdownInput" placeholder="Ej. 5"><span>%</span></div>
-              </div>
-              <div class="field">
-                <label for="totalDrawdownInput">Drawdown total</label>
-                <div class="input-suffix"><input type="text" inputmode="decimal" id="totalDrawdownInput" placeholder="Ej. 10"><span>%</span></div>
-              </div>
-              <div class="field">
-                <label for="profitTargetInput">Profit target</label>
-                <div class="input-suffix"><input type="text" inputmode="decimal" id="profitTargetInput" placeholder="Ej. 8"><span>%</span></div>
-              </div>
-              <div class="field">
-                <label>Tipo de drawdown total</label>
-                <div class="seg" id="ddTypePills">
-                  <button type="button" data-dd="static">Estático</button>
-                  <button type="button" data-dd="trailing">Trailing</button>
-                </div>
-              </div>
-            </div>
-            <div class="field" id="ddLockField" style="display:none;">
-              <label class="check-row">
-                <input type="checkbox" id="ddLockInput">
-                <span>El piso deja de subir cuando llega al balance inicial (mi firma congela el trailing)</span>
-              </label>
-            </div>
-          </div>
+          <div class="acct-list" id="accountList"></div>
+          <button type="button" id="addAccountBtn">+ Agregar cuenta</button>
         </section>
 
         <section class="card set-card">
@@ -785,22 +752,23 @@
   <img id="lightboxImg" src="">
 </div>
 
-<script src="js/icons.js?v=32"></script>
-<script src="js/storage.js?v=32"></script>
-<script src="js/time.js?v=32"></script>
-<script src="js/images.js?v=32"></script>
-<script src="js/session.js?v=32"></script>
-<script src="js/app.js?v=32"></script>
-<script src="js/analytics.js?v=32"></script>
-<script src="js/charts.js?v=32"></script>
-<script src="js/achievements.js?v=32"></script>
-<script src="js/dashboard.js?v=32"></script>
-<script src="js/analysis.js?v=32"></script>
-<script src="js/review.js?v=32"></script>
-<script src="js/calendar.js?v=32"></script>
-<script src="js/onboarding.js?v=32"></script>
-<script src="js/settings.js?v=32"></script>
-<script src="js/history.js?v=32"></script>
+<script src="js/icons.js?v=33"></script>
+<script src="js/storage.js?v=33"></script>
+<script src="js/time.js?v=33"></script>
+<script src="js/images.js?v=33"></script>
+<script src="js/session.js?v=33"></script>
+<script src="js/app.js?v=33"></script>
+<script src="js/accounts.js?v=33"></script>
+<script src="js/analytics.js?v=33"></script>
+<script src="js/charts.js?v=33"></script>
+<script src="js/achievements.js?v=33"></script>
+<script src="js/dashboard.js?v=33"></script>
+<script src="js/analysis.js?v=33"></script>
+<script src="js/review.js?v=33"></script>
+<script src="js/calendar.js?v=33"></script>
+<script src="js/onboarding.js?v=33"></script>
+<script src="js/settings.js?v=33"></script>
+<script src="js/history.js?v=33"></script>
 
 </body>
 </html>

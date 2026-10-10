@@ -148,9 +148,9 @@ const state = {
   history: [],
   bestStreak: 0,
   items: null,
-  accountType: null,
   maxDailyRisk: '',
-  fundedRules: {dailyDrawdown: '', totalDrawdown: '', profitTarget: '', ddType: 'static', ddLock: false},
+  accounts: [],
+  viewAccount: 'all',
   goals: {planPct: 80},
   reviews: {},
   achievements: {},
@@ -166,10 +166,29 @@ function loadState(){
   if(!state.reviews) state.reviews = {};
   if(!state.achievements) state.achievements = {};
   state.timePrefs = timePrefs();
+  // Siempre hay al menos una cuenta, y cada trade pertenece a una que existe.
+  if(!Array.isArray(state.accounts) || !state.accounts.length) state.accounts = [newAccount({id: 'acc_main', name: 'Mi cuenta'})];
+  state.history.forEach(h=>{ if(!accountById(h.accountId)) h.accountId = state.accounts[0].id; });
+  if(state.viewAccount !== 'all' && !accountById(state.viewAccount)) state.viewAccount = 'all';
   // Antes los meses cerrados se guardaban como foto; ahora se calculan del historial.
   delete state.closedMonths;
   sortHistory();
 }
+// ---- Cuentas ----
+function accountById(id){
+  return state.accounts.find(a=> a.id === id) || null;
+}
+// Cuentas en las que se puede registrar un trade nuevo.
+function openAccounts(){
+  return state.accounts.filter(a=> a.status === 'active');
+}
+const isPropAccount = a=> a && (a.type === 'challenge' || a.type === 'funded');
+// Trades de la cuenta que se está mirando (o de todas). Todas las vistas leen de acá;
+// los logros y la racha son del trader, así que siguen usando state.history.
+function viewTrades(){
+  return state.viewAccount === 'all' ? state.history : state.history.filter(h=> h.accountId === state.viewAccount);
+}
+
 function saveState(){
   const ok = JournalStore.save(state);
   if(ok) hideStorageWarning();
@@ -254,126 +273,6 @@ function genItemId(){
 }
 
 let editingItemId = null;
-
-function renderFundedProgress(){
-  const card = document.getElementById('fundedProgressCard');
-  const box = document.getElementById('fundedProgress');
-  const r = state.fundedRules || {};
-  const daily = parseFloat(String(r.dailyDrawdown||'').replace(',','.'));
-  const total = parseFloat(String(r.totalDrawdown||'').replace(',','.'));
-  const target = parseFloat(String(r.profitTarget||'').replace(',','.'));
-  const hasAny = !isNaN(daily) || !isNaN(total) || !isNaN(target);
-  if(state.accountType !== 'funded' || !hasAny){ card.style.display = 'none'; return; }
-  card.style.display = 'block';
-
-  const withPct = state.history.filter(h=>h.resultPct !== null && h.resultPct !== undefined);
-  const todayK = dayKeyFromTs(Date.now());
-  const todayPnl = withPct.filter(h=>dayKeyFromTs(h.ts) === todayK).reduce((a,h)=>a+h.resultPct,0);
-  const cum = withPct.reduce((a,h)=>a+h.resultPct,0);
-  const fmt = fmtSignedPct;
-
-  function colorFor(ratio){
-    if(ratio >= 0.8) return 'var(--danger)';
-    if(ratio >= 0.5) return 'var(--amber)';
-    return 'var(--brand)';
-  }
-  function limitRow(title, limit, used, extra){
-    used = Math.max(0, used);
-    const ratio = Math.min(used/limit, 1);
-    const left = Math.max(0, limit - used);
-    const breached = used >= limit;
-    return `<div class="fp-row">
-      <div class="top"><span>${title}</span><span>${fix1(used)}% / ${limit}%</span></div>
-      <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:${colorFor(ratio)};"></div></div>
-      <div class="sub">${breached ? 'Límite alcanzado o superado' : 'Te quedan ' + fix1(left) + '%'} · ${extra}</div>
-    </div>`;
-  }
-
-  const ddType = r.ddType === 'trailing' ? 'trailing' : 'static';
-  const chrono = withPct.slice().sort((a,b)=>a.ts-b.ts);
-  let running = 0, peak = 0;
-  chrono.forEach(h=>{ running += h.resultPct; if(running > peak) peak = running; });
-
-  let html = '';
-  if(!isNaN(daily) && daily > 0) html += limitRow('Drawdown diario', daily, -todayPnl, 'Hoy: ' + fmt(todayPnl));
-  if(!isNaN(total) && total > 0){
-    if(ddType === 'trailing'){
-      const lock = !!r.ddLock;
-      const floor = lock ? Math.min(peak - total, 0) : (peak - total);
-      const usedT = total - (cum - floor);
-      html += limitRow('Drawdown total (trailing' + (lock ? ', congelado en el inicial' : '') + ')', total, usedT, 'Pico: ' + fmt(peak) + ' · Piso: ' + fmt(floor) + ' · Acumulado: ' + fmt(cum));
-    } else {
-      html += limitRow('Drawdown total (estático)', total, -cum, 'Acumulado: ' + fmt(cum));
-    }
-  }
-  if(!isNaN(target) && target > 0){
-    const prog = Math.max(0, cum);
-    const ratio = Math.min(prog/target, 1);
-    const reached = prog >= target;
-    html += `<div class="fp-row">
-      <div class="top"><span>Profit target</span><span>${fix1(prog)}% / ${target}%</span></div>
-      <div class="bar"><div class="fill" style="width:${Math.round(ratio*100)}%; background:var(--brand);"></div></div>
-      <div class="sub">${reached ? 'Objetivo alcanzado' : 'Te falta ' + fix1(target-prog) + '%'} · Acumulado: ${fmt(cum)}</div>
-    </div>`;
-  }
-  box.innerHTML = html || '<p style="font-size:13px; color:var(--text-2);">Cargá al menos una regla en "Tipo de cuenta".</p>';
-}
-
-function renderAccountTypePills(){
-  document.querySelectorAll('#accountTypePills .type-card').forEach(btn=>{
-    btn.classList.toggle('active', state.accountType === btn.dataset.type);
-  });
-  const section = document.getElementById('fundedRulesSection');
-  section.style.display = state.accountType === 'funded' ? 'block' : 'none';
-  document.getElementById('dailyDrawdownInput').value = state.fundedRules.dailyDrawdown || '';
-  document.getElementById('totalDrawdownInput').value = state.fundedRules.totalDrawdown || '';
-  document.getElementById('profitTargetInput').value = state.fundedRules.profitTarget || '';
-  const curDd = state.fundedRules.ddType === 'trailing' ? 'trailing' : 'static';
-  document.querySelectorAll('#ddTypePills button').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.dd === curDd);
-  });
-  document.getElementById('ddLockField').style.display = curDd === 'trailing' ? 'block' : 'none';
-  document.getElementById('ddLockInput').checked = !!state.fundedRules.ddLock;
-  renderFundedProgress();
-}
-
-document.getElementById('ddLockInput').addEventListener('change', e=>{
-  state.fundedRules.ddLock = e.target.checked;
-  saveState();
-  renderFundedProgress();
-});
-
-document.querySelectorAll('#ddTypePills button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    state.fundedRules.ddType = btn.dataset.dd;
-    saveState();
-    renderAccountTypePills();
-  });
-});
-
-document.querySelectorAll('#accountTypePills .type-card').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    state.accountType = btn.dataset.type;
-    saveState();
-    renderAccountTypePills();
-  });
-});
-
-document.getElementById('dailyDrawdownInput').addEventListener('input', e=>{
-  state.fundedRules.dailyDrawdown = e.target.value;
-  saveState();
-  renderFundedProgress();
-});
-document.getElementById('totalDrawdownInput').addEventListener('input', e=>{
-  state.fundedRules.totalDrawdown = e.target.value;
-  saveState();
-  renderFundedProgress();
-});
-document.getElementById('profitTargetInput').addEventListener('input', e=>{
-  state.fundedRules.profitTarget = e.target.value;
-  saveState();
-  renderFundedProgress();
-});
 
 function afterPlanChange(){
   saveState();
@@ -700,6 +599,8 @@ function resetForm(){
   renderChips();
   renderFormHints();
   updateAddButton();
+  // accounts.js carga después: en el primer reset todavía no existe.
+  if(typeof renderFormAccount === 'function') renderFormAccount();
 }
 
 function startEditTrade(id){
@@ -714,6 +615,7 @@ function startEditTrade(id){
   planEditedInForm = false;
   entryTimeTouched = true;
   renderChecklist();
+  renderFormAccount(h.accountId);
   document.getElementById('entryTimeInput').value = toLocalInputValue(h.ts);
   document.getElementById('assetInput').value = h.asset || '';
   document.getElementById('setupInput').value = h.setup || '';
@@ -750,7 +652,6 @@ function renderOrDefer(fn){
 function renderAll(){
   renderDailyRisk();
   updateBestStreak();
-  renderFundedProgress();
   renderDatalists();
   onDataChange.forEach(renderOrDefer);
 }
@@ -818,6 +719,7 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     confidence: tradeForm.confidence,
     errors: [...tradeForm.errors],
     note: document.getElementById('resultNote').value.trim(),
+    accountId: formAccountId(),
   };
   // La captura se guarda aparte (IndexedDB); el trade solo lleva su id.
   const prev = editingTradeId ? state.history.find(x=> x.id === editingTradeId) : null;
@@ -870,14 +772,21 @@ function getMaxDailyRisk(){
   return (!isNaN(v) && v > 0) ? v : null;
 }
 
-function dayRiskMap(){
+// Riesgo tomado por día en una cuenta (el riesgo es % de cada cuenta, no se suma entre cuentas).
+function dayRiskMap(accountId){
   const map = {};
   state.history.forEach(h=>{
-    if(h.riskPct === null || h.riskPct === undefined) return;
+    if(h.riskPct === null || h.riskPct === undefined || h.accountId !== accountId) return;
     const k = dayKeyFromTs(h.ts);
     map[k] = (map[k] || 0) + h.riskPct;
   });
   return map;
+}
+// Riesgo tomado hoy: en la cuenta que se mira o, con todas, en la que más arriesgó.
+function todayRiskUsed(){
+  const today = dayKeyFromTs(Date.now());
+  const ids = state.viewAccount === 'all' ? state.accounts.map(a=> a.id) : [state.viewAccount];
+  return Math.max(0, ...ids.map(id=> dayRiskMap(id)[today] || 0));
 }
 
 function computeRiskMgmtPct(list){
@@ -886,7 +795,7 @@ function computeRiskMgmtPct(list){
   const map = {};
   list.forEach(h=>{
     if(h.riskPct === null || h.riskPct === undefined) return;
-    const k = dayKeyFromTs(h.ts);
+    const k = h.accountId + '|' + dayKeyFromTs(h.ts);
     map[k] = (map[k] || 0) + h.riskPct;
   });
   const days = Object.keys(map);
@@ -899,7 +808,7 @@ function renderDailyRisk(){
   const box = document.getElementById('dailyRiskStatus');
   const max = getMaxDailyRisk();
   if(max === null){ box.innerHTML = '<div class="risk-gauge empty">Elegí tu riesgo máximo diario para ver cuánto te queda cada día.</div>'; return; }
-  const used = dayRiskMap()[dayKeyFromTs(Date.now())] || 0;
+  const used = todayRiskUsed();
   const ratio = used / max;
   const cls = ratio >= 1 ? 'bad' : ratio >= 0.5 ? 'warn' : 'good';
   const label = ratio > 1 ? 'Límite superado' : ratio >= 1 ? 'Límite alcanzado' : ratio >= 0.5 ? 'Cerca del límite' : 'Dentro del límite';
@@ -976,9 +885,9 @@ function summarizePeriod(list){
 // desde el historial, así reflejan trades cargados, editados o borrados después.
 function closedMonthsList(){
   const currentKey = monthKeyOf(Date.now());
-  const keys = [...new Set(state.history.map(h=> monthKeyOf(h.ts)))].filter(k=> k !== currentKey).sort().reverse();
+  const keys = [...new Set(viewTrades().map(h=> monthKeyOf(h.ts)))].filter(k=> k !== currentKey).sort().reverse();
   return keys.map(key=>{
-    const monthTrades = state.history.filter(h=> monthKeyOf(h.ts) === key);
+    const monthTrades = viewTrades().filter(h=> monthKeyOf(h.ts) === key);
     const s = summarizePeriod(monthTrades);
     return {monthKey: key, label: monthLabelOf(monthTrades[0].ts), count: s.total, sum: s.sum,
       followedPct: s.pct, followedPctRaw: s.pctRaw, avgPerDay: s.avgPerDay, riskMgmtPct: s.riskMgmtPct};
@@ -1043,7 +952,6 @@ document.addEventListener('click', e=>{
 });
 
 loadState();
-renderAccountTypePills();
 document.getElementById('maxDailyRiskInput').value = state.maxDailyRisk || '';
 renderItemsManager();
 resetForm();

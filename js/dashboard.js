@@ -139,11 +139,11 @@ function renderHomeKpis(streak){
 
 function renderToday(){
   const todayKey = dayKeyFromTs(Date.now());
-  const today = state.history.filter(h=> dayKeyFromTs(h.ts) === todayKey);
+  const today = viewTrades().filter(h=> dayKeyFromTs(h.ts) === todayKey);
   const s = Analytics.summary(today);
   const broken = today.filter(h=> !h.followedPlan).length;
   const maxRisk = getMaxDailyRisk();
-  const used = dayRiskMap()[todayKey] || 0;
+  const used = todayRiskUsed();
   const d = keyDate(todayKey).toLocaleDateString('es-AR', {weekday: 'long', day: 'numeric', month: 'long'});
   document.getElementById('todayDate').textContent = d.charAt(0).toUpperCase() + d.slice(1);
   let alert;
@@ -204,7 +204,7 @@ function renderWeekStrip(){
   const box = document.getElementById('homeWeek');
   box.innerHTML = WEEKDAYS.map((n, i)=>{
     const key = addDaysKey(start, i);
-    const list = state.history.filter(h=> dayKeyFromTs(h.ts) === key);
+    const list = viewTrades().filter(h=> dayKeyFromTs(h.ts) === key);
     const sum = list.reduce((a, h)=> a + Analytics.pct(h), 0);
     const broke = list.some(h=> !h.followedPlan);
     const cls = !list.length ? 'none' : sum > 0 ? 'pos' : sum < 0 ? 'neg' : 'be';
@@ -223,7 +223,7 @@ function renderWeekStrip(){
 
 function renderLastTrades(){
   const box = document.getElementById('homeLast');
-  const list = state.history.slice(0, 5);
+  const list = viewTrades().slice(0, 5);
   if(!list.length){ box.innerHTML = '<div class="empty">Todavía no registraste trades.</div>'; return; }
   const [first, ...rest] = list;
   box.innerHTML = `<div class="hist">${typeof tradeRow === 'function' ? tradeRow(first, true) : ''}</div>
@@ -280,10 +280,10 @@ function renderHome(){
   renderToday();
   renderGoalRing();
   renderWeekStrip();
-  renderFundedProgress();
+  renderPropAccounts();
   renderLastTrades();
   renderInsightList(document.getElementById('homeInsights'), Analytics.insights().slice(0, 3),
-    state.history.length < 3 ? 'Con 3 trades o más vas a empezar a ver patrones de tu operativa acá.' : 'Todavía no hay patrones claros. Seguí registrando emociones y errores en cada trade.');
+    viewTrades().length < 3 ? 'Con 3 trades o más vas a empezar a ver patrones de tu operativa acá.' : 'Todavía no hay patrones claros. Seguí registrando emociones y errores en cada trade.');
   renderBadges();
 }
 
