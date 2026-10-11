@@ -24,6 +24,7 @@ const ERROR_TAGS = [
   {id:'ignored_tp', label:t('No respeté el TP')},
 ];
 const emotionById = id => EMOTIONS.find(e=>e.id === id);
+const isRiskEmotion = id => { const e = emotionById(id); return !!e && e.tone === 'risk'; };
 // Nombre de la emoción dentro de una frase ("con ansioso" → "con ansioso", pero FOMO en mayúsculas).
 const emotionWord = e => e.id === 'fomo' ? 'FOMO' : e.label.toLowerCase(LOCALE);
 const errorById = id => ERROR_TAGS.find(e=>e.id === id);
@@ -322,6 +323,8 @@ function renderItemsManager(){
         <div class="editRow" data-id="${it.id}">
           <input type="text" class="editLabel" value="${escapeHtml(it.label)}" aria-label="${t('Regla')}">
           <input type="text" class="editHint" value="${escapeHtml(it.hint || '')}" placeholder="${t('Aclaración (opcional)')}" aria-label="${t('Aclaración')}">
+          ${autoRuleFieldsHtml('edit-auto', it.auto)}
+          <div class="field-error edit-auto-error"></div>
           <div class="row">
             <button class="primary small editSaveBtn" data-id="${it.id}">${t('Guardar')}</button>
             <button class="ghost small editCancelBtn">${t('Cancelar')}</button>
@@ -335,6 +338,7 @@ function renderItemsManager(){
         <div class="txt">
           <div class="rule-label">${escapeHtml(it.label)}</div>
           ${it.hint ? `<div class="hint">${escapeHtml(it.hint)}</div>` : ''}
+          ${it.auto ? `<div class="rule-auto-tag">${Icons.svg('zap', 12)} ${autoRuleSummary(it.auto)}</div>` : ''}
         </div>
         <div class="actions">
           <button type="button" class="icon-btn move-btn upBtn" data-id="${it.id}" aria-label="${t('Subir')}" ${i === 0 ? 'disabled' : ''}>${Icons.svg('chevron-up', 15)}</button>
@@ -362,11 +366,14 @@ function renderItemsManager(){
     const label = row.querySelector('.editLabel').value.trim();
     const hint = row.querySelector('.editHint').value.trim();
     if(!label) return;
+    const parsed = readAutoRuleFields(row.querySelector('.auto-rule'));
+    if(parsed.error){ row.querySelector('.edit-auto-error').textContent = parsed.error; return; }
     const it = state.items.find(it=> it.id === id);
-    if(it){ it.label = label; it.hint = hint; }
+    if(it){ it.label = label; it.hint = hint; if(parsed.auto) it.auto = parsed.auto; else delete it.auto; }
     editingItemId = null;
     afterPlanChange();
   });
+  box.querySelectorAll('.editRow .auto-rule').forEach(bindAutoRuleFields);
   box.querySelectorAll('.editRow input').forEach(inp=> inp.addEventListener('keydown', e=>{
     if(e.key === 'Enter') box.querySelector('.editSaveBtn').click();
     if(e.key === 'Escape') box.querySelector('.editCancelBtn').click();
@@ -392,7 +399,15 @@ document.getElementById('addItemBtn').addEventListener('click', ()=>{
   const label = labelInput.value.trim();
   const hint = hintInput.value.trim();
   if(!label) return;
-  state.items.push({id: genItemId(), label, hint, createdAt: Date.now()});
+  const autoBox = document.querySelector('#newItemAuto .auto-rule');
+  const parsed = readAutoRuleFields(autoBox);
+  const errBox = document.getElementById('newItemAutoError');
+  if(parsed.error){ errBox.textContent = parsed.error; return; }
+  errBox.textContent = '';
+  const item = {id: genItemId(), label, hint, createdAt: Date.now()};
+  if(parsed.auto) item.auto = parsed.auto;
+  state.items.push(item);
+  resetAutoRuleFields(autoBox);
   labelInput.value = '';
   hintInput.value = '';
   hintInput.style.display = 'none';
@@ -400,6 +415,8 @@ document.getElementById('addItemBtn').addEventListener('click', ()=>{
   afterPlanChange();
   labelInput.focus();
 });
+document.getElementById('newItemAuto').innerHTML = autoRuleFieldsHtml('new-auto', null);
+bindAutoRuleFields(document.querySelector('#newItemAuto .auto-rule'));
 ['newItemLabel', 'newItemHint'].forEach(id=> document.getElementById(id).addEventListener('keydown', e=>{
   if(e.key === 'Enter') document.getElementById('addItemBtn').click();
 }));
@@ -409,6 +426,26 @@ document.getElementById('toggleHintBtn').addEventListener('click', e=>{
   hint.style.display = '';
   hint.focus();
 });
+
+// Datos del formulario con los que se verifican las reglas automáticas.
+function formAutoCtx(){
+  const timeVal = document.getElementById('entryTimeInput').value;
+  const ts = timeVal ? fromInputValue(timeVal) : Date.now();
+  const risk = parseNum(document.getElementById('riskInput').value);
+  return {
+    ts: isNaN(ts) ? Date.now() : ts,
+    riskPct: Number.isNaN(risk) ? null : risk,
+    accountId: typeof formAccountId === 'function' ? formAccountId() : (state.accounts[0] || {}).id,
+    id: editingTradeId,
+  };
+}
+// Tilda (o no) las reglas automáticas según los datos del formulario. Devuelve el resultado de cada una.
+function syncAutoChecks(){
+  const res = evalAutoRules(formAutoCtx());
+  Object.keys(res).forEach(id=> state.checked[id] = res[id].ok === true);
+  return res;
+}
+const isManualRule = it=> !it.auto;
 
 function renderChecklist(){
   const box = document.getElementById('checklist');
@@ -425,12 +462,21 @@ function renderChecklist(){
     renderTradeFormStatus();
     return;
   }
-  box.innerHTML = `<div class="rule-grid">${state.items.map(it=> `
+  const autoRes = syncAutoChecks();
+  box.innerHTML = `<div class="rule-grid">${state.items.map(it=>{
+    const r = autoRes[it.id];
+    if(r) return `
+    <div class="rule-tile auto ${r.ok ? 'on' : r.ok === false ? 'off' : 'unknown'}" data-id="${it.id}" role="status">
+      <span class="rule-check">${Icons.svg(r.ok ? 'circle-check' : r.ok === false ? 'x' : 'clock', 20)}</span>
+      <span class="rule-txt"><span class="label">${escapeHtml(it.label)}</span><span class="hint">${t('Se verifica sola')} · ${r.text}</span></span>
+    </div>`;
+    return `
     <button type="button" class="rule-tile ${state.checked[it.id] ? 'on' : ''}" data-id="${it.id}" aria-pressed="${!!state.checked[it.id]}">
       <span class="rule-check">${Icons.svg('circle-check', 20)}</span>
       <span class="rule-txt"><span class="label">${escapeHtml(it.label)}</span>${it.hint ? `<span class="hint">${escapeHtml(it.hint)}</span>` : ''}</span>
-    </button>`).join('')}</div>`;
-  box.querySelectorAll('.rule-tile').forEach(t=> t.addEventListener('click', ()=>{
+    </button>`;
+  }).join('')}</div>`;
+  box.querySelectorAll('button.rule-tile').forEach(t=> t.addEventListener('click', ()=>{
     state.checked[t.dataset.id] = !state.checked[t.dataset.id];
     // Si se desmarcan todas, el paso vuelve a quedar sin responder.
     tradeForm.planTouched = planProgress().done > 0;
@@ -515,7 +561,7 @@ function renderTradeFormStatus(){
   const {done, total, crit} = planProgress();
   document.getElementById('rulesSub').style.display = state.items.length && crit.length ? '' : 'none';
   const steps = {
-    plan: total > 0 && (done === total || tradeForm.planTouched),
+    plan: total > 0 && (done === total || tradeForm.planTouched || (!state.items.some(isManualRule) && !crit.length)),
     trade: !!(tradeForm.result && tradeForm.direction && val('assetInput')),
     mind: !!(tradeForm.emotion && tradeForm.confidence),
     notes: !!(val('resultNote') || currentImageData),
@@ -571,6 +617,9 @@ function renderTradeFormStatus(){
 }
 ['assetInput', 'setupInput', 'riskInput', 'rrPlanInput', 'resultPctInput', 'resultNote', 'entryTimeInput']
   .forEach(id=> document.getElementById(id).addEventListener('input', renderTradeFormStatus));
+// La hora, el riesgo y la cuenta cambian lo que dicen las reglas automáticas.
+['riskInput', 'entryTimeInput'].forEach(id=> document.getElementById(id).addEventListener('input', ()=>{ if(state.items.some(it=> it.auto)) renderChecklist(); }));
+document.getElementById('tradeAccountInput').addEventListener('change', ()=>{ if(state.items.some(it=> it.auto)) renderChecklist(); });
 
 function parseNum(raw){
   raw = String(raw || '').trim().replace(',', '.');
@@ -655,6 +704,8 @@ function startEditTrade(id){
   document.getElementById('resultPctInput').value = h.resultPct ?? '';
   document.getElementById('durationInput').value = h.durationMin ?? '';
   document.getElementById('resultNote').value = h.note || '';
+  // Las reglas automáticas se vuelven a verificar con los datos del trade.
+  renderChecklist();
   // Criterios: los que se tildaron al registrarlo. Trades de antes de los criterios: según si siguió el plan.
   const critMiss = new Set(h.criteriaMissing || []);
   const setupCrit = typeof setupByName === 'function' && setupByName(h.setup) ? setupByName(h.setup).criteria : [];
@@ -724,10 +775,25 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     resetForm();
     return fail(t('Ese trade ya no existe (se eliminó). No se guardaron los cambios.'));
   }
-  // Sin reglas ni criterios tildados el trade queda como plan roto: se confirma para que no sea un olvido.
-  const keepPlan = editingTradeId && editOriginalPlan && !planEditedInForm;
+  // Reglas automáticas: se verifican con la hora, el riesgo y la cuenta de este trade.
+  const autoCtx = {ts, riskPct, accountId: formAccountId(), id: editingTradeId};
+  const autoChecks = evalAutoRules(autoCtx);
+  const noRisk = state.items.find(it=> autoChecks[it.id] && autoChecks[it.id].ok === null);
+  if(noRisk) return fail(t('Tu regla "{rule}" se verifica con el riesgo del trade: cargalo para guardar.', {rule: noRisk.label}));
+  Object.keys(autoChecks).forEach(id=> state.checked[id] = autoChecks[id].ok);
+  // Al editar sin tocar las reglas se conserva el plan original, salvo que cambie
+  // lo que dicen las reglas automáticas que ya existían cuando se registró.
+  const prevTrade = editingTradeId ? state.history.find(x=> x.id === editingTradeId) : null;
+  const autoChanged = !!prevTrade && state.items.some(it=> autoChecks[it.id]
+    && ruleCreatedAt(it) <= Math.max(prevTrade.ts, prevTrade.loggedAt || 0)
+    && autoChecks[it.id].ok === (prevTrade.missingIds || []).includes(it.id));
+  const keepPlan = editingTradeId && editOriginalPlan && !planEditedInForm && !autoChanged;
   const prog = planProgress();
-  if(!keepPlan && prog.total && !prog.done
+  // Sin reglas ni criterios tildados a mano el trade queda como plan roto: se confirma para que no sea un olvido.
+  const manualItems = state.items.filter(isManualRule);
+  const manualTotal = manualItems.length + prog.crit.length;
+  const manualDone = manualItems.filter(it=> state.checked[it.id]).length + prog.critDone;
+  if(!keepPlan && manualTotal && !manualDone
     && !confirm(t('No marcaste ninguna regla ni criterio de tu Trading Plan. Si guardás así, el trade queda como "Plan roto". ¿Guardar igual?'))) return;
 
   // El plan del trade: reglas generales + criterios del setup. Faltar cualquiera lo deja fuera del plan.
@@ -761,10 +827,12 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     confidence: tradeForm.confidence,
     errors: [...tradeForm.errors],
     note: document.getElementById('resultNote').value.trim(),
-    accountId: formAccountId(),
+    accountId: autoCtx.accountId,
   };
+  if(!keepPlan) data.autoChecks = autoChecks;
   // La captura se guarda aparte (IndexedDB); el trade solo lleva su id.
-  const prev = editingTradeId ? state.history.find(x=> x.id === editingTradeId) : null;
+  const prev = prevTrade;
+  const before0 = prev ? {ts: prev.ts, accountId: prev.accountId} : null;
   const prevImage = prev ? tradeImage(prev) : null;
   let imageToRemove = null;
   if(!currentImageData){
@@ -784,7 +852,10 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
   if(editingTradeId){
     const h = state.history.find(x=> x.id === editingTradeId);
     const before = {...h};
+    const planBefore = planSnapshot(h);
     Object.assign(h, data, {editedAt: Date.now()});
+    // Si cambió lo que se cumplió del plan, queda registrado en el trade.
+    pushPlanEdit(h, planEditEntry(planBefore, planSnapshot(h), 'user'));
     // Un trade importado queda completo cuando se guarda desde el formulario.
     delete h.pending;
     undo = ()=>{ Object.keys(h).forEach(k=> delete h[k]); Object.assign(h, before); };
@@ -801,6 +872,10 @@ document.getElementById('addTradeBtn').addEventListener('click', ()=>{
     if(data.imageId && data.imageId !== (prev && prev.imageId)) ImageStore.cache.delete(data.imageId);
     return fail(t('No se pudo guardar el trade porque el almacenamiento del navegador está lleno. Exportá un backup y liberá espacio.'));
   }
+  // El número de trade del día cambia para los demás trades de ese día (y del día de antes, si se movió).
+  refreshDayAutoRules(dayKeyFromTs(ts), data.accountId);
+  if(prev && (dayKeyFromTs(before0.ts) !== dayKeyFromTs(ts) || before0.accountId !== data.accountId)) refreshDayAutoRules(dayKeyFromTs(before0.ts), before0.accountId);
+  saveState();
   if(data.imageId && data.imageId !== (prev && prev.imageId)) ImageStore.put(data.imageId, currentImageData).catch(()=>{});
   if(imageToRemove) ImageStore.remove(imageToRemove);
   const wasEditing = !!editingTradeId;

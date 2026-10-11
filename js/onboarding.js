@@ -43,7 +43,7 @@
       </div>` : `
       <div class="ob-item">
         <span class="ob-num">${i + 1}</span>
-        <div class="ob-text"><span class="t">${escapeHtml(it.label)}</span>${it.hint ? `<span class="h">${escapeHtml(it.hint)}</span>` : ''}</div>
+        <div class="ob-text"><span class="t">${escapeHtml(it.label)}</span>${it.hint ? `<span class="h">${escapeHtml(it.hint)}</span>` : ''}${it.auto ? `<span class="rule-auto-tag">${Icons.svg('zap', 12)} ${autoRuleSummary(it.auto)}</span>` : ''}</div>
         <div class="ob-actions">
           <button type="button" class="ob-icon" data-edit="${i}" aria-label="${t('Editar regla')}" title="${t('Editar')}">${Icons.svg('pencil', 15)}</button>
           <button type="button" class="ob-icon danger" data-del="${i}" aria-label="${t('Eliminar regla')}" title="${t('Eliminar')}">${Icons.svg('x', 15)}</button>
@@ -118,13 +118,19 @@
   function addItem(){
     const label = $('obNewItem').value.trim();
     if(!label){ $('obNewItem').focus(); return; }
-    draft.items.push({id: genItemId(), label, hint: $('obNewHint').value.trim()});
+    const autoBox = $('obNewAuto').querySelector('.auto-rule');
+    const parsed = readAutoRuleFields(autoBox);
+    if(parsed.error){ $('obItemsError').textContent = parsed.error; return; }
+    draft.items.push({id: genItemId(), label, hint: $('obNewHint').value.trim(), auto: parsed.auto});
+    resetAutoRuleFields(autoBox);
     $('obNewItem').value = '';
     $('obNewHint').value = '';
     $('obItemsError').textContent = '';
     renderItems();
     $('obNewItem').focus();
   }
+  $('obNewAuto').innerHTML = autoRuleFieldsHtml('ob-auto', null);
+  bindAutoRuleFields($('obNewAuto').querySelector('.auto-rule'));
   $('obAddItem').addEventListener('click', addItem);
   ['obNewItem', 'obNewHint'].forEach(id=> $(id).addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); addItem(); } }));
 
@@ -146,7 +152,7 @@
         return;
       }
     }
-    state.items = draft.items.map(it=> ({id: it.id, label: it.label, hint: it.hint || '', createdAt: Date.now()}));
+    state.items = draft.items.map(it=> ({id: it.id, label: it.label, hint: it.hint || '', createdAt: Date.now(), ...(it.auto ? {auto: it.auto} : {})}));
     // El primer setup queda como ficha en la pestaña Plan, igual que los que se cargan desde ahí.
     const name = draft.setup.name.trim().slice(0, 60);
     const key = name.toLowerCase();

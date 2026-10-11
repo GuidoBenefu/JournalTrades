@@ -98,6 +98,7 @@ function tradeRow(h, showDate){
   const tags = [];
   if(h.pending) tags.push(`<span class="tag warn">${t('Por completar')}</span>`);
   tags.push(`<span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? t('Plan seguido') : t('Plan roto')}</span>`);
+  if(planFlippedByUser(h)) tags.push(`<span class="tag warn" title="${t('Se registró como plan roto y después se cambió a plan seguido.')}">${t('Plan editado')}</span>`);
   if(emo) tags.push(`<span class="tag ${emo.tone === 'risk' ? 'warn' : ''}">${emo.label}</span>`);
   errs.slice(0, 2).forEach(e=> tags.push(`<span class="tag bad">${e.label}</span>`));
   if(errs.length > 2) tags.push(`<span class="tag bad">+${errs.length - 2}</span>`);
@@ -222,7 +223,8 @@ function renderTradePanel(){
   const deleted = missingLabels.filter(l=> !existed.some(it=> it.label === l && isMiss(it)));
   const rules = existed.map(it=>{
       const miss = isMiss(it);
-      return `<li class="${miss ? 'miss' : 'ok'}">${Icons.svg(miss ? 'x' : 'check', 14)}<span>${escapeHtml(it.label)}</span></li>`;
+      const auto = h.autoChecks && h.autoChecks[it.id];
+      return `<li class="${miss ? 'miss' : 'ok'}">${Icons.svg(miss ? 'x' : 'check', 14)}<span>${escapeHtml(it.label)}${auto ? `<small class="tp-auto">${Icons.svg('zap', 11)} ${t('Verificada sola')} · ${auto.text}</small>` : ''}</span></li>`;
     }).join('')
     + deleted.map(l=> `<li class="miss">${Icons.svg('x', 14)}<span>${escapeHtml(l)} <small>${t('(regla que ya no está en tu plan)')}</small></span></li>`).join('');
   // Criterios del setup tal como se tildaron al registrar el trade.
@@ -256,7 +258,8 @@ function renderTradePanel(){
     ${hasImage(h) ? `<img class="tp-img" src="${tradeImage(h)}" alt="${t('Captura del trade')}">` : ''}
     ${sec(`Trading Plan <span class="tag ${h.followedPlan ? 'good' : 'bad'}">${h.followedPlan ? t('Seguido') : t('Roto')}</span>`,
       (rules ? `<ul class="tp-rules">${rules}</ul>` : `<p class="tp-muted">${t('No tenías reglas cargadas.')}</p>`)
-      + (crit ? `<div class="tp-sub-t">${t('Criterios de {name}', {name: escapeHtml(h.setup || '')})}</div><ul class="tp-rules">${crit}</ul>` : ''))}
+      + (crit ? `<div class="tp-sub-t">${t('Criterios de {name}', {name: escapeHtml(h.setup || '')})}</div><ul class="tp-rules">${crit}</ul>` : '')
+      + ((h.planEdits || []).length ? `<div class="tp-sub-t">${t('Cambios en el plan de este trade')}</div>${planEditsHtml(h)}` : ''))}
     ${sec(t('Tu cabeza'), `<div class="tp-mind">
       <div><span class="tp-muted">${t('Emoción')}</span><b class="${emo ? (emo.tone === 'risk' ? 'warn' : 'pos') : ''}">${emo ? emo.label : '—'}</b></div>
       <div><span class="tp-muted">${t('Confianza')}</span>${h.confidence ? `<span class="tp-conf">${[1, 2, 3, 4, 5].map(i=> `<i class="${i <= h.confidence ? 'on' : ''}"></i>`).join('')}</span><b>${h.confidence}/5</b>` : '<b>—</b>'}</div>
@@ -279,6 +282,8 @@ function renderTradePanel(){
   document.getElementById('tpDelete').addEventListener('click', ()=>{
     if(!confirm(t('¿Eliminar este trade? No se puede deshacer.'))) return;
     state.history = state.history.filter(x=> x.id !== h.id);
+    // Los trades que venían después ese día pasan a tener un número menor.
+    refreshDayAutoRules(dayKeyFromTs(h.ts), h.accountId);
     ImageStore.remove(h.imageId);
     // Si ese trade estaba abierto para editar, el formulario vuelve a cero.
     if(editingTradeId === h.id) resetForm();

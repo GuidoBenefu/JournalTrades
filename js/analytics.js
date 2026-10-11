@@ -125,12 +125,19 @@ const Analytics = {
     const emo = this.group(trades, h=> h.emotion).filter(g=> g.n >= MIN_SAMPLE);
     if(emo.length >= 2){
       emo.sort((x, y)=> x.avg - y.avg);
-      const worst = emo[0], best = emo[emo.length - 1];
-      const w = emotionById(worst.key), bE = emotionById(best.key);
+      const worst = emo[0];
+      const w = emotionById(worst.key);
       if(worst.avg < 0) out.push({tone: 'bad', icon: 'frown', weight: 80,
         text: t('Tus trades con <b>{emo}</b> promedian <b>{avg}</b> ({n} trades).', {emo: emotionWord(w), avg: fmt(worst.avg), n: worst.n})});
-      if(best.avg > 0 && best.key !== worst.key) out.push({tone: 'good', icon: 'smile', weight: 60,
-        text: t('Operando <b>{emo}</b> promediás <b>{avg}</b> por trade.', {emo: emotionWord(bE), avg: fmt(best.avg)})});
+      // Lo que te funciona sale solo de los estados que ayudan: un trade con FOMO o revancha
+      // que salió bien no es algo para repetir.
+      const best = emo.filter(g=> !isRiskEmotion(g.key)).pop();
+      if(best && best.avg > 0 && best.key !== worst.key) out.push({tone: 'good', icon: 'smile', weight: 60,
+        text: t('Operando <b>{emo}</b> promediás <b>{avg}</b> por trade.', {emo: emotionWord(emotionById(best.key)), avg: fmt(best.avg)})});
+      // Ganar operando con una emoción de riesgo es suerte, no un patrón: se avisa como alerta.
+      const luckyRisk = emo.filter(g=> isRiskEmotion(g.key) && g.avg > 0).pop();
+      if(luckyRisk) out.push({tone: 'bad', icon: 'alert-triangle', weight: 65,
+        text: t('Con <b>{emo}</b> vas {avg} por trade ({n} trades), pero son trades fuera de tu cabeza fría: que salgan bien no los hace buenos trades.', {emo: emotionWord(emotionById(luckyRisk.key)), avg: fmt(luckyRisk.avg), n: luckyRisk.n})});
     } else if(emo.length === 1 && emo[0].avg < 0){
       const e = emotionById(emo[0].key);
       out.push({tone: 'bad', icon: 'frown', weight: 70, text: t('Tus trades con <b>{emo}</b> promedian <b>{avg}</b>.', {emo: emotionWord(e), avg: fmt(emo[0].avg)})});

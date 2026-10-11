@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=46"></script>
-<script src="js/i18n.js?v=46"></script>
+<script src="js/lang-en.js?v=47"></script>
+<script src="js/i18n.js?v=47"></script>
 <title>Mi journal · Journal Trading</title>
-<script src="js/theme.js?v=46"></script>
+<script src="js/theme.js?v=47"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#161615">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Journal">
-<script src="js/pwa.js?v=46" defer></script>
+<script src="js/pwa.js?v=47" defer></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=46">
-<script src="js/auth.js?v=46"></script>
+<link rel="stylesheet" href="css/styles.css?v=47">
+<script src="js/auth.js?v=47"></script>
 <script>
   if(!JournalAuth.currentUser()){
     document.documentElement.style.visibility = 'hidden';
@@ -458,6 +458,12 @@
           </div>
           <button type="button" class="link-btn" id="toggleHintBtn">+ Agregar aclaración</button>
           <input type="text" id="newItemHint" placeholder="Aclaración opcional (ej. 9:30 a 11:00 NY)" aria-label="Aclaración" style="display:none;">
+          <div class="rule-add-auto">
+            <span class="rule-add-auto-l">Cómo se verifica</span>
+            <div id="newItemAuto"></div>
+          </div>
+          <div class="field-error" id="newItemAutoError"></div>
+          <p class="rule-add-note">Las automáticas se tildan solas con la hora, el riesgo y la cantidad de trades del día: no se pueden marcar a mano.</p>
         </div>
       </section>
       <section class="card set-card">
@@ -756,6 +762,11 @@
           <label for="obNewHint">Aclaración (opcional)</label>
           <input type="text" id="obNewHint" placeholder="Ej. De 9:30 a 11:00 hora de Nueva York">
         </div>
+        <div class="field">
+          <label>Cómo se verifica</label>
+          <div id="obNewAuto"></div>
+          <div class="field-hint">El horario, los trades por día y el riesgo por trade se pueden verificar solos, sin que los tildes.</div>
+        </div>
         <button type="button" id="obAddItem">+ Agregar regla</button>
       </div>
       <div class="field-error" id="obItemsError"></div>
@@ -1009,27 +1020,28 @@
 </div>
 
 <script>translateDom();</script>
-<script src="js/icons.js?v=46"></script>
-<script src="js/storage.js?v=46"></script>
-<script src="js/time.js?v=46"></script>
-<script src="js/images.js?v=46"></script>
-<script src="js/session.js?v=46"></script>
-<script src="js/app.js?v=46"></script>
-<script src="js/accounts.js?v=46"></script>
-<script src="js/analytics.js?v=46"></script>
-<script src="js/charts.js?v=46"></script>
-<script src="js/achievements.js?v=46"></script>
-<script src="js/dashboard.js?v=46"></script>
-<script src="js/analysis.js?v=46"></script>
-<script src="js/review.js?v=46"></script>
-<script src="js/calendar.js?v=46"></script>
-<script src="js/onboarding.js?v=46"></script>
-<script src="js/settings.js?v=46"></script>
-<script src="js/history.js?v=46"></script>
-<script src="js/playbook.js?v=46"></script>
-<script src="js/share.js?v=46"></script>
-<script src="js/report.js?v=46"></script>
-<script src="js/importer.js?v=46"></script>
+<script src="js/icons.js?v=47"></script>
+<script src="js/storage.js?v=47"></script>
+<script src="js/time.js?v=47"></script>
+<script src="js/images.js?v=47"></script>
+<script src="js/session.js?v=47"></script>
+<script src="js/rules.js?v=47"></script>
+<script src="js/app.js?v=47"></script>
+<script src="js/accounts.js?v=47"></script>
+<script src="js/analytics.js?v=47"></script>
+<script src="js/charts.js?v=47"></script>
+<script src="js/achievements.js?v=47"></script>
+<script src="js/dashboard.js?v=47"></script>
+<script src="js/analysis.js?v=47"></script>
+<script src="js/review.js?v=47"></script>
+<script src="js/calendar.js?v=47"></script>
+<script src="js/onboarding.js?v=47"></script>
+<script src="js/settings.js?v=47"></script>
+<script src="js/history.js?v=47"></script>
+<script src="js/playbook.js?v=47"></script>
+<script src="js/share.js?v=47"></script>
+<script src="js/report.js?v=47"></script>
+<script src="js/importer.js?v=47"></script>
 
 </body>
 </html>
