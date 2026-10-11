@@ -105,7 +105,7 @@ en `sw.js`, así los navegadores bajan la versión nueva y los que tienen la app
 instalada ven el aviso "Hay una versión nueva":
 
 ```bash
-N=41
+N=48
 sed -i "s/?v=[0-9]*\"/?v=$N\"/g" *.html && sed -i "s/^const VERSION = [0-9]*;/const VERSION = $N;/" sw.js
 ```
 

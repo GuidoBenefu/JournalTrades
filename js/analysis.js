@@ -377,7 +377,9 @@ function renderBreakdown(cur){
   let best = null, worst = null;
   if(rows.length >= 2){
     const byAvg = rows.slice().sort((a, b)=> b.avg - a.avg);
-    if(byAvg[0].avg > 0) best = byAvg[0].key;
+    // Una emoción de riesgo (FOMO, revancha...) nunca se marca como "Mejor", aunque haya salido bien.
+    const bestRow = byAvg.find(r=> !(breakdownBy === 'emotion' && isRiskEmotion(r.key)));
+    if(bestRow && bestRow.avg > 0) best = bestRow.key;
     if(byAvg[byAvg.length - 1].avg < 0) worst = byAvg[byAvg.length - 1].key;
   }
   const maxAbs = Math.max(...rows.map(r=> Math.abs(r.sum)), 0.1);
