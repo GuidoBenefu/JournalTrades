@@ -1,7 +1,8 @@
 # Journal Trading
 
 Checklist y journal de trading que corre en el navegador, sin build. Las
-cuentas y los planes viven en Supabase; el journal, por ahora, en `localStorage`.
+cuentas, los planes y el journal viven en Supabase; el journal se guarda también
+en `localStorage` para abrir al instante y funcionar sin conexión.
 
 ## Cómo usarlo
 
@@ -37,6 +38,7 @@ supabase/schema.sql  Tablas, políticas RLS y triggers de la base
 js/session.js    Header del usuario, plan, paywall al vencer la prueba y logout
 js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
                  versión de esquema, migraciones, export/import
+js/sync.js       Sincroniza el journal con la tabla `journals` de Supabase
 js/i18n.js       Idiomas: t('texto') traduce, translateDom() traduce el HTML fijo
 js/lang-en.js    Diccionario al inglés (clave = texto original en español)
 js/time.js       Horarios: todo se calcula en hora de Nueva York (día de trading,
@@ -91,16 +93,25 @@ cuenta nueva.
 `app.js` solo lee y escribe a través de `JournalStore` (`js/storage.js`). Lo
 que falta:
 
-1. Un adapter de Supabase con la misma interfaz (`load`, `save`, `clear`),
-   asignado a `JournalStore.adapter`, contra la tabla `journals` (ya creada en
-   `supabase/schema.sql`). Conviene que siga guardando en `localStorage` y suba
-   los cambios en segundo plano, para no perder el modo sin conexión.
-2. Las capturas de los trades (hoy en IndexedDB) a Supabase Storage.
-3. Pagos con Paddle: checkout en `JournalAuth.checkout()` y un webhook (Edge
+1. Las capturas de los trades (hoy en IndexedDB) a Supabase Storage.
+2. Pagos con Paddle: checkout en `JournalAuth.checkout()` y un webhook (Edge
    Function) que escriba en `subscriptions`.
 
 Si cambia la forma de los datos, subir `SCHEMA_VERSION` y agregar la migración
 correspondiente en `MIGRATIONS`.
+
+### Journal en la nube
+
+`js/sync.js` reemplaza `JournalStore.adapter` por uno que sigue guardando en
+`localStorage` y además marca el journal como pendiente de subir. Los cambios se
+suben a la tabla `journals` a los 2 segundos, al salir de la app y al cerrar
+sesión. Al abrir la app (y al volver a ella) se fija si la nube tiene una versión
+más nueva, cargada desde otro dispositivo; si la hay, la trae y recarga.
+
+Cada subida solo pisa la nube si sigue en la versión que conocía este navegador
+(`updated_at`). Si los dos lados cambiaron, gana el cambio más reciente y se
+suman los trades, setups, cuentas y revisiones del otro (`mergeJournals`). El
+estado se ve en Ajustes → Datos y backup.
 
 ## Idiomas
 

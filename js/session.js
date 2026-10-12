@@ -103,6 +103,8 @@ document.getElementById('paywallExportBtn').addEventListener('click', ()=>{
 });
 
 async function logout(){
+  // Antes de cerrar la sesión se sube lo que falte (si no hay conexión, queda en este navegador).
+  if(typeof CloudSync !== 'undefined') await CloudSync.push();
   await JournalAuth.logout();
   location.replace('index.html');
 }
