@@ -111,7 +111,10 @@ function evalAutoRule(it, ctx){
   if(a.type === 'hours'){
     const p = nyParts(ctx.ts);
     const at = pad2(p.h) + ':' + pad2(p.min);
-    const ok = inSession(p.h * 60 + p.min, {start: a.from, end: a.to});
+    // A diferencia de las sesiones, el horario de la regla incluye el minuto final:
+    // "de 09:30 a 11:00" deja entrar a las 11:00.
+    const min = p.h * 60 + p.min;
+    const ok = inSession(min, {start: a.from, end: a.to}) || min === hhmmToMin(a.to);
     return {ok, text: ok ? t('Entraste a las {at} NY, dentro de tu horario ({from} a {to}).', {at, from: a.from, to: a.to})
       : t('Entraste a las {at} NY, fuera de tu horario ({from} a {to}).', {at, from: a.from, to: a.to})};
   }
