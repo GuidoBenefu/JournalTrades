@@ -25,8 +25,12 @@
   // Solo en https o localhost (en file:// no hay service worker).
   if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')){
     let reloading = false;
+    // En la primera visita el service worker toma la página al activarse (clients.claim):
+    // eso no es una versión nueva y recargar ahí borraría lo que el usuario está
+    // escribiendo (el registro o los pasos de la configuración guiada).
+    const hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', ()=>{
-      if(reloading) return;
+      if(reloading || !hadController) return;
       reloading = true;
       location.reload();
     });
