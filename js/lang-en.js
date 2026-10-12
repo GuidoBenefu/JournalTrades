@@ -324,7 +324,7 @@ const I18N_EN = {
   'Nueva York': 'New York',
   'Fuera de sesión': 'Outside session',
   'Datos y backup': 'Data and backup',
-  'Por ahora tus datos se guardan solo en este navegador. Exportá un backup para no perderlos o pasarlos a otro dispositivo.': 'For now your data is stored only in this browser. Export a backup so you don\'t lose it or to move it to another device.',
+  'Tus trades se guardan en la nube y los ves desde cualquier dispositivo. Las capturas, por ahora, quedan solo en este navegador: el backup las incluye.': 'Your trades are saved in the cloud and you can see them from any device. Screenshots, for now, stay only in this browser: the backup includes them.',
   'Exportar backup': 'Export backup',
   'Descargá un archivo con todos tus datos.': 'Download a file with all your data.',
   'Importar backup': 'Import backup',
@@ -1248,4 +1248,10 @@ const I18N_EN = {
   "No pudimos conectar con el servidor. Revisá tu conexión.": "We couldn't reach the server. Check your connection.",
   "Te mandamos un email a {email}. Abrí el link para confirmar tu cuenta y entrar a tu journal.": "We sent an email to {email}. Open the link to confirm your account and go to your journal.",
   "Todavía no confirmaste tu email. Revisá tu casilla (y la carpeta de spam).": "You haven't confirmed your email yet. Check your inbox (and your spam folder).",
+  // ---- Journal en la nube ----
+  "Guardando en la nube…": "Saving to the cloud…",
+  "Todo guardado en la nube.": "Everything saved to the cloud.",
+  "Sin conexión: los cambios se suben solos cuando vuelva.": "Offline: changes will upload automatically when you're back online.",
+  "Tu prueba terminó: los cambios nuevos se guardan solo en este navegador.": "Your trial ended: new changes are saved only in this browser.",
+  "No se pudo guardar en la nube. Tus datos siguen en este navegador.": "Couldn't save to the cloud. Your data is still in this browser.",
 };
