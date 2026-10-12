@@ -35,6 +35,7 @@ js/config.js     URL y anon key de Supabase (públicas)
 js/vendor/supabase.js  Cliente de Supabase (@supabase/supabase-js, build UMD)
 js/auth.js       Registro, login, sesión y planes con Supabase Auth
 supabase/schema.sql  Tablas, políticas RLS y triggers de la base
+supabase/storage.sql Bucket privado para las capturas y sus políticas
 js/session.js    Header del usuario, plan, paywall al vencer la prueba y logout
 js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
                  versión de esquema, migraciones, export/import
@@ -68,7 +69,8 @@ img/og-image.png Imagen para compartir el link en redes y WhatsApp
 ### Cuentas (Supabase)
 
 1. Crear un proyecto en [supabase.com](https://supabase.com).
-2. SQL Editor → New query → pegar `supabase/schema.sql` → Run.
+2. SQL Editor → New query → pegar `supabase/schema.sql` → Run. Después, lo
+   mismo con `supabase/storage.sql` (capturas).
 3. Project Settings → API: copiar la **Project URL** y la **anon public key** en
    `js/config.js`. La `service_role` key nunca va al frontend.
 4. Authentication → URL Configuration: poner la URL del sitio en **Site URL** y
@@ -93,8 +95,7 @@ cuenta nueva.
 `app.js` solo lee y escribe a través de `JournalStore` (`js/storage.js`). Lo
 que falta:
 
-1. Las capturas de los trades (hoy en IndexedDB) a Supabase Storage.
-2. Pagos con Paddle: checkout en `JournalAuth.checkout()` y un webhook (Edge
+1. Pagos con Paddle: checkout en `JournalAuth.checkout()` y un webhook (Edge
    Function) que escriba en `subscriptions`.
 
 Si cambia la forma de los datos, subir `SCHEMA_VERSION` y agregar la migración
@@ -109,9 +110,19 @@ sesión. Al abrir la app (y al volver a ella) se fija si la nube tiene una versi
 más nueva, cargada desde otro dispositivo; si la hay, la trae y recarga.
 
 Cada subida solo pisa la nube si sigue en la versión que conocía este navegador
-(`updated_at`). Si los dos lados cambiaron, gana el cambio más reciente y se
-suman los trades, setups, cuentas y revisiones del otro (`mergeJournals`). El
-estado se ve en Ajustes → Datos y backup.
+(`updated_at`). Cada navegador guarda también el journal tal como estaba en esa
+versión (`:base`). Si los dos lados cambiaron, `mergeJournals` mezcla en tres vías
+contra esa base: lo agregado, editado o borrado de cada lado se respeta, y si los
+dos cambiaron el mismo dato gana el más reciente. Los cambios se detectan sin
+importar el orden de las claves (Postgres reordena los `jsonb`). El estado se ve
+en Ajustes → Datos y backup.
+
+Las capturas viven en IndexedDB (`js/images.js`) y además en el bucket
+`journal-images` de Supabase Storage, como `<userId>/<imageId>`. Cada captura
+nueva se sube al guardarla y se borra de la nube al borrarla acá. Al abrir la app
+(`syncImages` en `js/app.js`) se compara lo local con la nube: se sube lo que
+falta (por ejemplo, lo que se cargó sin conexión) y se bajan las capturas que se
+cargaron en otro dispositivo. Esa comparación nunca borra nada en la nube.
 
 ## Idiomas
 

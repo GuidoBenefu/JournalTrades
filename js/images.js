@@ -1,5 +1,6 @@
 // Capturas de los trades. Se guardan aparte, en IndexedDB, para no llenar el
-// localStorage (que tiene ~5 MB y además guarda todo el journal). Los trades
+// localStorage (que tiene ~5 MB y además guarda todo el journal), y se suben a
+// Supabase Storage (CloudImages, en js/sync.js). Los trades
 // solo guardan `imageId`. Las imágenes se cargan a memoria al abrir la app, así
 // el resto del código las puede leer de forma sincrónica con tradeImage(h).
 //
@@ -63,14 +64,17 @@ const ImageStore = {
 
   get(id){ return id ? this.cache.get(id) || null : null; },
 
-  async put(id, dataUrl){
+  // fromCloud: la imagen se acaba de bajar de la nube, no hay que volver a subirla.
+  async put(id, dataUrl, {fromCloud = false} = {}){
     this.cache.set(id, dataUrl);
+    if(!fromCloud && typeof CloudImages !== 'undefined') CloudImages.upload(id, dataUrl);
     if(this.available) await this._tx('readwrite', s=> s.put(dataUrl, this.key(id)));
   },
 
   async remove(id){
     if(!id) return;
     this.cache.delete(id);
+    if(typeof CloudImages !== 'undefined') CloudImages.remove(id);
     if(this.available) await this._tx('readwrite', s=> s.delete(this.key(id))).catch(()=>{});
   },
 

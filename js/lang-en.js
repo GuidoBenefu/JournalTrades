@@ -324,7 +324,7 @@ const I18N_EN = {
   'Nueva York': 'New York',
   'Fuera de sesión': 'Outside session',
   'Datos y backup': 'Data and backup',
-  'Tus trades se guardan en la nube y los ves desde cualquier dispositivo. Las capturas, por ahora, quedan solo en este navegador: el backup las incluye.': 'Your trades are saved in the cloud and you can see them from any device. Screenshots, for now, stay only in this browser: the backup includes them.',
+  'Tus trades y capturas se guardan en la nube y los ves desde cualquier dispositivo. El backup es una copia extra, en un archivo.': 'Your trades and screenshots are saved in the cloud and you can see them from any device. The backup is an extra copy, in a file.',
   'Exportar backup': 'Export backup',
   'Descargá un archivo con todos tus datos.': 'Download a file with all your data.',
   'Importar backup': 'Import backup',

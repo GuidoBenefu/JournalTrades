@@ -1093,4 +1093,11 @@ ImageStore.init(JournalStore.adapter.userId).then(async ()=>{
     if(legacy.length) saveState();
   }
   renderAll();
+  syncImages();
+  window.addEventListener('online', syncImages);
 });
+
+// Sube a la nube las capturas que falten y baja las que se cargaron en otro dispositivo.
+function syncImages(){
+  return CloudImages.reconcile(()=> state.history.concat(state.playbook).map(x=> x.imageId)).then(n=>{ if(n) renderAll(); });
+}
