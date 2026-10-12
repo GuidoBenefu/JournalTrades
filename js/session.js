@@ -81,8 +81,14 @@ function closePaywall(){
 }
 
 document.querySelectorAll('.billing-card').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const user = JournalAuth.upgradeToPro(btn.dataset.billing);
+  btn.addEventListener('click', async ()=>{
+    let user;
+    try{
+      user = await JournalAuth.checkout(btn.dataset.billing);
+    }catch(ex){
+      if(typeof showToast === 'function') showToast(`<span class="toast-ic">${Icons.svg('hourglass', 22)}</span><div>${ex.message}</div>`);
+      return;
+    }
     closePaywall();
     renderSession(user);
     if(typeof renderProfile === 'function') renderProfile();
@@ -96,8 +102,8 @@ document.getElementById('paywallExportBtn').addEventListener('click', ()=>{
   if(typeof stateForExport === 'function') JournalStore.exportToFile(stateForExport());
 });
 
-function logout(){
-  JournalAuth.logout();
+async function logout(){
+  await JournalAuth.logout();
   location.replace('index.html');
 }
 
@@ -108,12 +114,25 @@ function checkSessionStillValid(){
   if(!u || !sessionUser || u.id !== sessionUser.id){ location.replace(u ? 'app.html' : 'auth.html?mode=login'); return; }
   renderSession(u);
 }
-window.addEventListener('storage', e=>{ if(e.key === 'jt_session' || e.key === 'jt_users') checkSessionStillValid(); });
+window.addEventListener('storage', e=>{ if(e.key === 'jt_profile') checkSessionStillValid(); });
 // Al volver con "Atrás" después de cerrar sesión, el navegador puede mostrar la página guardada.
 window.addEventListener('pageshow', e=>{ if(e.persisted) checkSessionStillValid(); });
 // El vencimiento de la prueba se revisa también con la app abierta.
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkSessionStillValid(); });
 setInterval(checkSessionStillValid, 60000);
+
+// Confirma la sesión y el plan contra el servidor al abrir la app y al volver a
+// ella (como mucho cada 5 minutos): así se ve un pago confirmado o una sesión
+// que ya no es válida.
+let lastSync = 0;
+function syncSession(){
+  if(Date.now() - lastSync < 5 * 60000) return checkSessionStillValid();
+  lastSync = Date.now();
+  JournalAuth.init().then(()=>{
+    checkSessionStillValid();
+    if(typeof renderProfile === 'function') renderProfile();
+  });
+}
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncSession(); });
 
 document.getElementById('upgradeBtn').addEventListener('click', ()=> openUpgrade(false));
 document.getElementById('logoutBtn').addEventListener('click', logout);
@@ -122,3 +141,4 @@ document.getElementById('paywallLogoutBtn').addEventListener('click', logout);
 document.getElementById('obLogout').addEventListener('click', logout);
 
 renderSession(sessionUser);
+syncSession();

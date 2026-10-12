@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script src="js/lang-en.js?v=47"></script>
-<script src="js/i18n.js?v=47"></script>
+<script src="js/lang-en.js?v=48"></script>
+<script src="js/i18n.js?v=48"></script>
 <title>Ingresar · Journal Trading</title>
-<script src="js/theme.js?v=47"></script>
+<script src="js/theme.js?v=48"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#161615">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Journal">
-<script src="js/pwa.js?v=47" defer></script>
+<script src="js/pwa.js?v=48" defer></script>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
-<link rel="stylesheet" href="css/styles.css?v=47">
-<link rel="stylesheet" href="css/site.css?v=47">
+<link rel="stylesheet" href="css/styles.css?v=48">
+<link rel="stylesheet" href="css/site.css?v=48">
 </head>
 <body>
 <div class="site">
@@ -72,7 +72,7 @@
         <input type="text" id="nameInput" autocomplete="name" aria-describedby="nameError">
         <div class="field-error" id="nameError"></div>
       </div>
-      <div class="field" data-field="email">
+      <div class="field" id="emailField" data-field="email">
         <label for="emailInput">Email</label>
         <input type="email" id="emailInput" autocomplete="email" aria-describedby="emailError">
         <div class="field-error" id="emailError"></div>
@@ -116,16 +116,22 @@
 </div>
 
 <script>translateDom();</script>
-<script src="js/auth.js?v=47"></script>
+<script src="js/config.js?v=48"></script>
+<script src="js/vendor/supabase.js?v=48"></script>
+<script src="js/auth.js?v=48"></script>
 <script>
-  if(JournalAuth.currentUser()) location.replace('app.html');
-
-  // Funciones que todavía necesitan servidor (Google, emails). Cuando estén
-  // conectadas, se pone en false y desaparecen los avisos.
-  const BACKEND_PENDING = true;
-
   const params = new URLSearchParams(location.search);
-  let mode = ['register', 'reset'].includes(params.get('mode')) ? params.get('mode') : 'login';
+  // update: crear una contraseña nueva después de entrar por el link del email.
+  let mode = ['register', 'reset', 'update'].includes(params.get('mode')) ? params.get('mode') : 'login';
+  if(mode !== 'update' && JournalAuth.currentUser()) location.replace('app.html');
+
+  // Si un link de email venció o ya se usó, Supabase vuelve con el error en la URL.
+  const linkError = new URLSearchParams(location.hash.slice(1)).get('error_description') || params.get('error_description');
+
+  // Al volver de confirmar el email o de Google, la sesión llega en la URL.
+  JournalAuth.init().then(user=>{
+    if(user && mode !== 'update') location.replace('app.html');
+  });
   let plan = params.get('plan') === 'pro' ? 'pro' : 'trial';
   let billing = params.get('billing') === 'annual' ? 'annual' : 'monthly';
   const pricing = JournalAuth.PRO_PRICING;
@@ -152,17 +158,18 @@
   }
 
   function render(){
-    const reg = mode === 'register', reset = mode === 'reset';
-    $('authTitle').textContent = reg ? t('Creá tu cuenta') : reset ? t('Recuperá tu contraseña') : t('Qué bueno verte de nuevo');
+    const reg = mode === 'register', reset = mode === 'reset', update = mode === 'update';
+    $('authTitle').textContent = reg ? t('Creá tu cuenta') : reset ? t('Recuperá tu contraseña') : update ? t('Creá una contraseña nueva') : t('Qué bueno verte de nuevo');
     $('authSubtitle').textContent = reg
       ? (plan === 'pro' ? t('Empezá con el plan Pro.') : t('Empezá tu prueba gratis de 7 días.'))
       : reset ? t('Ingresá tu email y te mandamos un link para crear una contraseña nueva.')
+      : update ? t('Elegí la contraseña que vas a usar para entrar.')
       : t('Ingresá para ir a tu journal.');
     document.querySelectorAll('.auth-tabs button').forEach(b=> b.classList.toggle('active', b.dataset.mode === mode));
     document.querySelectorAll('.plan-opt[data-plan]').forEach(b=> b.classList.toggle('active', b.dataset.plan === plan));
     document.querySelectorAll('.billing-opt').forEach(b=> b.classList.toggle('active', b.dataset.billing === billing));
-    show('authTabs', !reset);
-    show('googleBlock', !reset);
+    show('authTabs', !reset && !update);
+    show('googleBlock', !reset && !update);
     show('planField', reg);
     show('billingField', reg && plan === 'pro');
     $('billingNote').innerHTML = billing === 'annual'
@@ -171,13 +178,14 @@
     show('nameField', reg);
     show('passwordField', !reset);
     show('forgotBtn', mode === 'login');
-    show('passwordHint', reg);
+    show('emailField', !update);
+    show('passwordHint', reg || update);
     show('legalText', reg);
-    show('backToLogin', reset);
-    $('passwordInput').autocomplete = reg ? 'new-password' : 'current-password';
+    show('backToLogin', reset || update);
+    $('passwordInput').autocomplete = reg || update ? 'new-password' : 'current-password';
     $('submitBtn').textContent = reg
       ? (plan === 'pro' ? (billing === 'annual' ? t('Crear cuenta Pro anual') : t('Crear cuenta Pro mensual')) : t('Empezar prueba gratis'))
-      : reset ? t('Enviar link') : t('Iniciar sesión');
+      : reset ? t('Enviar link') : update ? t('Guardar contraseña') : t('Iniciar sesión');
     clearMessages();
   }
 
@@ -212,9 +220,13 @@
     });
   });
 
-  $('googleBtn').addEventListener('click', ()=>{
+  $('googleBtn').addEventListener('click', async ()=>{
     clearMessages();
-    if(BACKEND_PENDING) $('formNote').textContent = t('El ingreso con Google se activa cuando conectemos el servidor. Por ahora usá tu email.');
+    try{
+      await JournalAuth.loginWithGoogle();
+    }catch(ex){
+      $('formError').textContent = ex.message;
+    }
   });
 
   function validate(){
@@ -222,9 +234,11 @@
     const email = $('emailInput').value.trim();
     const password = $('passwordInput').value;
     if(mode === 'register' && !$('nameInput').value.trim()) errors.name = t('Ingresá tu nombre.');
-    if(!email) errors.email = t('Ingresá tu email.');
-    else if(!JournalAuth.EMAIL_RE.test(email)) errors.email = t('Ese email no parece válido.');
-    if(mode === 'register' && password.length < JournalAuth.MIN_PASSWORD) errors.password = t('La contraseña tiene que tener al menos {n} caracteres.', {n: JournalAuth.MIN_PASSWORD});
+    if(mode !== 'update'){
+      if(!email) errors.email = t('Ingresá tu email.');
+      else if(!JournalAuth.EMAIL_RE.test(email)) errors.email = t('Ese email no parece válido.');
+    }
+    if((mode === 'register' || mode === 'update') && password.length < JournalAuth.MIN_PASSWORD) errors.password = t('La contraseña tiene que tener al menos {n} caracteres.', {n: JournalAuth.MIN_PASSWORD});
     if(mode === 'login' && !password) errors.password = t('Ingresá tu contraseña.');
     return errors;
   }
@@ -241,14 +255,21 @@
     }
     const email = $('emailInput').value;
     const password = $('passwordInput').value;
-    if(mode === 'reset'){
-      $('formSuccess').textContent = t('Si hay una cuenta con ese email, te vamos a mandar un link para crear una contraseña nueva.');
-      if(BACKEND_PENDING) $('formNote').textContent = t('El envío de emails se activa cuando conectemos el servidor.');
-      return;
-    }
+    $('submitBtn').disabled = true;
     try{
+      if(mode === 'reset'){
+        await JournalAuth.requestPasswordReset(email);
+        $('formSuccess').textContent = t('Si hay una cuenta con ese email, te vamos a mandar un link para crear una contraseña nueva.');
+        return;
+      }
       if(mode === 'register'){
-        await JournalAuth.register({name: $('nameInput').value, email, password, plan, billing});
+        const res = await JournalAuth.register({name: $('nameInput').value, email, password});
+        if(res.needsConfirmation){
+          $('formSuccess').textContent = t('Te mandamos un email a {email}. Abrí el link para confirmar tu cuenta y entrar a tu journal.', {email: email.trim()});
+          return;
+        }
+      } else if(mode === 'update'){
+        await JournalAuth.updatePassword(password);
       } else {
         await JournalAuth.login({email, password});
       }
@@ -256,10 +277,13 @@
     }catch(ex){
       if(ex.field) setFieldError(ex.field, ex.message);
       else $('formError').textContent = ex.message;
+    }finally{
+      $('submitBtn').disabled = false;
     }
   });
 
   render();
+  if(linkError) $('formError').textContent = t('El link no es válido o ya venció. Pedí uno nuevo.');
 </script>
 </body>
 </html>
