@@ -1,7 +1,7 @@
 # Journal Trading
 
-Checklist y journal de trading que corre 100% en el navegador. Los datos se
-guardan en `localStorage`, sin backend ni build.
+Checklist y journal de trading que corre en el navegador, sin build. Las
+cuentas y los planes viven en Supabase; el journal, por ahora, en `localStorage`.
 
 ## Cómo usarlo
 
@@ -30,7 +30,10 @@ css/styles.css   Tokens de color (claro/oscuro) y estilos de la app
 css/site.css     Estilos de inicio y login
 js/icons.js      Íconos de línea en SVG (basados en Lucide, licencia ISC)
 js/theme.js      Modo claro/oscuro (oscuro por defecto, la elección se guarda)
-js/auth.js       Usuarios, sesión y planes (simulados en localStorage)
+js/config.js     URL y anon key de Supabase (públicas)
+js/vendor/supabase.js  Cliente de Supabase (@supabase/supabase-js, build UMD)
+js/auth.js       Registro, login, sesión y planes con Supabase Auth
+supabase/schema.sql  Tablas, políticas RLS y triggers de la base
 js/session.js    Header del usuario, plan, paywall al vencer la prueba y logout
 js/storage.js    Persistencia del journal por usuario: adapter de localStorage,
                  versión de esquema, migraciones, export/import
@@ -60,25 +63,41 @@ js/calendar.js   Calendario mensual/anual y panel con el detalle de cada día
 img/og-image.png Imagen para compartir el link en redes y WhatsApp
 ```
 
-### Cuentas simuladas
+### Cuentas (Supabase)
 
-Todavía no hay backend: los usuarios, la sesión y el plan viven en el
-`localStorage` del navegador (`jt_users`, `jt_session`). Cada usuario tiene su
-propio journal (`tradingChecklistState:<userId>`). La prueba gratis dura 7 días;
-al vencer aparece un paywall. Pasar a Pro no cobra nada todavía.
+1. Crear un proyecto en [supabase.com](https://supabase.com).
+2. SQL Editor → New query → pegar `supabase/schema.sql` → Run.
+3. Project Settings → API: copiar la **Project URL** y la **anon public key** en
+   `js/config.js`. La `service_role` key nunca va al frontend.
+4. Authentication → URL Configuration: poner la URL del sitio en **Site URL** y
+   agregar `<sitio>/auth.html` a **Redirect URLs** (también
+   `http://localhost:8000/auth.html` para probar local). Ahí vuelven los links de
+   confirmación, de recuperar contraseña y el login con Google.
+5. Opcional: Authentication → Providers → Google para el botón de Google.
+
+`JournalAuth.currentUser()` es sincrónico: lee una copia del perfil en
+`localStorage` (`jt_profile`), así la app abre al instante y sin conexión.
+`JournalAuth.init()` la confirma contra Supabase al abrir la app y al volver a
+ella. La prueba gratis (7 días) la fija el servidor al registrarse
+(`profiles.trial_ends_at`) y el plan Pro sale de la tabla `subscriptions`, que
+solo escribe el servidor. Pasar a Pro todavía no cobra: falta Paddle.
+
+Las cuentas que se crearon antes de Supabase vivían solo en el navegador
+(`jt_users`). Al entrar con el mismo email, su journal y sus capturas pasan a la
+cuenta nueva.
 
 ## Camino a SaaS
 
-`app.js` solo lee y escribe a través de `JournalStore` (`js/storage.js`). Para
-pasar a un backend:
+`app.js` solo lee y escribe a través de `JournalStore` (`js/storage.js`). Lo
+que falta:
 
-1. Escribir un adapter con la misma interfaz (`load`, `save`, `clear`) que
-   llame a una API, y asignarlo a `JournalStore.adapter`.
-2. Mover las imágenes de los trades fuera del JSON (hoy van en base64 y
-   `localStorage` tiene ~5 MB de límite) a un storage de archivos.
-3. Reemplazar `js/auth.js` por autenticación real y una pasarela de pagos
-   para Pro; el backup JSON sirve para migrar los datos que ya
-   tengan los usuarios en su navegador.
+1. Un adapter de Supabase con la misma interfaz (`load`, `save`, `clear`),
+   asignado a `JournalStore.adapter`, contra la tabla `journals` (ya creada en
+   `supabase/schema.sql`). Conviene que siga guardando en `localStorage` y suba
+   los cambios en segundo plano, para no perder el modo sin conexión.
+2. Las capturas de los trades (hoy en IndexedDB) a Supabase Storage.
+3. Pagos con Paddle: checkout en `JournalAuth.checkout()` y un webhook (Edge
+   Function) que escriba en `subscriptions`.
 
 Si cambia la forma de los datos, subir `SCHEMA_VERSION` y agregar la migración
 correspondiente en `MIGRATIONS`.
