@@ -9,9 +9,11 @@
 //   base   updated_at de la nube con el que está al día este navegador
 //   dirty  hay cambios locales sin subir
 //   at     cuándo fue el último cambio local
-// Cada subida solo pisa la nube si sigue en `base`. Si los dos lados cambiaron
-// (dos dispositivos sin conexión, por ejemplo), gana el cambio más reciente pero
-// se conservan los trades, setups, cuentas y revisiones del otro.
+// y en `tradingChecklistState:<userId>:base`, el journal tal como estaba en esa
+// versión de la nube. Cada subida solo pisa la nube si sigue en `base`. Si los dos
+// lados cambiaron (dos dispositivos sin conexión, por ejemplo), se mezclan
+// comparando cada uno contra esa base: se respeta lo que se agregó, editó o borró
+// de cada lado, y si los dos cambiaron lo mismo gana el cambio más reciente.
 
 const CloudSync = {
   status: 'idle',
@@ -30,6 +32,14 @@ const CloudSync = {
     const m = {...this.meta(), ...changes};
     try{ localStorage.setItem(this.metaKey(), JSON.stringify(m)); }catch(e){}
     return m;
+  },
+  baseKey(){ return LocalStorageAdapter.key() + ':base'; },
+  baseData(){
+    try{ return JSON.parse(localStorage.getItem(this.baseKey())); }catch(e){ return null; }
+  },
+  setBase(data){
+    try{ localStorage.setItem(this.baseKey(), JSON.stringify(data)); }
+    catch(e){ localStorage.removeItem(this.baseKey()); }
   },
   localData(){
     const raw = localStorage.getItem(LocalStorageAdapter.key());
@@ -88,6 +98,7 @@ const CloudSync = {
       }
       if(res.error) return this.fail(res.error);
       // Si hubo cambios locales mientras subía, quedan pendientes para la próxima vuelta.
+      this.setBase(data);
       this.setMeta({base: res.data[0].updated_at, dirty: this.meta().at !== at});
     }
     this.setStatus('synced');
@@ -110,16 +121,18 @@ const CloudSync = {
     const remote = res.data.data;
     const local = this.localData();
     const m = this.meta();
+    const base = m.base ? this.baseData() : null;
     let next, dirty = false;
-    if(!local || isEmptyJournal(local) || (!m.dirty && m.base)){
+    // Sin cambios locales desde la última sincronización: se toma lo de la nube.
+    if(!local || isEmptyJournal(local) || (base && (!m.dirty || canonical(local) === canonical(base)))){
       next = remote;
     } else {
-      // Los dos lados tienen cambios: gana el más reciente y se suman los trades del otro.
-      const localNewer = (m.at || 0) > Date.parse(res.data.updated_at);
-      next = localNewer ? mergeJournals(local, remote) : mergeJournals(remote, local);
+      // Los dos lados cambiaron (o este navegador nunca sincronizó): se mezclan.
+      next = mergeJournals(base, local, remote, (m.at || 0) > Date.parse(res.data.updated_at));
       dirty = true;
     }
     LocalStorageAdapter.save(next);
+    this.setBase(remote);
     this.setMeta({base: res.data.updated_at, dirty, at: Date.now()});
     // La app tiene en memoria la versión vieja: se recarga con la nueva (y, si hubo
     // que mezclar, al abrir se sube el resultado).
@@ -134,18 +147,56 @@ function isEmptyJournal(d){
   return !len('history') && !len('items') && !len('playbook');
 }
 
-// `winner` queda como está y se le agregan los elementos de `other` que no tiene.
-// Un trade borrado en un dispositivo puede volver si el otro lo tenía: es preferible
-// a perder uno.
-function mergeJournals(winner, other){
-  const out = {...winner};
-  ['history', 'playbook', 'accounts'].forEach(k=>{
-    const mine = Array.isArray(winner[k]) ? winner[k] : [];
-    const ids = new Set(mine.map(x=> x && x.id));
-    const extra = (Array.isArray(other[k]) ? other[k] : []).filter(x=> x && x.id && !ids.has(x.id));
-    out[k] = mine.concat(extra);
+// JSON con las claves ordenadas: el mismo contenido da el mismo texto (Postgres
+// reordena las claves de un jsonb, y la app las guarda en su propio orden).
+function canonical(v){
+  return JSON.stringify(v, (k, x)=> isObj(x) ? Object.keys(x).sort().reduce((o, key)=>{ o[key] = x[key]; return o; }, {}) : x);
+}
+
+// Mezcla de tres vías: `base` es la versión de la nube que conocían los dos lados
+// (null si este navegador nunca sincronizó: entonces se suma todo lo de ambos).
+// Lo que cambió de un solo lado gana; si cambió de los dos, se mezcla adentro
+// (listas por id, objetos por clave) y en lo demás gana el lado más reciente.
+function mergeJournals(base, local, remote, localNewer){
+  return merge3(base || {}, local, remote, localNewer);
+}
+
+function merge3(b, l, r, localNewer){
+  const cl = canonical(l), cr = canonical(r);
+  if(cl === cr) return l;
+  const cb = canonical(b);
+  if(cl === cb) return r;
+  if(cr === cb) return l;
+  if(isIdList(l) && isIdList(r)) return mergeById(b, l, r, localNewer);
+  if(isObj(l) && isObj(r)){
+    const bo = isObj(b) ? b : {}, out = {};
+    new Set([...Object.keys(localNewer ? l : r), ...Object.keys(localNewer ? r : l)]).forEach(k=>{
+      const v = merge3(bo[k], l[k], r[k], localNewer);
+      if(v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+  return localNewer ? l : r;
+}
+
+// Trades, setups, cuentas y reglas: listas de objetos con id.
+function isIdList(a){
+  return Array.isArray(a) && a.every(x=> isObj(x) && x.id);
+}
+
+// Lo agregado de cualquier lado se suma, lo borrado de cualquier lado se borra y
+// lo editado de los dos lados se mezcla campo por campo.
+function mergeById(b, l, r, localNewer){
+  const byId = a=> new Map((Array.isArray(a) ? a : []).filter(x=> isObj(x) && x.id).map(x=> [x.id, x]));
+  const B = byId(b), L = byId(l), R = byId(r);
+  const out = [], seen = new Set();
+  [...(localNewer ? L : R).keys(), ...(localNewer ? R : L).keys()].forEach(id=>{
+    if(seen.has(id)) return;
+    seen.add(id);
+    const inL = L.has(id), inR = R.has(id);
+    if(B.has(id) && !(inL && inR)) return;
+    out.push(inL && inR ? merge3(B.get(id), L.get(id), R.get(id), localNewer) : (inL ? L.get(id) : R.get(id)));
   });
-  out.reviews = {...(isObj(other.reviews) ? other.reviews : {}), ...(isObj(winner.reviews) ? winner.reviews : {})};
   return out;
 }
 
@@ -158,13 +209,113 @@ const CloudAdapter = {
     if(!this.userId) return;
     // La app guarda también al abrir y al renderizar: si no cambió nada, no hay que subir.
     const json = JSON.stringify(data);
-    if(json === localStorage.getItem(LocalStorageAdapter.key())) return;
+    const prev = localStorage.getItem(LocalStorageAdapter.key());
+    if(json === prev) return;
     localStorage.setItem(LocalStorageAdapter.key(), json);
+    // Mismo contenido con las claves en otro orden (por ejemplo, recién bajado de la nube).
+    try{ if(prev && canonical(JSON.parse(prev)) === canonical(data)) return; }catch(e){}
     CloudSync.markDirty();
   },
   clear(){ LocalStorageAdapter.clear(); },
 };
 JournalStore.adapter = CloudAdapter;
+
+// ---- Capturas (Supabase Storage) ----
+// Cada imagen de ImageStore se sube como `<userId>/<imageId>` al bucket privado
+// `journal-images` (supabase/storage.sql). Al abrir la app se compara lo local
+// con la nube: se sube lo que falta y se bajan las capturas que cargó otro
+// dispositivo. Nunca se borra en la nube por comparar (este navegador podría no
+// tener todavía el journal más nuevo): solo cuando se borra una captura acá.
+const IMAGES_BUCKET = 'journal-images';
+
+const CloudImages = {
+  reconciling: null,
+
+  path(id){ return CloudSync.uid() + '/' + id; },
+  bucket(){ return sb().storage.from(IMAGES_BUCKET); },
+
+  async upload(id, dataUrl){
+    if(!CloudSync.uid() || !id || !dataUrl) return false;
+    try{
+      const blob = await (await fetch(dataUrl)).blob();
+      const {error} = await this.bucket().upload(this.path(id), blob, {contentType: blob.type, upsert: false});
+      // Ya estaba subida (por ejemplo, desde otra pestaña).
+      if(error && !(String(error.statusCode) === '409' || /exist/i.test(error.message))) throw error;
+      return true;
+    }catch(e){
+      // Si falla (sin conexión, prueba vencida), se reintenta en la próxima comparación.
+      console.warn('No se pudo subir la captura', id, e);
+      return false;
+    }
+  },
+
+  async remove(id){
+    if(!CloudSync.uid() || !id) return;
+    try{
+      const {error} = await this.bucket().remove([this.path(id)]);
+      if(error) throw error;
+    }catch(e){
+      console.warn('No se pudo borrar la captura de la nube', id, e);
+    }
+  },
+
+  async download(id){
+    const {data, error} = await this.bucket().download(this.path(id));
+    if(error) throw error;
+    return new Promise((resolve, reject)=>{
+      const r = new FileReader();
+      r.onload = ()=> resolve(r.result);
+      r.onerror = ()=> reject(r.error);
+      r.readAsDataURL(data);
+    });
+  },
+
+  // Nombres de los archivos del usuario en la nube.
+  async list(){
+    const names = new Set();
+    for(let offset = 0; ; offset += 1000){
+      const {data, error} = await this.bucket().list(CloudSync.uid(), {limit: 1000, offset});
+      if(error) throw error;
+      data.forEach(f=> names.add(f.name));
+      if(data.length < 1000) return names;
+    }
+  },
+
+  // ids(): las capturas que usa el journal. Devuelve cuántas bajó.
+  reconcile(ids){
+    if(this.reconciling || !CloudSync.uid()) return this.reconciling || Promise.resolve(0);
+    this.reconciling = (async ()=>{
+      // Primero el journal: si otro dispositivo lo cambió, la página se recarga con
+      // la versión nueva y no tiene sentido subir capturas de trades ya borrados.
+      await CloudSync.firstPull;
+      if(CloudSync.reloading) return 0;
+      const used = [...new Set(ids().filter(Boolean))];
+      let remote;
+      try{ remote = await this.list(); }
+      catch(e){ console.warn('No se pudieron listar las capturas', e); return 0; }
+      const toUpload = used.filter(id=> ImageStore.get(id) && !remote.has(id));
+      const toDownload = used.filter(id=> !ImageStore.get(id) && remote.has(id));
+      let downloaded = 0;
+      await runLimited(toUpload, 3, id=> this.upload(id, ImageStore.get(id)));
+      await runLimited(toDownload, 4, async id=>{
+        try{
+          await ImageStore.put(id, await this.download(id), {fromCloud: true});
+          downloaded++;
+        }catch(e){ console.warn('No se pudo bajar la captura', id, e); }
+      });
+      return downloaded;
+    })().finally(()=>{ this.reconciling = null; });
+    return this.reconciling;
+  },
+};
+
+// Corre fn sobre cada elemento, con a lo sumo `limit` a la vez.
+async function runLimited(items, limit, fn){
+  const queue = items.slice();
+  await Promise.all(Array.from({length: Math.min(limit, queue.length)}, async ()=>{
+    while(queue.length) await fn(queue.shift());
+  }));
+}
 
 // Estado de la nube en Ajustes → Datos y backup.
 function renderSyncStatus(){
@@ -181,7 +332,7 @@ function renderSyncStatus(){
   el.className = 'sync-status ' + CloudSync.status;
 }
 
-window.addEventListener('load', ()=> CloudSync.pull());
+CloudSync.firstPull = new Promise(resolve=> window.addEventListener('load', ()=> resolve(CloudSync.pull())));
 window.addEventListener('online', ()=> CloudSync.pull());
 document.addEventListener('visibilitychange', ()=>{
   // Al salir de la app se sube lo pendiente sin esperar; al volver, se busca lo nuevo.
